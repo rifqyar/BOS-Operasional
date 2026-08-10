@@ -68,22 +68,22 @@ class User extends Authenticatable // implements MustVerifyEmail
 
     public function getAuthPassword(): string
     {
-        return (string) $this->PASS;
+        return (string) ($this->attributes['PASS'] ?? '');
     }
 
     public function getNameAttribute(): string
     {
-        return (string) $this->NAMA;
+        return (string) ($this->attributes['NAMA'] ?? '');
     }
 
     public function getEmailAttribute(): string
     {
-        return (string) $this->EMAIL;
+        return (string) ($this->attributes['EMAIL'] ?? '');
     }
 
     public function getUsernameAttribute(): string
     {
-        return (string) $this->USER_NAME;
+        return (string) ($this->attributes['USER_NAME'] ?? '');
     }
 
     /**
