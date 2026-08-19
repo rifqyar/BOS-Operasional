@@ -31,6 +31,7 @@
 
             return $currentMinutes >= $shift['starts_at'] || $currentMinutes < $shift['ends_at'];
         });
+        $activePanel = request()->routeIs('pickup.index') ? 'pickup' : null;
     @endphp
 
     <div class="min-h-[calc(100vh-5rem)] bg-slate-50 pb-24 text-slate-950 dark:bg-slate-950 dark:text-white lg:pb-6">
@@ -85,129 +86,118 @@
                         <h2 class="text-base font-semibold">Menu Handheld</h2>
                         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Akses operasi utama lapangan</p>
                     </div>
-                    <span
-                        class="flex size-10 shrink-0 items-center justify-center rounded-md bg-sky-100 text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
-                        <flux:icon.squares-2x2 class="size-5" />
-                    </span>
+                    <button type="button" wire:click="$refresh" data-reload-handheld
+                        class="flex size-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
+                        aria-label="Muat ulang data handheld">
+                        <flux:icon.arrow-path class="size-5" />
+                    </button>
                 </div>
 
-                <div class="mx-auto grid max-w-md gap-3">
-                    <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex items-center gap-3 font-semibold">
+                <div @class(['mx-auto grid w-full max-w-5xl grid-cols-3 gap-3 lg:grid-cols-6 lg:gap-4', 'hidden' => $activePanel]) data-handheld-menu>
+                    <a href="{{ route('pickup.index') }}" wire:navigate data-open-pickup
+                        class="group relative flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-sky-200 bg-sky-50 p-3 text-center text-sky-900 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-100 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-100 dark:hover:bg-sky-400/15 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-sky-700 text-white shadow-sm transition group-hover:bg-sky-800">
                             <flux:icon.truck class="size-5" />
-                            PICK UP
                         </span>
-                        <flux:icon.arrow-right class="size-5 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Pick Up</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex items-center gap-3 font-semibold">
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-sky-700 transition group-hover:bg-sky-700 group-hover:text-white dark:bg-white/10 dark:text-sky-200">
                             <flux:icon.clipboard-document-check class="size-5" />
-                            BEHANDLE IN
                         </span>
-                        <flux:icon.arrow-right class="size-5 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Behandle In</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex items-center gap-3 font-semibold">
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-amber-700 transition group-hover:bg-amber-500 group-hover:text-white dark:bg-white/10 dark:text-amber-200">
                             <flux:icon.pause-circle class="size-5" />
-                            HOLD
                         </span>
-                        <flux:icon.arrow-right class="size-5 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Hold</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex min-w-0 items-center gap-3 font-semibold">
-                            <flux:icon.map-pin class="size-5 shrink-0" />
-                            <span class="truncate">MARSHALLING CIC</span>
+                        class="group relative flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="absolute right-2 top-2 rounded-sm bg-amber-300 px-2 py-0.5 text-xs font-bold text-slate-950">55</span>
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white dark:bg-white/10 dark:text-emerald-200">
+                            <flux:icon.map-pin class="size-5" />
                         </span>
-                        <span class="rounded-sm bg-amber-300 px-2 py-1 text-xs font-bold text-slate-950">55</span>
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Marshalling CIC</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex min-w-0 items-center gap-3 font-semibold">
-                            <flux:icon.map-pin class="size-5 shrink-0" />
-                            <span class="truncate">MARSHALLING YARD</span>
+                        class="group relative flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="absolute right-2 top-2 rounded-sm bg-amber-300 px-2 py-0.5 text-xs font-bold text-slate-950">2</span>
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white dark:bg-white/10 dark:text-emerald-200">
+                            <flux:icon.map-pin class="size-5" />
                         </span>
-                        <span class="rounded-sm bg-amber-300 px-2 py-1 text-xs font-bold text-slate-950">2</span>
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Marshalling Yard</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex min-w-0 items-center gap-3 font-semibold">
-                            <flux:icon.document-magnifying-glass class="size-5 shrink-0" />
-                            <span class="truncate">PEMERIKSAAN BEHANDLE</span>
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-sky-700 transition group-hover:bg-sky-700 group-hover:text-white dark:bg-white/10 dark:text-sky-200">
+                            <flux:icon.document-magnifying-glass class="size-5" />
                         </span>
-                        <flux:icon.arrow-right class="size-5 shrink-0 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Pemeriksaan Behandle</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex items-center gap-3 font-semibold">
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-yellow-700 transition group-hover:bg-yellow-500 group-hover:text-white dark:bg-white/10 dark:text-yellow-200">
                             <flux:icon.bolt class="size-5" />
-                            PLUG REEFER
                         </span>
-                        <flux:icon.arrow-right class="size-5 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Plug Reefer</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex min-w-0 items-center gap-3 font-semibold">
-                            <flux:icon.adjustments-horizontal class="size-5 shrink-0" />
-                            <span class="truncate">MONITORING REEFER</span>
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-cyan-700 transition group-hover:bg-cyan-600 group-hover:text-white dark:bg-white/10 dark:text-cyan-200">
+                            <flux:icon.adjustments-horizontal class="size-5" />
                         </span>
-                        <flux:icon.arrow-right class="size-5 shrink-0 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Monitoring Reefer</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex items-center gap-3 font-semibold">
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-indigo-700 transition group-hover:bg-indigo-600 group-hover:text-white dark:bg-white/10 dark:text-indigo-200">
                             <flux:icon.arrow-right-circle class="size-5" />
-                            DELIVERY
                         </span>
-                        <flux:icon.arrow-right class="size-5 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Delivery</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex min-w-0 items-center gap-3 font-semibold">
-                            <flux:icon.check-circle class="size-5 shrink-0" />
-                            <span class="truncate">INSPECTION OUT</span>
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white dark:bg-white/10 dark:text-emerald-200">
+                            <flux:icon.check-circle class="size-5" />
                         </span>
-                        <flux:icon.arrow-right class="size-5 shrink-0 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Inspection Out</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex min-w-0 items-center gap-3 font-semibold">
-                            <flux:icon.wrench-screwdriver class="size-5 shrink-0" />
-                            <span class="truncate">ON CHASSIS</span>
+                        class="group relative flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="absolute right-2 top-2 rounded-sm bg-amber-300 px-2 py-0.5 text-xs font-bold text-slate-950">6</span>
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-rose-700 transition group-hover:bg-rose-600 group-hover:text-white dark:bg-white/10 dark:text-rose-200">
+                            <flux:icon.wrench-screwdriver class="size-5" />
                         </span>
-                        <span class="rounded-sm bg-amber-300 px-2 py-1 text-xs font-bold text-slate-950">6</span>
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">On Chassis</span>
                     </a>
 
                     <a href="#"
-                        class="flex min-h-14 items-center justify-between gap-3 rounded-md bg-sky-700 px-4 py-3 text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                        <span class="flex items-center gap-3 font-semibold">
+                        class="group flex aspect-square min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white sm:min-h-24 lg:aspect-auto lg:h-28 lg:min-h-0 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-sky-400/10 dark:hover:text-sky-100 dark:focus:ring-offset-slate-900">
+                        <span class="flex size-10 items-center justify-center rounded-md bg-slate-100 text-violet-700 transition group-hover:bg-violet-600 group-hover:text-white dark:bg-white/10 dark:text-violet-200">
                             <flux:icon.archive-box class="size-5" />
-                            COPYYARD
                         </span>
-                        <flux:icon.arrow-right class="size-5 text-sky-100" />
+                        <span class="text-xs font-bold uppercase leading-tight sm:text-sm">Copyyard</span>
                     </a>
+                </div>
 
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <button type="submit"
-                            class="flex min-h-14 w-full items-center justify-center gap-3 rounded-md bg-red-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
-                            <flux:icon.arrow-right-start-on-rectangle class="size-5" />
-                            SIGNOUT
-                        </button>
-                    </form>
+                <div id="panel">
+                    @if ($activePanel === 'pickup')
+                        @include('livewire.partials.pickup.pickup-panel')
+                    @endif
                 </div>
             </section>
 
@@ -399,3 +389,7 @@
         </div>
     </nav>
 </div>
+
+@push('scripts')
+    @vite('resources/js/pickup.js')
+@endpush('scripts')

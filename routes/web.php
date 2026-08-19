@@ -1,18 +1,18 @@
 <?php
 
 use App\Livewire\Dashboard;
+use App\Http\Controllers\PickupController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
-Route::get('dashboard', Dashboard::class)
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('dashboard', Dashboard::class)->name('dashboard');
+    Route::get('/', Dashboard::class)->name('home');
+    Route::get('pickup', Dashboard::class)->name('pickup.index');
 
-Route::get('/', Dashboard::class)
-    ->middleware(['auth', 'verified'])
-    ->name('home');
+    Route::post('pickup/search', [PickupController::class, 'search'])->name('pickup.search');
+    Route::post('pickup/store', [PickupController::class, 'store'])->name('pickup.store');
 
-Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
