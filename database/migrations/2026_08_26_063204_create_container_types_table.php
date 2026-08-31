@@ -8,16 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('container_types', function (Blueprint $table) {
 
             $table->id();
 
-            $table->string('username', 100)
+            $table->string('code', 20)
                 ->unique();
 
-            $table->string('name', 150);
+            $table->string('name', 100);
 
-            $table->string('role', 50)
+            $table->string('size', 10)
+                ->nullable();
+
+            $table->string('iso_code', 20)
                 ->nullable();
 
             $table->boolean('is_active')
@@ -25,14 +28,17 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index('role');
+
+            $table->index('size');
+            $table->index('iso_code');
             $table->index('is_active');
+
         });
     }
 
 
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('container_types');
     }
 };
