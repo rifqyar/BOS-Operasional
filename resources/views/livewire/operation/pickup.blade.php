@@ -44,6 +44,7 @@
                            border-l-4 border-transparent
                            transition-colors"
                 >
+
                     <span class="material-symbols-outlined">
                         dashboard
                     </span>
@@ -51,6 +52,7 @@
                     <span class="text-xs font-semibold tracking-wider">
                         Dashboard
                     </span>
+
                 </a>
             </li>
 
@@ -313,9 +315,11 @@
                            hover:bg-[#eff4ff]
                            rounded"
                 >
+
                     <span class="material-symbols-outlined text-[20px]">
                         notifications
                     </span>
+
                 </button>
 
 
@@ -326,9 +330,11 @@
                            hover:bg-[#eff4ff]
                            rounded hidden sm:block"
                 >
+
                     <span class="material-symbols-outlined text-[20px]">
                         terminal
                     </span>
+
                 </button>
 
 
@@ -339,9 +345,11 @@
                            hover:bg-[#eff4ff]
                            rounded hidden sm:block"
                 >
+
                     <span class="material-symbols-outlined text-[20px]">
                         help_outline
                     </span>
+
                 </button>
 
 
@@ -443,6 +451,7 @@
 
                     </div>
 
+
                     <div>
 
                         <h3
@@ -500,6 +509,7 @@
                                 >
                                     confirmation_number
                                 </span>
+
 
                                 <input
                                     id="searchSpk"
@@ -569,6 +579,7 @@
                                 search
                             </span>
 
+
                             <span
                                 wire:loading
                                 wire:target="search"
@@ -577,12 +588,14 @@
                                 progress_activity
                             </span>
 
+
                             <span
                                 wire:loading.remove
                                 wire:target="search"
                             >
                                 SEARCH
                             </span>
+
 
                             <span
                                 wire:loading
@@ -636,6 +649,7 @@
                         @endif
 
                     </span>
+
 
                     <div>
 
@@ -698,6 +712,7 @@
                                 </h3>
 
                             </div>
+
 
                             <p class="mt-1 text-xs text-[#737686]">
                                 Container yang terdaftar pada SPK.
@@ -772,7 +787,13 @@
                         </div>
 
 
-                        <div class="p-5 border-t sm:border-t-0 sm:border-l border-[#c3c6d7]/30">
+                        <div
+                            class="p-5
+                                   border-t
+                                   sm:border-t-0
+                                   sm:border-l
+                                   border-[#c3c6d7]/30"
+                        >
 
                             <p
                                 class="text-[10px]
@@ -796,7 +817,13 @@
                         </div>
 
 
-                        <div class="p-5 border-t sm:border-t-0 sm:border-l border-[#c3c6d7]/30">
+                        <div
+                            class="p-5
+                                   border-t
+                                   sm:border-t-0
+                                   sm:border-l
+                                   border-[#c3c6d7]/30"
+                        >
 
                             <p
                                 class="text-[10px]
@@ -847,6 +874,7 @@
                                         No
                                     </th>
 
+
                                     <th
                                         class="px-6
                                                py-3
@@ -859,6 +887,7 @@
                                     >
                                         No Container
                                     </th>
+
 
                                     <th
                                         class="px-6
@@ -873,6 +902,7 @@
                                         Ukuran
                                     </th>
 
+
                                     <th
                                         class="px-6
                                                py-3
@@ -885,6 +915,7 @@
                                     >
                                         Type
                                     </th>
+
 
                                     <th
                                         class="px-6
@@ -899,6 +930,7 @@
                                         Status
                                     </th>
 
+
                                     <th
                                         class="px-6
                                                py-3
@@ -912,6 +944,36 @@
                                         Send NPCT1
                                     </th>
 
+
+                                    {{-- BARU --}}
+                                    <th
+                                        class="px-6
+                                               py-3
+                                               text-left
+                                               text-[10px]
+                                               font-semibold
+                                               uppercase
+                                               tracking-widest
+                                               text-[#737686]"
+                                    >
+                                        Current Process
+                                    </th>
+
+
+                                    {{-- BARU --}}
+                                    <th
+                                        class="px-6
+                                               py-3
+                                               text-left
+                                               text-[10px]
+                                               font-semibold
+                                               uppercase
+                                               tracking-widest
+                                               text-[#737686]"
+                                    >
+                                        Operation Status
+                                    </th>
+
                                 </tr>
 
                             </thead>
@@ -923,220 +985,476 @@
                                        bg-white"
                             >
 
-                                @forelse($containers as $index => $item)
+@forelse($containers as $index => $item)
 
-                                    <tr
-                                        class="hover:bg-[#eff4ff]/50
-                                               transition-colors"
-                                    >
+    @php
+        $operation = $operations->get($item->container_id);
+        $pickup = $operation?->pickup;
+    @endphp
 
-                                        {{-- NUMBER --}}
-                                        <td
-                                            class="px-6
-                                                   py-4
-                                                   text-xs
-                                                   font-medium
-                                                   text-[#737686]"
-                                        >
-                                            {{ $index + 1 }}
-                                        </td>
+    {{-- MAIN CONTAINER ROW --}}
+    <tr
+        class="hover:bg-[#eff4ff]/50
+               transition-colors"
+    >
 
-
-                                        {{-- CONTAINER --}}
-                                        <td
-                                            class="px-6
-                                                   py-4
-                                                   whitespace-nowrap"
-                                        >
-
-                                            <div class="flex items-center gap-3">
-
-                                                <div
-                                                    class="w-8
-                                                           h-8
-                                                           rounded-lg
-                                                           bg-[#d3e4fe]
-                                                           flex
-                                                           items-center
-                                                           justify-center
-                                                           text-[#004ac6]"
-                                                >
-
-                                                    <span
-                                                        class="material-symbols-outlined text-[18px]"
-                                                    >
-                                                        inventory_2
-                                                    </span>
-
-                                                </div>
-
-                                                <span
-                                                    class="text-sm
-                                                           font-semibold
-                                                           text-[#0b1c30]"
-                                                >
-                                                    {{ $item->container?->no_cont ?? '-' }}
-                                                </span>
-
-                                            </div>
-
-                                        </td>
+        {{-- NUMBER --}}
+        <td
+            class="px-6
+                   py-4
+                   text-xs
+                   font-medium
+                   text-[#737686]"
+        >
+            {{ $index + 1 }}
+        </td>
 
 
-                                        {{-- UKURAN --}}
-                                        <td
-                                            class="px-6
-                                                   py-4
-                                                   whitespace-nowrap
-                                                   text-sm
-                                                   text-[#434655]"
-                                        >
-                                            {{ $item->container?->type?->size ?? '-' }}
-                                        </td>
+        {{-- CONTAINER --}}
+        <td
+            class="px-6
+                   py-4
+                   whitespace-nowrap"
+        >
+
+            <div class="flex items-center gap-3">
+
+                <div
+                    class="w-8
+                           h-8
+                           rounded-lg
+                           bg-[#d3e4fe]
+                           flex
+                           items-center
+                           justify-center
+                           text-[#004ac6]"
+                >
+
+                    <span
+                        class="material-symbols-outlined text-[18px]"
+                    >
+                        inventory_2
+                    </span>
+
+                </div>
+
+                <span
+                    class="text-sm
+                           font-semibold
+                           text-[#0b1c30]"
+                >
+                    {{ $item->container?->no_cont ?? '-' }}
+                </span>
+
+            </div>
+
+        </td>
 
 
-                                        {{-- TYPE --}}
-                                        <td
-                                            class="px-6
-                                                   py-4
-                                                   whitespace-nowrap
-                                                   text-sm
-                                                   text-[#434655]"
-                                        >
-                                            {{ $item->container?->type?->name ?? '-' }}
-                                        </td>
+        {{-- UKURAN --}}
+        <td
+            class="px-6
+                   py-4
+                   whitespace-nowrap
+                   text-sm
+                   text-[#434655]"
+        >
+            {{ $item->container?->type?->size ?? '-' }}
+        </td>
 
 
-                                        {{-- STATUS --}}
-                                        <td class="px-6 py-4">
-
-                                            @if($item->status)
-
-                                                <span
-                                                    class="inline-flex
-                                                           items-center
-                                                           rounded-full
-                                                           bg-[#eff4ff]
-                                                           border
-                                                           border-[#c3c6d7]/40
-                                                           px-3
-                                                           py-1
-                                                           text-[10px]
-                                                           font-semibold
-                                                           uppercase
-                                                           tracking-wider
-                                                           text-[#434655]"
-                                                >
-                                                    {{ $item->status }}
-                                                </span>
-
-                                            @else
-
-                                                <span class="text-xs text-[#737686]">
-                                                    -
-                                                </span>
-
-                                            @endif
-
-                                        </td>
+        {{-- TYPE --}}
+        <td
+            class="px-6
+                   py-4
+                   whitespace-nowrap
+                   text-sm
+                   text-[#434655]"
+        >
+            {{ $item->container?->type?->name ?? '-' }}
+        </td>
 
 
-                                        {{-- SEND NPCT1 --}}
-                                        <td class="px-6 py-4">
+        {{-- SPK CONTAINER STATUS --}}
+        <td class="px-6 py-4">
 
-                                            @if($item->fl_send_npct1 === true || $item->fl_send_npct1 === 1 || $item->fl_send_npct1 === 'Y')
+            @if($item->status)
 
-                                                <span
-                                                    class="inline-flex
-                                                           items-center
-                                                           gap-1.5
-                                                           rounded-full
-                                                           bg-[#6ffbbe]/20
-                                                           border
-                                                           border-[#4edea3]/40
-                                                           px-3
-                                                           py-1
-                                                           text-[10px]
-                                                           font-semibold
-                                                           text-[#005236]"
-                                                >
+                <span
+                    class="inline-flex
+                           items-center
+                           rounded-full
+                           bg-[#eff4ff]
+                           border
+                           border-[#c3c6d7]/40
+                           px-3
+                           py-1
+                           text-[10px]
+                           font-semibold
+                           uppercase
+                           tracking-wider
+                           text-[#434655]"
+                >
+                    {{ $item->status }}
+                </span>
 
-                                                    <span
-                                                        class="material-symbols-outlined text-[14px]"
-                                                    >
-                                                        check_circle
-                                                    </span>
+            @else
 
-                                                    SENT
+                <span class="text-xs text-[#737686]">
+                    -
+                </span>
 
-                                                </span>
+            @endif
 
-                                            @else
+        </td>
 
-                                                <span
-                                                    class="inline-flex
-                                                           items-center
-                                                           gap-1.5
-                                                           rounded-full
-                                                           bg-[#d3e4fe]/60
-                                                           border
-                                                           border-[#c3c6d7]/40
-                                                           px-3
-                                                           py-1
-                                                           text-[10px]
-                                                           font-semibold
-                                                           text-[#565e74]"
-                                                >
 
-                                                    <span
-                                                        class="material-symbols-outlined text-[14px]"
-                                                    >
-                                                        schedule
-                                                    </span>
+        {{-- SEND NPCT1 --}}
+        <td class="px-6 py-4">
 
-                                                    NOT SENT
+            @if(
+                $item->fl_send_npct1 === '1' ||
+                $item->fl_send_npct1 === 'Y'
+            )
 
-                                                </span>
+                <span
+                    class="inline-flex
+                           items-center
+                           gap-1.5
+                           rounded-full
+                           bg-[#6ffbbe]/20
+                           border
+                           border-[#4edea3]/40
+                           px-3
+                           py-1
+                           text-[10px]
+                           font-semibold
+                           text-[#005236]"
+                >
 
-                                            @endif
+                    <span
+                        class="material-symbols-outlined text-[14px]"
+                    >
+                        check_circle
+                    </span>
 
-                                        </td>
+                    SENT
 
-                                    </tr>
+                </span>
 
-                                @empty
+            @else
 
-                                    <tr>
+                <span
+                    class="inline-flex
+                           items-center
+                           gap-1.5
+                           rounded-full
+                           bg-[#d3e4fe]/60
+                           border
+                           border-[#c3c6d7]/40
+                           px-3
+                           py-1
+                           text-[10px]
+                           font-semibold
+                           text-[#565e74]"
+                >
 
-                                        <td
-                                            colspan="6"
-                                            class="px-6
-                                                   py-12
-                                                   text-center"
-                                        >
+                    <span
+                        class="material-symbols-outlined text-[14px]"
+                    >
+                        schedule
+                    </span>
 
-                                            <span
-                                                class="material-symbols-outlined
-                                                       text-[#737686]
-                                                       text-[36px]"
-                                            >
-                                                inventory_2
-                                            </span>
+                    NOT SENT
 
-                                            <p
-                                                class="mt-2
-                                                       text-sm
-                                                       font-medium
-                                                       text-[#434655]"
-                                            >
-                                                Tidak ada container.
-                                            </p>
+                </span>
 
-                                        </td>
+            @endif
 
-                                    </tr>
+        </td>
 
-                                @endforelse
+
+        {{-- CURRENT PROCESS --}}
+        <td class="px-6 py-4">
+
+            @if($operation?->current_process)
+
+                <span
+                    class="inline-flex
+                           items-center
+                           rounded-full
+                           bg-[#d3e4fe]
+                           border
+                           border-[#b4c5ff]
+                           px-3
+                           py-1
+                           text-[10px]
+                           font-semibold
+                           uppercase
+                           tracking-wider
+                           text-[#004ac6]"
+                >
+                    {{ str_replace('_', ' ', $operation->current_process) }}
+                </span>
+
+            @else
+
+                <span class="text-xs text-[#737686]">
+                    NO OPERATION
+                </span>
+
+            @endif
+
+        </td>
+
+
+        {{-- OPERATION STATUS --}}
+        <td class="px-6 py-4">
+
+            @if($operation?->status)
+
+                <span
+                    class="inline-flex
+                           items-center
+                           rounded-full
+                           bg-[#eff4ff]
+                           border
+                           border-[#c3c6d7]/40
+                           px-3
+                           py-1
+                           text-[10px]
+                           font-semibold
+                           uppercase
+                           tracking-wider
+                           text-[#434655]"
+                >
+                    {{ $operation->status }}
+                </span>
+
+            @else
+
+                <span class="text-xs text-[#737686]">
+                    -
+                </span>
+
+            @endif
+
+        </td>
+
+    </tr>
+
+
+    {{-- =========================================================
+        PICKUP DETAIL
+    ========================================================== --}}
+
+    @if($operation)
+
+        <tr class="bg-[#f8f9ff]">
+
+            <td
+                colspan="8"
+                class="px-6 py-4"
+            >
+
+                <div
+                    class="rounded-lg
+                           border
+                           border-[#c3c6d7]/30
+                           bg-white
+                           p-4"
+                >
+
+                    <div
+                        class="flex
+                               items-center
+                               gap-2
+                               mb-4"
+                    >
+
+                        <span
+                            class="material-symbols-outlined
+                                   text-[#004ac6]
+                                   text-[20px]"
+                        >
+                            local_shipping
+                        </span>
+
+                        <div>
+
+                            <h4
+                                class="text-sm
+                                       font-semibold
+                                       text-[#0b1c30]"
+                            >
+                                Pickup Information
+                            </h4>
+
+                            <p
+                                class="text-[11px]
+                                       text-[#737686]"
+                            >
+                                Detail pickup untuk operation
+                                #{{ $operation->id }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="grid
+                               grid-cols-1
+                               sm:grid-cols-3
+                               gap-4"
+                    >
+
+                        {{-- PICKUP STATUS --}}
+                        <div
+                            class="rounded-lg
+                                   border
+                                   border-[#c3c6d7]/30
+                                   bg-[#f8f9ff]
+                                   p-4"
+                        >
+
+                            <p
+                                class="text-[10px]
+                                       font-semibold
+                                       uppercase
+                                       tracking-widest
+                                       text-[#737686]"
+                            >
+                                Pickup Status
+                            </p>
+
+                            <p
+                                class="mt-2
+                                       text-sm
+                                       font-semibold
+                                       text-[#0b1c30]"
+                            >
+                                {{ $pickup?->status ?? '-' }}
+                            </p>
+
+                        </div>
+
+
+                        {{-- PICKUP AT --}}
+                        <div
+                            class="rounded-lg
+                                   border
+                                   border-[#c3c6d7]/30
+                                   bg-[#f8f9ff]
+                                   p-4"
+                        >
+
+                            <p
+                                class="text-[10px]
+                                       font-semibold
+                                       uppercase
+                                       tracking-widest
+                                       text-[#737686]"
+                            >
+                                Pickup At
+                            </p>
+
+                            <p
+                                class="mt-2
+                                       text-sm
+                                       font-semibold
+                                       text-[#0b1c30]"
+                            >
+
+                                @if($pickup?->pickup_at)
+
+                                    {{ $pickup->pickup_at->format('d-m-Y H:i:s') }}
+
+                                @else
+
+                                    -
+
+                                @endif
+
+                            </p>
+
+                        </div>
+
+
+                        {{-- TRUCK --}}
+                        <div
+                            class="rounded-lg
+                                   border
+                                   border-[#c3c6d7]/30
+                                   bg-[#f8f9ff]
+                                   p-4"
+                        >
+
+                            <p
+                                class="text-[10px]
+                                       font-semibold
+                                       uppercase
+                                       tracking-widest
+                                       text-[#737686]"
+                            >
+                                Truck ID
+                            </p>
+
+                            <p
+                                class="mt-2
+                                       text-sm
+                                       font-semibold
+                                       text-[#0b1c30]"
+                            >
+                                {{ $pickup?->truck?->id ?? '-' }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </td>
+
+        </tr>
+
+    @endif
+
+@empty
+
+    <tr>
+
+        <td
+            colspan="8"
+            class="px-6
+                   py-12
+                   text-center"
+        >
+
+            <span
+                class="material-symbols-outlined
+                       text-[#737686]
+                       text-[36px]"
+            >
+                inventory_2
+            </span>
+
+            <p
+                class="mt-2
+                       text-sm
+                       font-medium
+                       text-[#434655]"
+            >
+                Tidak ada container.
+            </p>
+
+        </td>
+
+    </tr>
+
+@endforelse
 
                             </tbody>
 
@@ -1175,4 +1493,3 @@
 {{-- ================================================================
     MATERIAL SYMBOLS
 ================================================================= --}}
-

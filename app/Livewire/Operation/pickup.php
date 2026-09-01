@@ -26,6 +26,8 @@ class Pickup extends Component
 
     public $containers = [];
 
+    public $operations = [];
+
 
     /*
     |--------------------------------------------------------------------------
@@ -54,7 +56,6 @@ class Pickup extends Component
             ],
         ]);
 
-
         $keyword = strtoupper(trim($this->searchSpk));
 
 
@@ -65,11 +66,10 @@ class Pickup extends Component
         */
 
         $this->spk = null;
-
         $this->containers = [];
+        $this->operations = [];
 
         $this->pickupMessage = null;
-
         $this->pickupMessageType = null;
 
 
@@ -109,11 +109,6 @@ class Pickup extends Component
         |--------------------------------------------------------------------------
         | GET CONTAINERS
         |--------------------------------------------------------------------------
-        |
-        | Relationship pada App\Models\Spk adalah:
-        |
-        | public function containers()
-        |
         */
 
         $this->containers = $this->spk
@@ -139,6 +134,27 @@ class Pickup extends Component
 
             return;
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET EXISTING OPERATIONS
+        |--------------------------------------------------------------------------
+        |
+        | Hanya membaca operation yang sudah ada.
+        | Tidak membuat operation baru.
+        |
+        */
+
+        $this->operations = $this->spk
+            ->operations()
+            ->with([
+                'container.type',
+                'pickup',
+                'pickup.truck',
+            ])
+            ->get()
+            ->keyBy('container_id');
 
 
         /*
