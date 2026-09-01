@@ -7,20 +7,43 @@ use Livewire\Component;
 
 class Pickup extends Component
 {
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
     public string $searchSpk = '';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA
+    |--------------------------------------------------------------------------
+    */
 
     public $spk = null;
 
     public $containers = [];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MESSAGE
+    |--------------------------------------------------------------------------
+    */
 
     public ?string $pickupMessage = null;
 
     public ?string $pickupMessageType = null;
 
 
-    /**
-     * SEARCH NO SPK
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH NO SPK
+    |--------------------------------------------------------------------------
+    */
+
     public function search(): void
     {
         $this->validate([
@@ -31,7 +54,9 @@ class Pickup extends Component
             ],
         ]);
 
+
         $keyword = strtoupper(trim($this->searchSpk));
+
 
         /*
         |--------------------------------------------------------------------------
@@ -40,9 +65,11 @@ class Pickup extends Component
         */
 
         $this->spk = null;
+
         $this->containers = [];
 
         $this->pickupMessage = null;
+
         $this->pickupMessageType = null;
 
 
@@ -53,7 +80,11 @@ class Pickup extends Component
         */
 
         $this->spk = Spk::query()
-            ->where('no_spk', 'like', '%' . $keyword . '%')
+            ->where(
+                'no_spk',
+                'like',
+                '%' . $keyword . '%'
+            )
             ->first();
 
 
@@ -78,10 +109,15 @@ class Pickup extends Component
         |--------------------------------------------------------------------------
         | GET CONTAINERS
         |--------------------------------------------------------------------------
+        |
+        | Relationship pada App\Models\Spk adalah:
+        |
+        | public function containers()
+        |
         */
 
         $this->containers = $this->spk
-            ->spkContainers()
+            ->containers()
             ->with([
                 'container.type',
             ])
@@ -117,6 +153,12 @@ class Pickup extends Component
             "NO SPK : {$this->spk->no_spk} FOUND";
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | RENDER
+    |--------------------------------------------------------------------------
+    */
 
     public function render()
     {
