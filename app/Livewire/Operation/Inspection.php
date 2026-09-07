@@ -2,105 +2,45 @@
 
 namespace App\Livewire\Operation;
 
+use App\Models\BehandleReport;
+use App\Models\Equipment;
+use App\Models\JobDetail;
+use App\Models\JobSlip;
 use App\Models\Operation;
+use App\Models\OperationInspection;
+use App\Models\SystemUser;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class Inspection extends Component
 {
-    /*
-    |--------------------------------------------------------------------------
-    | SEARCH
-    |--------------------------------------------------------------------------
-    */
-
     public string $searchCont = '';
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | DATA
-    |--------------------------------------------------------------------------
-    */
 
     public $operations = [];
 
-    public $selectedOperation = null;
+    public ?Operation $selectedOperation = null;
 
-    public $inspection = null;
+    public ?OperationInspection $inspection = null;
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | FORM
-    |--------------------------------------------------------------------------
-    */
+    public ?JobSlip $jobSlip = null;
 
     public string $noSeal = '';
 
-    public string $containerType = '';
+    public ?int $alat = null;
 
-    public string $alat = '';
-
-    public string $operator = '';
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | STATE
-    |--------------------------------------------------------------------------
-    */
+    public ?int $operator = null;
 
     public bool $inspectionStarted = false;
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | MESSAGE
-    |--------------------------------------------------------------------------
-    */
 
     public ?string $message = null;
 
     public ?string $messageType = null;
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | MOUNT
-    |--------------------------------------------------------------------------
-    */
-
     public function mount(): void
     {
-        $this->searchCont = '';
-
-        $this->operations = [];
-
-        $this->selectedOperation = null;
-
-        $this->inspection = null;
-
-        $this->noSeal = '';
-
-        $this->containerType = '';
-
-        $this->alat = '';
-
-        $this->operator = '';
-
-        $this->inspectionStarted = false;
-
-        $this->message = null;
-
-        $this->messageType = null;
+        $this->resetState();
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SEARCH
-    |--------------------------------------------------------------------------
-    */
 
     public function search(): void
     {
@@ -118,90 +58,46 @@ class Inspection extends Component
             ]
         );
 
-
         $keyword = strtoupper(
             trim($this->searchCont)
         );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESET STATE
-        |--------------------------------------------------------------------------
-        */
-
-        $this->operations = [];
-
-        $this->selectedOperation = null;
-
-        $this->inspection = null;
-
-        $this->inspectionStarted = false;
-
-        $this->message = null;
-
-        $this->messageType = null;
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | SEARCH
-        |--------------------------------------------------------------------------
-        |
-        | Source lama:
-        | search_realis
-        |
-        | DB baru:
-        | operations -> container
-        |
-        */
+        $this->resetSelection();
 
         $this->operations = Operation::query()
-
             ->with([
                 'spk',
-                'container',
                 'container.type',
-                'inspection',
+                'container.currentLocation',
             ])
-
             ->whereHas(
                 'container',
                 function ($query) use ($keyword) {
-
                     $query->where(
                         'no_cont',
                         'like',
                         '%' . $keyword . '%'
                     );
-
                 }
             )
-
-            /*
-            |--------------------------------------------------------------------------
-            | INSPECTION PROCESS
-            |--------------------------------------------------------------------------
-            */
-
-            ->where(
-                'current_process',
-                'INSPECTION'
+            ->whereHas(
+                'spk',
+                function ($query) {
+                    $query->whereHas(
+                        'containers',
+                        function ($query) {
+                            $query->where(
+                                'status',
+                                '460'
+                            );
+                        }
+                    );
+                }
             )
-
             ->orderByDesc('id')
-
             ->get();
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | NOT FOUND
-        |--------------------------------------------------------------------------
-        */
-
         if ($this->operations->isEmpty()) {
-
             $this->messageType = 'danger';
 
             $this->message =
@@ -210,64 +106,32 @@ class Inspection extends Component
             return;
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | FOUND
-        |--------------------------------------------------------------------------
-        */
-
         if ($this->operations->count() === 1) {
-
             $this->selectOperation(
                 $this->operations->first()->id
             );
 
-            $this->messageType = 'primary';
-
-            $this->message =
-                "NO CONT : {$keyword} MULAI PEMERIKSAAN";
-
             return;
         }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | MULTIPLE CONTAINER
-        |--------------------------------------------------------------------------
-        */
 
         $this->messageType = 'primary';
 
         $this->message =
-            "Ditemukan {$this->operations->count()} container. Silakan pilih container.";
+            "Ditemukan {$this->operations->count()} data. "
+            . 'Silakan pilih container.';
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SELECT CONTAINER
-    |--------------------------------------------------------------------------
-    */
 
     public function selectOperation(int $id): void
     {
-        $this->selectedOperation =
-            Operation::query()
-
-                ->with([
-                    'spk',
-                    'container',
-                    'container.type',
-                    'inspection',
-                ])
-
-                ->find($id);
-
+        $this->selectedOperation = Operation::query()
+            ->with([
+                'spk',
+                'container.type',
+                'container.currentLocation',
+            ])
+            ->find($id);
 
         if (!$this->selectedOperation) {
-
             $this->messageType = 'danger';
 
             $this->message =
@@ -276,61 +140,16 @@ class Inspection extends Component
             return;
         }
 
+        $this->loadCurrentInspection();
 
-        $this->inspection =
-            $this->selectedOperation->inspection;
+        $this->message = null;
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOAD EXISTING DATA
-        |--------------------------------------------------------------------------
-        */
-
-        $this->containerType =
-            $this->selectedOperation
-                ->container
-                ?->type
-                ?->name
-            ?? '';
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | EXISTING INSPECTION
-        |--------------------------------------------------------------------------
-        */
-
-        if ($this->inspection) {
-
-            $this->noSeal =
-                $this->inspection->no_seal
-                ?? '';
-
-            $this->alat =
-                $this->inspection->alat_id
-                ?? '';
-
-            $this->operator =
-                $this->inspection->operator_id
-                ?? '';
-
-            $this->inspectionStarted =
-                true;
-        }
+        $this->messageType = null;
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | START INSPECTION
-    |--------------------------------------------------------------------------
-    */
 
     public function startInspection(): void
     {
         if (!$this->selectedOperation) {
-
             $this->messageType = 'danger';
 
             $this->message =
@@ -339,40 +158,263 @@ class Inspection extends Component
             return;
         }
 
+        $this->validate(
+            [
+                'operator' => [
+                    'required',
+                    'integer',
+                    'exists:users,id',
+                ],
+                'alat' => [
+                    'required',
+                    'integer',
+                    'exists:equipments,id',
+                ],
+            ],
+            [
+                'operator.required' =>
+                    'Operator wajib dipilih.',
+                'alat.required' =>
+                    'Alat wajib dipilih.',
+            ]
+        );
 
-        $this->inspectionStarted = true;
+        try {
+            DB::transaction(
+                function () {
+                    $operation = Operation::query()
+                        ->with([
+                            'spk',
+                            'container',
+                        ])
+                        ->lockForUpdate()
+                        ->find(
+                            $this->selectedOperation->id
+                        );
 
+                    if (!$operation) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'Data operation tidak ditemukan.',
+                            ]
+                        );
+                    }
 
-        $this->messageType = 'primary';
+                    $container =
+                        $operation->container;
 
-        $this->message =
-            'NO CONT : '
-            . (
-                $this->selectedOperation
-                    ->container
-                    ?->no_cont
-                ?? '-'
-            )
-            . ' MULAI PEMERIKSAAN';
+                    if (!$container) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'Container tidak ditemukan.',
+                            ]
+                        );
+                    }
+
+                    $spkContainer =
+                        $operation->spk
+                            ->containers()
+                            ->where(
+                                'container_id',
+                                $container->id
+                            )
+                            ->orderByDesc('id')
+                            ->lockForUpdate()
+                            ->first();
+
+                    if (!$spkContainer) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'SPK Container tidak ditemukan.',
+                            ]
+                        );
+                    }
+
+                    if (
+                        (string) $spkContainer->status
+                        !== '460'
+                    ) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'Container tidak berada pada status 460.',
+                            ]
+                        );
+                    }
+
+                    $jobSlip = JobSlip::query()
+                        ->with('gatepass')
+                        ->where(
+                            'spk_container_id',
+                            $spkContainer->id
+                        )
+                        ->orderByDesc('id')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$jobSlip) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'Job Slip tidak ditemukan.',
+                            ]
+                        );
+                    }
+
+                    $jenisKegiatan =
+                        (string) (
+                            $jobSlip
+                                ->gatepass
+                                ?->jenis_kegiatan
+                            ?? ''
+                        );
+
+                    if (
+                        !in_array(
+                            $jenisKegiatan,
+                            ['1', '2'],
+                            true
+                        )
+                    ) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'Jenis kegiatan Gatepass tidak valid.',
+                            ]
+                        );
+                    }
+
+                    $existing =
+                        OperationInspection::query()
+                            ->where(
+                                'operation_id',
+                                $operation->id
+                            )
+                            ->where(
+                                'status',
+                                'WAITING'
+                            )
+                            ->latest('id')
+                            ->lockForUpdate()
+                            ->first();
+
+                    if ($existing) {
+                        throw ValidationException::withMessages(
+                            [
+                                'searchCont' =>
+                                    'Pemeriksaan container ini sedang berjalan.',
+                            ]
+                        );
+                    }
+
+                    OperationInspection::create(
+                        [
+                            'operation_id' =>
+                                $operation->id,
+
+                            'job_slip_id' =>
+                                $jobSlip->id,
+
+                            'behandlein_id' =>
+                                $operation
+                                    ->behandlein
+                                    ?->id,
+
+                            'equipment_id' =>
+                                $this->alat,
+
+                            'operator_id' =>
+                                $this->operator,
+
+                            'no_seal' => null,
+
+                            'container_type_id' =>
+                                $container
+                                    ->container_type_id,
+
+                            'started_at' => now(),
+
+                            'finished_at' => null,
+
+                            'status' => 'WAITING',
+
+                            'note' => null,
+                        ]
+                    );
+
+                    $operation->update(
+                        [
+                            'started_at' => now(),
+                        ]
+                    );
+
+                    $report = $this->findReport(
+                        $container->no_cont,
+                        $operation->spk_id
+                    );
+
+                    if ($report) {
+                        if (
+                            $jenisKegiatan === '1'
+                        ) {
+                            $report->update(
+                                [
+                                    'pb1_marshalling_b1' =>
+                                        now(),
+                                ]
+                            );
+                        } else {
+                            $report->update(
+                                [
+                                    'pb2_marshalling_b2' =>
+                                        now(),
+                                ]
+                            );
+                        }
+                    }
+                }
+            );
+
+            $this->loadCurrentInspection();
+
+            $this->inspectionStarted = true;
+
+            $this->messageType = 'primary';
+
+            $this->message =
+                'NO CONT : '
+                . (
+                    $this->selectedOperation
+                        ->container
+                        ?->no_cont
+                    ?? '-'
+                )
+                . ' MULAI PEMERIKSAAN';
+
+        } catch (ValidationException $e) {
+            $this->messageType = 'danger';
+
+            $this->message =
+                collect(
+                    $e->errors()
+                )->flatten()->first();
+
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->messageType = 'danger';
+
+            $this->message =
+                'Pemeriksaan gagal dimulai.';
+        }
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | FINISH INSPECTION
-    |--------------------------------------------------------------------------
-    |
-    | Untuk sementara tidak melakukan INSERT / UPDATE.
-    |
-    | Kita hanya menyelesaikan flow UI terlebih dahulu
-    | karena struktur tabel inspection DB baru belum diberikan.
-    |
-    */
 
     public function finishInspection(): void
     {
         if (!$this->selectedOperation) {
-
             $this->messageType = 'danger';
 
             $this->message =
@@ -381,7 +423,6 @@ class Inspection extends Component
             return;
         }
 
-
         $this->validate(
             [
                 'noSeal' => [
@@ -389,56 +430,359 @@ class Inspection extends Component
                     'string',
                     'max:100',
                 ],
-
-                'containerType' => [
-                    'required',
-                    'string',
-                    'max:50',
-                ],
             ],
             [
                 'noSeal.required' =>
                     'No Seal wajib diisi.',
-
-                'containerType.required' =>
-                    'Type Container wajib dipilih.',
             ]
         );
 
+        try {
+            DB::transaction(
+                function () {
+                    $operation = Operation::query()
+                        ->with([
+                            'spk',
+                            'container',
+                        ])
+                        ->lockForUpdate()
+                        ->find(
+                            $this->selectedOperation->id
+                        );
 
-        /*
-        |--------------------------------------------------------------------------
-        | IMPORTANT
-        |--------------------------------------------------------------------------
-        |
-        | Belum melakukan database update.
-        |
-        | Setelah struktur OperationInspection diberikan,
-        | bagian ini bisa kita sambungkan ke DB baru.
-        |
-        */
+                    if (!$operation) {
+                        throw ValidationException::withMessages(
+                            [
+                                'noSeal' =>
+                                    'Data operation tidak ditemukan.',
+                            ]
+                        );
+                    }
 
-        $this->messageType = 'primary';
+                    $container =
+                        $operation->container;
 
-        $this->message =
-            'NO CONT : '
-            . (
-                $this->selectedOperation
-                    ->container
-                    ?->no_cont
-                ?? '-'
-            )
-            . ' SELESAI PEMERIKSAAN';
+                    if (!$container) {
+                        throw ValidationException::withMessages(
+                            [
+                                'noSeal' =>
+                                    'Container tidak ditemukan.',
+                            ]
+                        );
+                    }
+
+                    $inspection =
+                        OperationInspection::query()
+                            ->where(
+                                'operation_id',
+                                $operation->id
+                            )
+                            ->where(
+                                'status',
+                                'WAITING'
+                            )
+                            ->latest('id')
+                            ->lockForUpdate()
+                            ->first();
+
+                    if (!$inspection) {
+                        throw ValidationException::withMessages(
+                            [
+                                'noSeal' =>
+                                    'Pemeriksaan belum dimulai atau sudah selesai.',
+                            ]
+                        );
+                    }
+
+                    $spkContainer =
+                        $operation->spk
+                            ->containers()
+                            ->where(
+                                'container_id',
+                                $container->id
+                            )
+                            ->orderByDesc('id')
+                            ->lockForUpdate()
+                            ->first();
+
+                    if (!$spkContainer) {
+                        throw ValidationException::withMessages(
+                            [
+                                'noSeal' =>
+                                    'SPK Container tidak ditemukan.',
+                            ]
+                        );
+                    }
+
+                    $jobSlip = JobSlip::query()
+                        ->with('gatepass')
+                        ->where(
+                            'id',
+                            $inspection->job_slip_id
+                        )
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$jobSlip) {
+                        throw ValidationException::withMessages(
+                            [
+                                'noSeal' =>
+                                    'Job Slip pemeriksaan tidak ditemukan.',
+                            ]
+                        );
+                    }
+
+                    $jenisKegiatan =
+                        (string) (
+                            $jobSlip
+                                ->gatepass
+                                ?->jenis_kegiatan
+                            ?? ''
+                        );
+
+                    if (
+                        !in_array(
+                            $jenisKegiatan,
+                            ['1', '2'],
+                            true
+                        )
+                    ) {
+                        throw ValidationException::withMessages(
+                            [
+                                'noSeal' =>
+                                    'Jenis kegiatan Gatepass tidak valid.',
+                            ]
+                        );
+                    }
+
+                    $seal = strtoupper(
+                        trim($this->noSeal)
+                    );
+
+                    $inspection->update(
+                        [
+                            'no_seal' => $seal,
+
+                            'operator_id' =>
+                                $this->operator
+                                ?: $inspection
+                                    ->operator_id,
+
+                            'equipment_id' =>
+                                $this->alat
+                                ?: $inspection
+                                    ->equipment_id,
+
+                            'finished_at' => now(),
+
+                            'status' => 'DONE',
+                        ]
+                    );
+
+                    $operation->update(
+                        [
+                            'finished_at' => now(),
+                        ]
+                    );
+
+                    $container->update(
+                        [
+                            'no_seal' => $seal,
+                        ]
+                    );
+
+                    $spkContainer->update(
+                        [
+                            'status' => '500',
+                        ]
+                    );
+
+                    if ($operation->spk) {
+                        $operation
+                            ->spk
+                            ->update(
+                                [
+                                    'status' => '500',
+                                ]
+                            );
+                    }
+
+                    $jobSlip->update(
+                        [
+                            'job_type' =>
+                                $jenisKegiatan === '1'
+                                    ? 'EX BEHANDLE 1'
+                                    : 'EX BEHANDLE 2',
+
+                            'status' => 'WAITING',
+                        ]
+                    );
+
+                    JobDetail::create(
+                        [
+                            'job_slip_id' =>
+                                $jobSlip->id,
+
+                            'equipment_id' =>
+                                $this->alat
+                                ?: $inspection
+                                    ->equipment_id,
+
+                            'operator_id' =>
+                                $this->operator
+                                ?: $inspection
+                                    ->operator_id,
+
+                            'job_activity_code' =>
+                                null,
+
+                            'status' => 'DONE',
+
+                            'job_activity_code_2' =>
+                                null,
+
+                            'truck_id' =>
+                                null,
+
+                            'operator_id_2' =>
+                                null,
+
+                            'job_activity_code_3' =>
+                                null,
+
+                            'equipment_id_3' =>
+                                null,
+
+                            'operator_id_3' =>
+                                null,
+                        ]
+                    );
+
+                    $report = $this->findReport(
+                        $container->no_cont,
+                        $operation->spk_id
+                    );
+
+                    if ($report) {
+                        $report->update(
+                            [
+                                'no_seal' => $seal,
+                            ]
+                        );
+                    }
+                }
+            );
+
+            $this->loadCurrentInspection();
+
+            $this->inspectionStarted = false;
+
+            $this->messageType = 'success';
+
+            $this->message =
+                'NO CONT : '
+                . (
+                    $this->selectedOperation
+                        ->container
+                        ?->no_cont
+                    ?? '-'
+                )
+                . ' SELESAI PEMERIKSAAN';
+
+        } catch (ValidationException $e) {
+            $this->messageType = 'danger';
+
+            $this->message =
+                collect(
+                    $e->errors()
+                )->flatten()->first();
+
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->messageType = 'danger';
+
+            $this->message =
+                'Pemeriksaan gagal diselesaikan.';
+        }
     }
 
+    protected function loadCurrentInspection(): void
+    {
+        if (!$this->selectedOperation) {
+            $this->inspection = null;
 
-    /*
-    |--------------------------------------------------------------------------
-    | RESET
-    |--------------------------------------------------------------------------
-    */
+            $this->jobSlip = null;
+
+            $this->inspectionStarted = false;
+
+            return;
+        }
+
+        $this->inspection =
+            OperationInspection::query()
+                ->with([
+                    'equipment',
+                    'operator',
+                    'jobSlip.gatepass',
+                ])
+                ->where(
+                    'operation_id',
+                    $this->selectedOperation->id
+                )
+                ->latest('id')
+                ->first();
+
+        $this->jobSlip =
+            $this->inspection?->jobSlip;
+
+        $this->inspectionStarted =
+            $this->inspection?->status === 'WAITING';
+
+        if ($this->inspection) {
+            $this->noSeal =
+                $this->inspection->no_seal ?? '';
+
+            $this->alat =
+                $this->inspection->equipment_id;
+
+            $this->operator =
+                $this->inspection->operator_id;
+        }
+    }
+
+    protected function findReport(
+        string $noCont,
+        int $spkId
+    ): ?BehandleReport {
+        $noSpk =
+            $this->selectedOperation
+                ?->spk
+                ?->no_spk;
+
+        if (!$noSpk) {
+            return null;
+        }
+
+        return BehandleReport::query()
+            ->where(
+                'no_cont',
+                $noCont
+            )
+            ->where(
+                'no_spk',
+                $noSpk
+            )
+            ->latest('id')
+            ->first();
+    }
 
     public function resetSearch(): void
+    {
+        $this->resetState();
+    }
+
+    protected function resetSelection(): void
     {
         $this->searchCont = '';
 
@@ -448,13 +792,13 @@ class Inspection extends Component
 
         $this->inspection = null;
 
+        $this->jobSlip = null;
+
         $this->noSeal = '';
 
-        $this->containerType = '';
+        $this->alat = null;
 
-        $this->alat = '';
-
-        $this->operator = '';
+        $this->operator = null;
 
         $this->inspectionStarted = false;
 
@@ -463,17 +807,34 @@ class Inspection extends Component
         $this->messageType = null;
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | RENDER
-    |--------------------------------------------------------------------------
-    */
+    protected function resetState(): void
+    {
+        $this->resetSelection();
+    }
 
     public function render()
     {
         return view(
-            'livewire.operation.inspection'
+            'livewire.operation.inspection',
+            [
+                'equipments' =>
+                    Equipment::query()
+                        ->where(
+                            'is_active',
+                            true
+                        )
+                        ->orderBy('name')
+                        ->get(),
+
+                'operators' =>
+                    SystemUser::query()
+                        ->where(
+                            'is_active',
+                            true
+                        )
+                        ->orderBy('name')
+                        ->get(),
+            ]
         );
     }
 }

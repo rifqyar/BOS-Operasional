@@ -3,39 +3,54 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OperationBehandlein extends Model
 {
+    protected $table = 'operation_behandleins';
 
-    protected $table='operation_behandleins';
+    protected $primaryKey = 'id';
 
+    public $incrementing = true;
 
-    protected $fillable=[
+    protected $keyType = 'int';
+
+    protected $fillable = [
         'operation_id',
         'job_slip_id',
         'equipment_id',
         'operator_id',
+        'truck_id',
         'no_seal',
         'container_type_id',
+        'container_condition_id',
+        'iso_code',
+        'load_status',
+        'location_id',
         'join_inspection',
+        'label',
         'started_at',
         'finished_at',
         'status',
-        'note'
+        'note',
     ];
 
-
-
-    protected $casts=[
-        'join_inspection'=>'boolean',
-        'started_at'=>'datetime',
-        'finished_at'=>'datetime'
+    protected $casts = [
+        'id' => 'integer',
+        'operation_id' => 'integer',
+        'job_slip_id' => 'integer',
+        'equipment_id' => 'integer',
+        'operator_id' => 'integer',
+        'truck_id' => 'integer',
+        'container_type_id' => 'integer',
+        'container_condition_id' => 'integer',
+        'location_id' => 'integer',
+        'join_inspection' => 'boolean',
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
     ];
 
-
-
-    public function operation()
+    public function operation(): BelongsTo
     {
         return $this->belongsTo(
             Operation::class,
@@ -43,9 +58,7 @@ class OperationBehandlein extends Model
         );
     }
 
-
-
-    public function jobSlip()
+    public function jobSlip(): BelongsTo
     {
         return $this->belongsTo(
             JobSlip::class,
@@ -53,9 +66,7 @@ class OperationBehandlein extends Model
         );
     }
 
-
-
-    public function equipment()
+    public function equipment(): BelongsTo
     {
         return $this->belongsTo(
             Equipment::class,
@@ -63,19 +74,23 @@ class OperationBehandlein extends Model
         );
     }
 
-
-
-    public function operator()
+    public function operator(): BelongsTo
     {
         return $this->belongsTo(
-            User::class,
+            SystemUser::class,
             'operator_id'
         );
     }
 
+    public function truck(): BelongsTo
+    {
+        return $this->belongsTo(
+            Truck::class,
+            'truck_id'
+        );
+    }
 
-
-    public function containerType()
+    public function containerType(): BelongsTo
     {
         return $this->belongsTo(
             ContainerType::class,
@@ -83,4 +98,19 @@ class OperationBehandlein extends Model
         );
     }
 
+    public function containerCondition(): BelongsTo
+    {
+        return $this->belongsTo(
+            ContainerCondition::class,
+            'container_condition_id'
+        );
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(
+            YardLocation::class,
+            'location_id'
+        );
+    }
 }

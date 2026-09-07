@@ -31,7 +31,7 @@ class Container extends Model
     }
 
 
-    public function status()
+    public function currentStatus()
     {
         return $this->belongsTo(
             ContainerStatus::class,
@@ -40,7 +40,7 @@ class Container extends Model
     }
 
 
-    public function location()
+    public function currentLocation()
     {
         return $this->belongsTo(
             YardLocation::class,

@@ -1,1495 +1,311 @@
-<div class="bg-[#f8f9ff] text-[#0b1c30] antialiased min-h-screen">
+<div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
 
-    {{-- ============================================================
-        PICKUP PAGE
-        Template utama PortOps Central
-    ============================================================= --}}
+    <div class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 
-    {{-- SIDEBAR --}}
-    <nav
-        class="hidden md:flex flex-col h-screen overflow-y-auto
-               fixed left-0 top-0
-               w-[260px]
-               border-r border-[#c3c6d7]/20
-               bg-[#213145]
-               z-40"
-    >
+        <div class="mb-5 flex items-center justify-between gap-3">
 
-        {{-- BRAND --}}
-        <div class="p-6 flex flex-col gap-2 border-b border-[#c3c6d7]/10">
+            <a
+                href="{{ route('dashboard') }}"
+                wire:navigate
+                class="inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+            >
+                <flux:icon.arrow-left class="size-4" />
 
-            <h1 class="text-base font-bold text-[#dbe1ff]">
-                PortOps Central
-            </h1>
+                <span>
+                    Menu Handheld
+                </span>
+            </a>
 
-            <p class="text-[13px] text-[#bec6e0]">
-                Terminal A-101
-            </p>
+            <span
+                class="rounded-md bg-sky-100 px-3 py-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-300"
+            >
+                Pick Up
+            </span>
 
         </div>
 
 
-        {{-- NAVIGATION --}}
-        <ul class="flex flex-col py-4 flex-1">
+        {{-- SEARCH --}}
 
-            {{-- Dashboard --}}
-            <li>
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:text-[#bec6e0]
-                           hover:bg-[#d3e4fe]/10
-                           border-l-4 border-transparent
-                           transition-colors"
-                >
-
-                    <span class="material-symbols-outlined">
-                        dashboard
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        Dashboard
-                    </span>
-
-                </a>
-            </li>
-
-
-            {{-- Operation --}}
-            <li class="mt-2">
-
-                <div
-                    class="px-6 py-2
-                           text-[10px]
-                           font-semibold
-                           uppercase
-                           tracking-widest
-                           text-[#bec6e0]/50"
-                >
-                    Operations
-                </div>
-
-            </li>
-
-
-            {{-- PICKUP ACTIVE --}}
-            <li>
-
-                <a
-                    href="{{ route('operation.pickup') }}"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           bg-[#2563eb]/10
-                           border-l-4
-                           border-[#004ac6]
-                           text-[#dbe1ff]
-                           font-bold"
-                >
-
-                    <span
-                        class="material-symbols-outlined"
-                        style="font-variation-settings: 'FILL' 1;"
-                    >
-                        local_shipping
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        PICKUP
-                    </span>
-
-                </a>
-
-            </li>
-
-
-            {{-- Behandle In --}}
-            <li>
-
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:text-[#bec6e0]
-                           hover:bg-[#d3e4fe]/10
-                           border-l-4 border-transparent
-                           transition-colors"
-                >
-
-                    <span class="material-symbols-outlined">
-                        move_to_inbox
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        BEHANDLE IN
-                    </span>
-
-                </a>
-
-            </li>
-
-
-            {{-- Hold --}}
-            <li>
-
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:text-[#bec6e0]
-                           hover:bg-[#d3e4fe]/10
-                           border-l-4 border-transparent
-                           transition-colors"
-                >
-
-                    <span class="material-symbols-outlined">
-                        front_hand
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        HOLD
-                    </span>
-
-                </a>
-
-            </li>
-
-
-            {{-- Marshalling --}}
-            <li>
-
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:text-[#bec6e0]
-                           hover:bg-[#d3e4fe]/10
-                           border-l-4 border-transparent
-                           transition-colors"
-                >
-
-                    <span class="material-symbols-outlined">
-                        warehouse
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        MARSHALLING
-                    </span>
-
-                </a>
-
-            </li>
-
-
-            {{-- Inspection --}}
-            <li>
-
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:text-[#bec6e0]
-                           hover:bg-[#d3e4fe]/10
-                           border-l-4 border-transparent
-                           transition-colors"
-                >
-
-                    <span class="material-symbols-outlined">
-                        fact_check
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        INSPECTION
-                    </span>
-
-                </a>
-
-            </li>
-
-
-            {{-- Spacer --}}
-            <li class="mt-auto">
-
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:text-[#bec6e0]
-                           hover:bg-[#d3e4fe]/10
-                           border-l-4 border-transparent
-                           transition-colors"
-                >
-
-                    <span class="material-symbols-outlined">
-                        logout
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        Logout
-                    </span>
-
-                </a>
-
-            </li>
-
-        </ul>
-
-    </nav>
-
-
-    {{-- ============================================================
-        MAIN CONTENT
-    ============================================================= --}}
-
-    <div class="md:ml-[260px] min-h-screen flex flex-col">
-
-
-        {{-- TOP BAR --}}
-        <header
-            class="flex justify-between items-center
-                   w-full
-                   px-6
-                   h-10
-                   bg-[#f8f9ff]
-                   border-b border-[#c3c6d7]/30
-                   sticky top-0
-                   z-30"
+        <div
+            class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5"
         >
 
-            {{-- SEARCH / BRAND --}}
-            <div class="flex items-center gap-6">
+            <label
+                for="search-spk"
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200"
+            >
+                Nomor SPK
+            </label>
 
-                <span
-                    class="text-base font-black text-[#0b1c30] md:hidden"
-                >
-                    PortOps Central
-                </span>
+            <div class="mt-2 flex flex-col gap-3 sm:flex-row">
 
+                <div class="relative min-w-0 flex-1">
 
-                <div class="relative hidden sm:block">
-
-                    <span
-                        class="material-symbols-outlined
-                               absolute left-2
-                               top-1/2
-                               -translate-y-1/2
-                               text-[#434655]
-                               text-[18px]"
-                    >
-                        search
-                    </span>
+                    <flux:icon.magnifying-glass
+                        class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400"
+                    />
 
                     <input
+                        id="search-spk"
                         type="text"
-                        placeholder="Search operations..."
-                        class="pl-8 pr-4 py-1
-                               text-[13px]
-                               bg-[#eff4ff]
-                               border border-[#c3c6d7]/50
-                               rounded
-                               focus:border-[#004ac6]
-                               focus:ring-1
-                               focus:ring-[#004ac6]
-                               outline-none
-                               w-64"
+                        wire:model="searchSpk"
+                        wire:keydown.enter="search"
+                        autocomplete="off"
+                        placeholder="SEARCH NO SPK"
+                        class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white"
                     >
 
                 </div>
+
+                <button
+                    type="button"
+                    wire:click="search"
+                    wire:loading.attr="disabled"
+                    wire:target="search"
+                    class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-slate-950"
+                >
+
+                    <span wire:loading.remove wire:target="search">
+                        <flux:icon.magnifying-glass class="size-4" />
+                    </span>
+
+                    <span
+                        wire:loading
+                        wire:target="search"
+                        class="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    ></span>
+
+                    <span wire:loading.remove wire:target="search">
+                        Search
+                    </span>
+
+                    <span wire:loading wire:target="search">
+                        Searching...
+                    </span>
+
+                </button>
 
             </div>
 
-
-            {{-- ACTIONS --}}
-            <div class="flex items-center gap-4">
-
-                <button
-                    type="button"
-                    class="p-1
-                           text-[#434655]
-                           hover:bg-[#eff4ff]
-                           rounded"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-                        notifications
-                    </span>
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="p-1
-                           text-[#434655]
-                           hover:bg-[#eff4ff]
-                           rounded hidden sm:block"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-                        terminal
-                    </span>
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="p-1
-                           text-[#434655]
-                           hover:bg-[#eff4ff]
-                           rounded hidden sm:block"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-                        help_outline
-                    </span>
-
-                </button>
-
-
-                <div class="h-6 w-px bg-[#c3c6d7]/30"></div>
-
-
-                <div
-                    class="w-8 h-8
-                           rounded-full
-                           bg-[#2563eb]
-                           flex items-center justify-center
-                           border border-[#c3c6d7]/20"
-                >
-
-                    <span
-                        class="material-symbols-outlined
-                               text-white
-                               text-[18px]"
-                    >
-                        person
-                    </span>
-
-                </div>
-
-            </div>
-
-        </header>
-
-
-        {{-- ========================================================
-            CANVAS
-        ========================================================= --}}
-
-        <main
-            class="flex-1
-                   overflow-y-auto
-                   p-6
-                   bg-[#f8f9ff]"
-        >
-
-
-            {{-- PAGE HEADER --}}
-            <div class="mb-6">
-
-                <div class="flex items-center gap-2 mb-2">
-
-                    <span
-                        class="material-symbols-outlined
-                               text-[#004ac6]
-                               text-[22px]"
-                    >
-                        local_shipping
-                    </span>
-
-                    <h2
-                        class="text-2xl
-                               font-semibold
-                               tracking-tight
-                               text-[#0b1c30]"
-                    >
-                        PICK UP
-                    </h2>
-
-                </div>
-
-                <p class="text-sm text-[#434655]">
-                    Search No SPK untuk melihat container terkait.
+            @error('searchSpk')
+                <p class="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
+                    {{ $message }}
                 </p>
+            @enderror
 
-            </div>
+        </div>
 
 
-            {{-- ====================================================
-                SEARCH CARD
-            ===================================================== --}}
+        {{-- MESSAGE --}}
+
+        @if ($pickupMessage)
 
             <div
-                class="bg-white
-                       border border-[#c3c6d7]/30
-                       rounded-xl
-                       shadow-sm
-                       p-6
-                       mb-6"
+                class="mt-4 rounded-lg border px-4 py-3 text-sm font-semibold
+                @if ($pickupMessageType === 'success')
+                    border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300
+                @elseif ($pickupMessageType === 'warning')
+                    border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300
+                @else
+                    border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300
+                @endif"
             >
-
-                <div class="flex items-center gap-3 mb-5">
-
-                    <div
-                        class="w-10 h-10
-                               rounded-lg
-                               bg-[#d3e4fe]
-                               flex items-center justify-center
-                               text-[#004ac6]"
-                    >
-
-                        <span class="material-symbols-outlined">
-                            search
-                        </span>
-
-                    </div>
-
-
-                    <div>
-
-                        <h3
-                            class="text-base
-                                   font-semibold
-                                   text-[#0b1c30]"
-                        >
-                            Search SPK
-                        </h3>
-
-                        <p class="text-xs text-[#434655]">
-                            Masukkan nomor SPK untuk mencari data container.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <form wire:submit="search">
-
-                    <div
-                        class="flex flex-col
-                               gap-3
-                               sm:flex-row
-                               sm:items-end"
-                    >
-
-                        <div class="w-full sm:max-w-md">
-
-                            <label
-                                for="searchSpk"
-                                class="block
-                                       mb-2
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
-                            >
-                                No SPK
-                            </label>
-
-
-                            <div class="relative">
-
-                                <span
-                                    class="material-symbols-outlined
-                                           absolute
-                                           left-3
-                                           top-1/2
-                                           -translate-y-1/2
-                                           text-[#737686]
-                                           text-[20px]"
-                                >
-                                    confirmation_number
-                                </span>
-
-
-                                <input
-                                    id="searchSpk"
-                                    type="text"
-                                    wire:model="searchSpk"
-                                    autofocus
-                                    autocomplete="off"
-                                    placeholder="SEARCH NO SPK"
-                                    class="w-full
-                                           rounded-lg
-                                           border
-                                           border-[#c3c6d7]
-                                           bg-white
-                                           pl-10
-                                           pr-4
-                                           py-2.5
-                                           text-sm
-                                           text-[#0b1c30]
-                                           placeholder:text-[#737686]
-                                           focus:border-[#004ac6]
-                                           focus:outline-none
-                                           focus:ring-2
-                                           focus:ring-[#b4c5ff]"
-                                >
-
-                            </div>
-
-
-                            @error('searchSpk')
-
-                                <p class="mt-2 text-xs text-[#ba1a1a]">
-                                    {{ $message }}
-                                </p>
-
-                            @enderror
-
-                        </div>
-
-
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            class="inline-flex
-                                   items-center
-                                   justify-center
-                                   gap-2
-                                   rounded-lg
-                                   bg-[#004ac6]
-                                   px-5
-                                   py-2.5
-                                   text-sm
-                                   font-semibold
-                                   text-white
-                                   hover:bg-[#003ea8]
-                                   focus:outline-none
-                                   focus:ring-2
-                                   focus:ring-[#b4c5ff]
-                                   disabled:cursor-not-allowed
-                                   disabled:opacity-50"
-                        >
-
-                            <span
-                                wire:loading.remove
-                                wire:target="search"
-                                class="material-symbols-outlined text-[19px]"
-                            >
-                                search
-                            </span>
-
-
-                            <span
-                                wire:loading
-                                wire:target="search"
-                                class="material-symbols-outlined text-[19px]"
-                            >
-                                progress_activity
-                            </span>
-
-
-                            <span
-                                wire:loading.remove
-                                wire:target="search"
-                            >
-                                SEARCH
-                            </span>
-
-
-                            <span
-                                wire:loading
-                                wire:target="search"
-                            >
-                                SEARCHING...
-                            </span>
-
-                        </button>
-
-                    </div>
-
-                </form>
-
+                {{ $pickupMessage }}
             </div>
 
+        @endif
 
-            {{-- ====================================================
-                MESSAGE
-            ===================================================== --}}
 
-            @if($pickupMessage)
+        {{-- RESULT --}}
+
+        @if ($spk)
+
+            <div
+                class="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950"
+            >
 
                 <div
-                    class="mb-6
-                           rounded-lg
-                           border
-                           px-4
-                           py-3
-                           flex
-                           items-start
-                           gap-3
-
-                           @if($pickupMessageType === 'success')
-                               border-[#4edea3]/40
-                               bg-[#6ffbbe]/10
-                               text-[#005236]
-                           @else
-                               border-[#ba1a1a]/30
-                               bg-[#ffdad6]/50
-                               text-[#93000a]
-                           @endif"
+                    class="border-b border-slate-200 bg-slate-50 px-4 py-4 dark:border-white/10 dark:bg-white/5"
                 >
 
-                    <span class="material-symbols-outlined text-[20px]">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        NO SPK
+                    </p>
 
-                        @if($pickupMessageType === 'success')
-                            check_circle
-                        @else
-                            error
-                        @endif
-
-                    </span>
-
-
-                    <div>
-
-                        <p class="text-sm font-semibold">
-                            {{ $pickupMessage }}
-                        </p>
-
-                    </div>
+                    <p class="mt-1 text-lg font-bold text-slate-950 dark:text-white">
+                        {{ $spk->no_spk }}
+                    </p>
 
                 </div>
 
-            @endif
-
-
-            {{-- ====================================================
-                RESULT
-            ===================================================== --}}
-
-            @if($spk)
 
                 <div
-                    class="bg-white
-                           border border-[#c3c6d7]/30
-                           rounded-xl
-                           shadow-sm
-                           overflow-hidden"
+                    class="hidden grid-cols-[minmax(0,1.3fr)_minmax(5rem,0.45fr)_minmax(0,1.4fr)_auto] gap-3 border-b border-slate-200 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500 dark:border-white/10 dark:text-slate-400 lg:grid"
                 >
+                    <span>No Kontainer</span>
+                    <span>Ukuran</span>
+                    <span>Nomer Truck</span>
+                    <span>Action</span>
+                </div>
 
 
-                    {{-- RESULT HEADER --}}
-                    <div
-                        class="px-6
-                               py-5
-                               border-b border-[#c3c6d7]/30
-                               flex
-                               flex-col
-                               gap-4
-                               md:flex-row
-                               md:items-center
-                               md:justify-between"
-                    >
+                <div class="divide-y divide-slate-200 dark:divide-white/10">
 
-                        <div>
+                    @foreach ($containers as $spkContainer)
 
-                            <div class="flex items-center gap-2">
-
-                                <span
-                                    class="material-symbols-outlined
-                                           text-[#004ac6]"
-                                >
-                                    description
-                                </span>
-
-                                <h3
-                                    class="text-base
-                                           font-semibold
-                                           text-[#0b1c30]"
-                                >
-                                    SPK Information
-                                </h3>
-
-                            </div>
-
-
-                            <p class="mt-1 text-xs text-[#737686]">
-                                Container yang terdaftar pada SPK.
-                            </p>
-
-                        </div>
-
-
-                        {{-- SPK NUMBER --}}
-                        <div
-                            class="rounded-lg
-                                   bg-[#eff4ff]
-                                   border border-[#c3c6d7]/30
-                                   px-4
-                                   py-3"
-                        >
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                No SPK
-                            </p>
-
-                            <p
-                                class="mt-1
-                                       text-sm
-                                       font-bold
-                                       text-[#004ac6]"
-                            >
-                                {{ $spk->no_spk }}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- SUMMARY --}}
-                    <div
-                        class="grid
-                               grid-cols-1
-                               sm:grid-cols-3
-                               border-b
-                               border-[#c3c6d7]/30"
-                    >
-
-                        <div class="p-5">
-
-                            <p
-                                class="text-[10px]
-                                       uppercase
-                                       tracking-widest
-                                       font-semibold
-                                       text-[#737686]"
-                            >
-                                Total Container
-                            </p>
-
-                            <p
-                                class="mt-1
-                                       text-xl
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $containers->count() }}
-                            </p>
-
-                        </div>
-
+                        @php
+                            $container = $spkContainer->container;
+                            $operation = $operations->get($spkContainer->container_id);
+                            $pickup = $operation?->pickup;
+                            $truck = $pickup?->truck;
+                        @endphp
 
                         <div
-                            class="p-5
-                                   border-t
-                                   sm:border-t-0
-                                   sm:border-l
-                                   border-[#c3c6d7]/30"
+                            wire:key="pickup-container-{{ $spkContainer->container_id }}"
+                            class="p-4"
                         >
 
-                            <p
-                                class="text-[10px]
-                                       uppercase
-                                       tracking-widest
-                                       font-semibold
-                                       text-[#737686]"
+                            <div
+                                class="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(5rem,0.45fr)_minmax(0,1.4fr)_auto] lg:items-center"
                             >
-                                SPK Status
-                            </p>
 
-                            <p
-                                class="mt-1
-                                       text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $spk->status ?? '-' }}
-                            </p>
+                                {{-- CONTAINER --}}
 
-                        </div>
+                                <div class="min-w-0">
 
+                                    <span class="mb-1 block text-xs font-semibold uppercase text-slate-500 lg:hidden dark:text-slate-400">
+                                        No Kontainer
+                                    </span>
 
-                        <div
-                            class="p-5
-                                   border-t
-                                   sm:border-t-0
-                                   sm:border-l
-                                   border-[#c3c6d7]/30"
-                        >
-
-                            <p
-                                class="text-[10px]
-                                       uppercase
-                                       tracking-widest
-                                       font-semibold
-                                       text-[#737686]"
-                            >
-                                Document
-                            </p>
-
-                            <p
-                                class="mt-1
-                                       text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $spk->no_dok ?? '-' }}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- =================================================
-                        CONTAINER TABLE
-                    ================================================== --}}
-
-                    <div class="overflow-x-auto">
-
-                        <table class="min-w-full">
-
-                            <thead class="bg-[#eff4ff]">
-
-                                <tr>
-
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
+                                    <div
+                                        class="flex h-11 items-center rounded-md border border-slate-200 bg-slate-100 px-3 text-sm font-bold text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
                                     >
-                                        No
-                                    </th>
+                                        {{ $container?->no_cont ?? '-' }}
+                                    </div>
+
+                                </div>
 
 
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
-                                    >
-                                        No Container
-                                    </th>
+                                {{-- SIZE --}}
 
+                                <div class="min-w-0">
 
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
-                                    >
+                                    <span class="mb-1 block text-xs font-semibold uppercase text-slate-500 lg:hidden dark:text-slate-400">
                                         Ukuran
-                                    </th>
+                                    </span>
 
-
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
+                                    <div
+                                        class="flex h-11 items-center rounded-md border border-slate-200 bg-slate-100 px-3 text-sm font-bold text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
                                     >
-                                        Type
-                                    </th>
+                                        {{ $container?->type?->size ?? '-' }}
+                                    </div>
+
+                                </div>
 
 
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
-                                    >
-                                        Status
-                                    </th>
+                                {{-- TRUCK --}}
+
+                                <div class="min-w-0">
+
+                                    <span class="mb-1 block text-xs font-semibold uppercase text-slate-500 lg:hidden dark:text-slate-400">
+                                        Nomer Truck
+                                    </span>
+
+                                    @if ($truck)
+
+                                        <div
+                                            class="flex h-11 items-center rounded-md border border-emerald-200 bg-emerald-50 px-3 text-sm font-bold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300"
+                                        >
+                                            Truck ID {{ $truck->id }}
+                                        </div>
+
+                                    @else
+
+                                        <select
+                                            wire:model="selectedTrucks.{{ $spkContainer->container_id }}"
+                                            class="h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 pr-9 text-sm font-semibold text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
+                                        >
+
+                                            <option value="">
+                                                Pilih Truck
+                                            </option>
+
+                                            @foreach ($trucks as $availableTruck)
+
+                                                <option
+                                                    value="{{ $availableTruck->id }}"
+                                                >
+                                                    Truck ID {{ $availableTruck->id }}
+                                                </option>
+
+                                            @endforeach
+
+                                        </select>
+
+                                    @endif
+
+                                </div>
 
 
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
-                                    >
-                                        Send NPCT1
-                                    </th>
+                                {{-- ACTION --}}
 
+                                <div class="min-w-0">
 
-                                    {{-- BARU --}}
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
-                                    >
-                                        Current Process
-                                    </th>
+                                    <span class="mb-1 block text-xs font-semibold uppercase text-slate-500 lg:hidden dark:text-slate-400">
+                                        Action
+                                    </span>
 
+                                    @if ($pickup)
 
-                                    {{-- BARU --}}
-                                    <th
-                                        class="px-6
-                                               py-3
-                                               text-left
-                                               text-[10px]
-                                               font-semibold
-                                               uppercase
-                                               tracking-widest
-                                               text-[#737686]"
-                                    >
-                                        Operation Status
-                                    </th>
+                                        <button
+                                            type="button"
+                                            disabled
+                                            class="inline-flex h-11 w-full items-center justify-center rounded-md bg-slate-500 px-4 text-sm font-bold text-white opacity-80 lg:w-auto"
+                                        >
+                                            Terkirim
+                                        </button>
 
-                                </tr>
+                                    @else
 
-                            </thead>
+                                        <button
+                                            type="button"
+                                            wire:click="send({{ $spkContainer->container_id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="send({{ $spkContainer->container_id }})"
+                                            class="inline-flex h-11 w-full items-center justify-center rounded-md bg-sky-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto dark:focus:ring-offset-slate-950"
+                                        >
+                                            <span
+                                                wire:loading.remove
+                                                wire:target="send({{ $spkContainer->container_id }})"
+                                            >
+                                                Send
+                                            </span>
 
+                                            <span
+                                                wire:loading
+                                                wire:target="send({{ $spkContainer->container_id }})"
+                                            >
+                                                Sending...
+                                            </span>
+                                        </button>
 
-                            <tbody
-                                class="divide-y
-                                       divide-[#c3c6d7]/20
-                                       bg-white"
-                            >
+                                    @endif
 
-@forelse($containers as $index => $item)
+                                </div>
 
-    @php
-        $operation = $operations->get($item->container_id);
-        $pickup = $operation?->pickup;
-    @endphp
+                            </div>
 
-    {{-- MAIN CONTAINER ROW --}}
-    <tr
-        class="hover:bg-[#eff4ff]/50
-               transition-colors"
-    >
+                        </div>
 
-        {{-- NUMBER --}}
-        <td
-            class="px-6
-                   py-4
-                   text-xs
-                   font-medium
-                   text-[#737686]"
-        >
-            {{ $index + 1 }}
-        </td>
-
-
-        {{-- CONTAINER --}}
-        <td
-            class="px-6
-                   py-4
-                   whitespace-nowrap"
-        >
-
-            <div class="flex items-center gap-3">
-
-                <div
-                    class="w-8
-                           h-8
-                           rounded-lg
-                           bg-[#d3e4fe]
-                           flex
-                           items-center
-                           justify-center
-                           text-[#004ac6]"
-                >
-
-                    <span
-                        class="material-symbols-outlined text-[18px]"
-                    >
-                        inventory_2
-                    </span>
+                    @endforeach
 
                 </div>
-
-                <span
-                    class="text-sm
-                           font-semibold
-                           text-[#0b1c30]"
-                >
-                    {{ $item->container?->no_cont ?? '-' }}
-                </span>
 
             </div>
 
-        </td>
-
-
-        {{-- UKURAN --}}
-        <td
-            class="px-6
-                   py-4
-                   whitespace-nowrap
-                   text-sm
-                   text-[#434655]"
-        >
-            {{ $item->container?->type?->size ?? '-' }}
-        </td>
-
-
-        {{-- TYPE --}}
-        <td
-            class="px-6
-                   py-4
-                   whitespace-nowrap
-                   text-sm
-                   text-[#434655]"
-        >
-            {{ $item->container?->type?->name ?? '-' }}
-        </td>
-
-
-        {{-- SPK CONTAINER STATUS --}}
-        <td class="px-6 py-4">
-
-            @if($item->status)
-
-                <span
-                    class="inline-flex
-                           items-center
-                           rounded-full
-                           bg-[#eff4ff]
-                           border
-                           border-[#c3c6d7]/40
-                           px-3
-                           py-1
-                           text-[10px]
-                           font-semibold
-                           uppercase
-                           tracking-wider
-                           text-[#434655]"
-                >
-                    {{ $item->status }}
-                </span>
-
-            @else
-
-                <span class="text-xs text-[#737686]">
-                    -
-                </span>
-
-            @endif
-
-        </td>
-
-
-        {{-- SEND NPCT1 --}}
-        <td class="px-6 py-4">
-
-            @if(
-                $item->fl_send_npct1 === '1' ||
-                $item->fl_send_npct1 === 'Y'
-            )
-
-                <span
-                    class="inline-flex
-                           items-center
-                           gap-1.5
-                           rounded-full
-                           bg-[#6ffbbe]/20
-                           border
-                           border-[#4edea3]/40
-                           px-3
-                           py-1
-                           text-[10px]
-                           font-semibold
-                           text-[#005236]"
-                >
-
-                    <span
-                        class="material-symbols-outlined text-[14px]"
-                    >
-                        check_circle
-                    </span>
-
-                    SENT
-
-                </span>
-
-            @else
-
-                <span
-                    class="inline-flex
-                           items-center
-                           gap-1.5
-                           rounded-full
-                           bg-[#d3e4fe]/60
-                           border
-                           border-[#c3c6d7]/40
-                           px-3
-                           py-1
-                           text-[10px]
-                           font-semibold
-                           text-[#565e74]"
-                >
-
-                    <span
-                        class="material-symbols-outlined text-[14px]"
-                    >
-                        schedule
-                    </span>
-
-                    NOT SENT
-
-                </span>
-
-            @endif
-
-        </td>
-
-
-        {{-- CURRENT PROCESS --}}
-        <td class="px-6 py-4">
-
-            @if($operation?->current_process)
-
-                <span
-                    class="inline-flex
-                           items-center
-                           rounded-full
-                           bg-[#d3e4fe]
-                           border
-                           border-[#b4c5ff]
-                           px-3
-                           py-1
-                           text-[10px]
-                           font-semibold
-                           uppercase
-                           tracking-wider
-                           text-[#004ac6]"
-                >
-                    {{ str_replace('_', ' ', $operation->current_process) }}
-                </span>
-
-            @else
-
-                <span class="text-xs text-[#737686]">
-                    NO OPERATION
-                </span>
-
-            @endif
-
-        </td>
-
-
-        {{-- OPERATION STATUS --}}
-        <td class="px-6 py-4">
-
-            @if($operation?->status)
-
-                <span
-                    class="inline-flex
-                           items-center
-                           rounded-full
-                           bg-[#eff4ff]
-                           border
-                           border-[#c3c6d7]/40
-                           px-3
-                           py-1
-                           text-[10px]
-                           font-semibold
-                           uppercase
-                           tracking-wider
-                           text-[#434655]"
-                >
-                    {{ $operation->status }}
-                </span>
-
-            @else
-
-                <span class="text-xs text-[#737686]">
-                    -
-                </span>
-
-            @endif
-
-        </td>
-
-    </tr>
-
-
-    {{-- =========================================================
-        PICKUP DETAIL
-    ========================================================== --}}
-
-    @if($operation)
-
-        <tr class="bg-[#f8f9ff]">
-
-            <td
-                colspan="8"
-                class="px-6 py-4"
-            >
-
-                <div
-                    class="rounded-lg
-                           border
-                           border-[#c3c6d7]/30
-                           bg-white
-                           p-4"
-                >
-
-                    <div
-                        class="flex
-                               items-center
-                               gap-2
-                               mb-4"
-                    >
-
-                        <span
-                            class="material-symbols-outlined
-                                   text-[#004ac6]
-                                   text-[20px]"
-                        >
-                            local_shipping
-                        </span>
-
-                        <div>
-
-                            <h4
-                                class="text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                Pickup Information
-                            </h4>
-
-                            <p
-                                class="text-[11px]
-                                       text-[#737686]"
-                            >
-                                Detail pickup untuk operation
-                                #{{ $operation->id }}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div
-                        class="grid
-                               grid-cols-1
-                               sm:grid-cols-3
-                               gap-4"
-                    >
-
-                        {{-- PICKUP STATUS --}}
-                        <div
-                            class="rounded-lg
-                                   border
-                                   border-[#c3c6d7]/30
-                                   bg-[#f8f9ff]
-                                   p-4"
-                        >
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Pickup Status
-                            </p>
-
-                            <p
-                                class="mt-2
-                                       text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $pickup?->status ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- PICKUP AT --}}
-                        <div
-                            class="rounded-lg
-                                   border
-                                   border-[#c3c6d7]/30
-                                   bg-[#f8f9ff]
-                                   p-4"
-                        >
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Pickup At
-                            </p>
-
-                            <p
-                                class="mt-2
-                                       text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-
-                                @if($pickup?->pickup_at)
-
-                                    {{ $pickup->pickup_at->format('d-m-Y H:i:s') }}
-
-                                @else
-
-                                    -
-
-                                @endif
-
-                            </p>
-
-                        </div>
-
-
-                        {{-- TRUCK --}}
-                        <div
-                            class="rounded-lg
-                                   border
-                                   border-[#c3c6d7]/30
-                                   bg-[#f8f9ff]
-                                   p-4"
-                        >
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Truck ID
-                            </p>
-
-                            <p
-                                class="mt-2
-                                       text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $pickup?->truck?->id ?? '-' }}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </td>
-
-        </tr>
-
-    @endif
-
-@empty
-
-    <tr>
-
-        <td
-            colspan="8"
-            class="px-6
-                   py-12
-                   text-center"
-        >
-
-            <span
-                class="material-symbols-outlined
-                       text-[#737686]
-                       text-[36px]"
-            >
-                inventory_2
-            </span>
-
-            <p
-                class="mt-2
-                       text-sm
-                       font-medium
-                       text-[#434655]"
-            >
-                Tidak ada container.
-            </p>
-
-        </td>
-
-    </tr>
-
-@endforelse
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-            {{-- FOOTER --}}
-            <div
-                class="mt-6
-                       border-t
-                       border-[#c3c6d7]/30
-                       pt-5
-                       text-center"
-            >
-
-                <p class="text-xs text-[#737686]">
-                    PICK UP · PortOps Central
-                </p>
-
-            </div>
-
-
-        </main>
+        @endif
 
     </div>
 
 </div>
-
-
-{{-- ================================================================
-    MATERIAL SYMBOLS
-================================================================= --}}

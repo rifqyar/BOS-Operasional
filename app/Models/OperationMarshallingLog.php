@@ -3,18 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OperationMarshallingLog extends Model
 {
+    protected $table = 'operation_marshalling_logs';
 
-    protected $table='operation_marshalling_logs';
+    protected $primaryKey = 'id';
 
+    public $incrementing = true;
 
-    public $timestamps=false;
+    protected $keyType = 'int';
 
+    public $timestamps = false;
 
-    protected $fillable=[
+    protected $fillable = [
         'operation_id',
         'marshalling_id',
         'action',
@@ -24,20 +27,20 @@ class OperationMarshallingLog extends Model
         'data_before',
         'data_after',
         'ip_address',
-        'created_at'
+        'created_at',
     ];
 
-
-
-    protected $casts=[
-        'data_before'=>'array',
-        'data_after'=>'array',
-        'created_at'=>'datetime'
+    protected $casts = [
+        'id' => 'integer',
+        'operation_id' => 'integer',
+        'marshalling_id' => 'integer',
+        'user_id' => 'integer',
+        'data_before' => 'array',
+        'data_after' => 'array',
+        'created_at' => 'datetime',
     ];
 
-
-
-    public function operation()
+    public function operation(): BelongsTo
     {
         return $this->belongsTo(
             Operation::class,
@@ -45,8 +48,7 @@ class OperationMarshallingLog extends Model
         );
     }
 
-
-    public function marshalling()
+    public function marshalling(): BelongsTo
     {
         return $this->belongsTo(
             OperationMarshalling::class,
@@ -54,13 +56,11 @@ class OperationMarshallingLog extends Model
         );
     }
 
-
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(
-            User::class,
+            SystemUser::class,
             'user_id'
         );
     }
-
 }

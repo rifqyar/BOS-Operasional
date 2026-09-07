@@ -43,17 +43,10 @@ Route::livewire(
     Index::class
 )->name('home');
 
-
-/*
-|--------------------------------------------------------------------------
-| OPERATION DASHBOARD
-|--------------------------------------------------------------------------
-*/
-
 Route::livewire(
-    '/operation',
+    '/dashboard',
     Index::class
-)->name('operation.index');
+)->name('dashboard');
 
 
 /*

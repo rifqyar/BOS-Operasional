@@ -4,27 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-
 class OperationPickup extends Model
 {
+    protected $table = 'operation_pickups';
 
-    protected $table='operation_pickups';
+    protected $primaryKey = 'id';
 
+    public $incrementing = false;
 
-    protected $fillable=[
+    protected $keyType = 'int';
+
+    protected $fillable = [
+        'id',
         'operation_id',
         'truck_id',
         'status',
-        'pickup_at'
+        'pickup_at',
     ];
 
-
-
-    protected $casts=[
-        'pickup_at'=>'datetime'
+    protected $casts = [
+        'id' => 'integer',
+        'operation_id' => 'integer',
+        'truck_id' => 'integer',
+        'pickup_at' => 'datetime',
     ];
-
-
 
     public function operation()
     {
@@ -34,8 +37,6 @@ class OperationPickup extends Model
         );
     }
 
-
-
     public function truck()
     {
         return $this->belongsTo(
@@ -43,5 +44,4 @@ class OperationPickup extends Model
             'truck_id'
         );
     }
-
 }

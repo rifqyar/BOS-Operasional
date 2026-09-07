@@ -1,1762 +1,672 @@
-<div class="min-h-screen bg-[#f8f9ff] text-[#0b1c30] antialiased">
-
-    {{-- ============================================================
-        SIDEBAR
-    ============================================================= --}}
-
-    <aside
-        class="fixed left-0 top-0 z-40 hidden h-screen w-[260px]
-               flex-col overflow-y-auto border-r
-               border-[#c3c6d7]/20 bg-[#213145] md:flex"
-    >
-
-        {{-- BRAND --}}
-
-        <div
-            class="flex flex-col gap-1 border-b
-                   border-[#c3c6d7]/10 p-6"
-        >
-
-            <h1 class="text-base font-bold text-[#dbe1ff]">
-                PortOps Central
-            </h1>
-
-            <p class="text-[13px] text-[#bec6e0]">
-                Terminal A-101
-            </p>
-
-        </div>
-
-
-        {{-- MENU --}}
-
-        <nav class="flex flex-1 flex-col py-4">
-
-            {{-- DASHBOARD --}}
-
-            <a
-                href="{{ route('home') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    dashboard
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    Dashboard
-                </span>
-
-            </a>
-
-
-            {{-- TITLE --}}
-
-            <div
-                class="px-6 pb-2 pt-4 text-[10px]
-                       font-semibold uppercase
-                       tracking-widest text-[#bec6e0]/50"
-            >
-                Operations
-            </div>
-
-
-            {{-- PICKUP --}}
-
-            <a
-                href="{{ route('operation.pickup') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    local_shipping
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    PICKUP
-                </span>
-
-            </a>
-
-
-            {{-- BEHANDLE IN --}}
-
-            <a
-                href="{{ route('operation.behandle-in') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    move_to_inbox
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    BEHANDLE IN
-                </span>
-
-            </a>
-
-
-            {{-- HOLD --}}
-
-            <a
-                href="{{ route('operation.hold') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    front_hand
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    HOLD
-                </span>
-
-            </a>
-
-
-            {{-- MARSHALLING CIC ACTIVE --}}
-
-            <a
-                href="{{ route('operation.marshallingcic') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-[#004ac6]
-                       bg-[#2563eb]/10 px-6 py-3
-                       font-bold text-[#dbe1ff]"
-            >
-
-                <span
-                    class="material-symbols-outlined"
-                    style="font-variation-settings: 'FILL' 1;"
-                >
-                    warehouse
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    MARSHALLING CIC
-                </span>
-
-            </a>
-
-
-            {{-- MARSHALLING YARD --}}
-
-            <a
-                href="{{ route('operation.marshalling-yard') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    location_on
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    MARSHALLING YARD
-                </span>
-
-            </a>
-
-
-            {{-- INSPECTION --}}
-
-            <a
-                href="{{ route('operation.inspection') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    fact_check
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    INSPECTION
-                </span>
-
-            </a>
-
-
-            {{-- REEFER --}}
-
-            <a
-                href="{{ route('operation.plug-reefer') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    ac_unit
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    REEFER
-                </span>
-
-            </a>
-
-
-            {{-- DELIVERY --}}
-
-            <a
-                href="{{ route('operation.delivery') }}"
-                class="flex items-center gap-4 border-l-4
-                       border-transparent px-6 py-3
-                       text-[#bec6e0]/70
-                       transition hover:bg-[#d3e4fe]/10
-                       hover:text-[#bec6e0]"
-            >
-
-                <span class="material-symbols-outlined">
-                    local_shipping
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    DELIVERY
-                </span>
-
-            </a>
-
-
-            {{-- LOGOUT --}}
-
-            <div class="mt-auto">
-
+<div class="min-h-screen bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+    <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+
+        <div class="mb-5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
                 <a
-                    href="#"
-                    class="flex items-center gap-4 border-l-4
-                           border-transparent px-6 py-3
-                           text-[#bec6e0]/70
-                           transition hover:bg-[#d3e4fe]/10
-                           hover:text-[#bec6e0]"
+                    href="{{ route('operation.pickup') }}"
+                    wire:navigate
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl
+                           bg-white text-slate-600 shadow-sm ring-1 ring-slate-200
+                           hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300
+                           dark:ring-slate-800"
                 >
-
-                    <span class="material-symbols-outlined">
-                        logout
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        Logout
-                    </span>
-
+                    <flux:icon.arrow-left class="h-5 w-5" />
                 </a>
 
+                <div>
+                    <div class="text-xs font-medium uppercase tracking-wider text-slate-500">
+                        Menu Handheld
+                    </div>
+
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white">
+                        Marshalling CIC
+                    </h1>
+                </div>
             </div>
 
-        </nav>
+            <div class="hidden rounded-xl bg-sky-100 px-3 py-2 text-xs font-semibold
+                        text-sky-700 sm:block dark:bg-sky-950 dark:text-sky-300">
+                Operations
+            </div>
+        </div>
 
-    </aside>
+        @if ($message)
+            <div class="mb-5 rounded-xl border px-4 py-3 text-sm
+                {{ $messageType === 'success'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300' }}">
+                {{ $message }}
+            </div>
+        @endif
 
+        @if ($errors->any())
+            <div class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3
+                        text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40
+                        dark:text-rose-300">
+                <ul class="list-inside list-disc space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
+        {{-- SEARCH --}}
+        <div class="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200
+                    dark:bg-slate-900 dark:ring-slate-800">
 
-    {{-- ============================================================
-        MAIN
-    ============================================================= --}}
+            <div class="mb-4">
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
+                    Search Container
+                </h2>
 
-    <div class="min-h-screen md:ml-[260px]">
+                <p class="mt-1 text-xs text-slate-500">
+                    Cari container yang menunggu proses Marshalling CIC.
+                </p>
+            </div>
 
-
-        {{-- ========================================================
-            TOP BAR
-        ========================================================= --}}
-
-        <header
-            class="sticky top-0 z-30 flex h-14
-                   items-center justify-between
-                   border-b border-[#c3c6d7]/30
-                   bg-[#f8f9ff] px-4 sm:px-6"
-        >
-
-            <div class="flex items-center gap-4">
-
-                {{-- MOBILE BRAND --}}
-
-                <span
-                    class="text-base font-black
-                           text-[#0b1c30] md:hidden"
-                >
-                    PortOps Central
-                </span>
-
-
-                {{-- TOP SEARCH --}}
-
-                <div class="relative hidden sm:block">
-
-                    <span
-                        class="material-symbols-outlined
-                               absolute left-2 top-1/2
-                               -translate-y-1/2
-                               text-[18px] text-[#434655]"
-                    >
-                        search
-                    </span>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <div class="flex-1">
+                    <label class="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                        No Container
+                    </label>
 
                     <input
                         type="text"
-                        placeholder="Search operations..."
-                        class="w-64 rounded border
-                               border-[#c3c6d7]/50
-                               bg-[#eff4ff]
-                               py-1 pl-8 pr-4
-                               text-[13px]
-                               outline-none
-                               focus:border-[#004ac6]
-                               focus:ring-1
-                               focus:ring-[#004ac6]"
+                        wire:model.live.debounce.400ms="searchCont"
+                        placeholder="Cari No Container..."
+                        autocomplete="off"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5
+                               text-sm uppercase outline-none focus:border-sky-500
+                               focus:ring-2 focus:ring-sky-500/20
+                               dark:border-slate-700 dark:bg-slate-950"
                     >
-
                 </div>
 
-            </div>
-
-
-            <div class="flex items-center gap-3 sm:gap-4">
-
-                <button
-                    type="button"
-                    class="rounded p-1 text-[#434655]
-                           hover:bg-[#eff4ff]"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-                        notifications
-                    </span>
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="hidden rounded p-1
-                           text-[#434655]
-                           hover:bg-[#eff4ff] sm:block"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-                        terminal
-                    </span>
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="hidden rounded p-1
-                           text-[#434655]
-                           hover:bg-[#eff4ff] sm:block"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-                        help_outline
-                    </span>
-
-                </button>
-
-
-                <div class="h-6 w-px bg-[#c3c6d7]/30"></div>
-
-
-                <div
-                    class="flex h-8 w-8 items-center
-                           justify-center rounded-full
-                           bg-[#2563eb]"
-                >
-
-                    <span
-                        class="material-symbols-outlined
-                               text-[18px] text-white"
+                <div class="flex items-end">
+                    <button
+                        type="button"
+                        wire:click="$set('searchCont', '')"
+                        class="min-h-11 rounded-xl bg-slate-100 px-5 py-2.5 text-sm
+                               font-semibold text-slate-700 hover:bg-slate-200
+                               dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     >
-                        person
-                    </span>
-
+                        Reset
+                    </button>
                 </div>
-
             </div>
-
-        </header>
-
-
-
-        {{-- ========================================================
-            CONTENT
-        ========================================================= --}}
-
-        <main class="min-h-[calc(100vh-56px)] p-4 sm:p-6">
-
-
-            {{-- ====================================================
-                PAGE HEADER
-            ===================================================== --}}
-
-            <div class="mb-6">
-
-                <div class="mb-2 flex items-center gap-2">
-
-                    <span
-                        class="material-symbols-outlined
-                               text-[23px] text-[#004ac6]"
-                    >
-                        warehouse
-                    </span>
-
-
-                    <h1
-                        class="text-2xl font-semibold
-                               tracking-tight text-[#0b1c30]"
-                    >
-                        MARSHALLING CIC
-                    </h1>
-
-                </div>
-
-
-                <p class="text-sm text-[#434655]">
-                    Search No Container untuk proses dan melihat informasi Marshalling CIC.
-                </p>
-
-            </div>
-
-
-
-            {{-- ====================================================
-                SEARCH CARD
-            ===================================================== --}}
-
-            <div
-                class="mb-6 rounded-xl border
-                       border-[#c3c6d7]/30
-                       bg-white p-5 shadow-sm sm:p-6"
-            >
-
-                <div class="mb-5 flex items-center gap-3">
-
-                    <div
-                        class="flex h-10 w-10
-                               items-center justify-center
-                               rounded-lg bg-[#d3e4fe]
-                               text-[#004ac6]"
-                    >
-
-                        <span class="material-symbols-outlined">
-                            search
-                        </span>
-
-                    </div>
-
-
-                    <div>
-
-                        <h2
-                            class="text-base font-semibold
-                                   text-[#0b1c30]"
-                        >
-                            Search Container
-                        </h2>
-
-
-                        <p class="text-xs text-[#737686]">
-                            Masukkan nomor container.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <form wire:submit="search">
-
-                    <div
-                        class="flex flex-col gap-3
-                               sm:flex-row
-                               sm:items-end"
-                    >
-
-                        <div class="w-full sm:max-w-md">
-
-                            <label
-                                for="searchCont"
-                                class="mb-2 block
-                                       text-xs font-semibold
-                                       uppercase tracking-wider
-                                       text-[#434655]"
-                            >
-                                No Container
-                            </label>
-
-
-                            <div class="relative">
-
-                                <span
-                                    class="material-symbols-outlined
-                                           absolute left-3 top-1/2
-                                           -translate-y-1/2
-                                           text-[20px]
-                                           text-[#737686]"
-                                >
-                                    inventory_2
-                                </span>
-
-
-                                <input
-                                    id="searchCont"
-                                    type="text"
-                                    wire:model="searchCont"
-                                    autocomplete="off"
-                                    autofocus
-                                    placeholder="SEARCH NO CONT"
-                                    class="w-full rounded-lg
-                                           border border-[#c3c6d7]
-                                           bg-white py-2.5
-                                           pl-10 pr-4 text-sm
-                                           text-[#0b1c30]
-                                           placeholder:text-[#737686]
-                                           focus:border-[#004ac6]
-                                           focus:outline-none
-                                           focus:ring-2
-                                           focus:ring-[#b4c5ff]"
-                                >
-
-                            </div>
-
-
-                            @error('searchCont')
-
-                                <p class="mt-2 text-xs text-[#ba1a1a]">
-                                    {{ $message }}
-                                </p>
-
-                            @enderror
-
-                        </div>
-
-
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            class="inline-flex items-center
-                                   justify-center gap-2
-                                   rounded-lg
-                                   bg-[#004ac6]
-                                   px-5 py-2.5
-                                   text-sm font-semibold
-                                   text-white
-                                   transition
-                                   hover:bg-[#003ea8]
-                                   disabled:cursor-not-allowed
-                                   disabled:opacity-50"
-                        >
-
-                            <span
-                                wire:loading.remove
-                                wire:target="search"
-                                class="material-symbols-outlined text-[19px]"
-                            >
-                                search
-                            </span>
-
-
-                            <span
-                                wire:loading
-                                wire:target="search"
-                                class="material-symbols-outlined
-                                       animate-spin text-[19px]"
-                            >
-                                progress_activity
-                            </span>
-
-
-                            <span
-                                wire:loading.remove
-                                wire:target="search"
-                            >
-                                SEARCH
-                            </span>
-
-
-                            <span
-                                wire:loading
-                                wire:target="search"
-                            >
-                                SEARCHING...
-                            </span>
-
-                        </button>
-
-
-                        @if(
-                            $searchCont !== ''
-                            || !empty($containers)
-                            || !empty($marshallings)
-                        )
-
-                            <button
-                                type="button"
-                                wire:click="resetSearch"
-                                class="inline-flex items-center
-                                       justify-center gap-2
-                                       rounded-lg
-                                       border border-[#c3c6d7]
-                                       bg-white
-                                       px-5 py-2.5
-                                       text-sm font-semibold
-                                       text-[#434655]
-                                       hover:bg-[#eff4ff]"
-                            >
-
-                                <span
-                                    class="material-symbols-outlined
-                                           text-[18px]"
-                                >
-                                    refresh
-                                </span>
-
-                                RESET
-
-                            </button>
-
-                        @endif
-
-                    </div>
-
-                </form>
-
-            </div>
-
-
-
-            {{-- ====================================================
-                MESSAGE
-            ===================================================== --}}
-
-            @isset($message)
-            @if($message)
-
-                <div
-                    class="mb-6 flex items-start
-                           gap-3 rounded-lg border px-4 py-3
-
-                           @if($messageType === 'success')
-                               border-[#4edea3]/40
-                               bg-[#6ffbbe]/10
-                               text-[#005236]
-                           @else
-                               border-[#ba1a1a]/30
-                               bg-[#ffdad6]/50
-                               text-[#93000a]
-                           @endif"
-                >
-
-                    <span class="material-symbols-outlined text-[20px]">
-
-                        @if($messageType === 'success')
-                            check_circle
-                        @else
-                            error
-                        @endif
-
-                    </span>
-
-
-                    <p class="text-sm font-semibold">
-                        {{ $message }}
+        </div>
+
+        {{-- TABLE --}}
+        @if (!$showForm)
+            <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200
+                        dark:bg-slate-900 dark:ring-slate-800">
+
+                <div class="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">
+                        Daftar Marshalling CIC
+                    </h2>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        Pilih pekerjaan yang akan diproses.
                     </p>
-
                 </div>
-
-            @endif
-            @endisset
-
-
-
-            {{-- ====================================================
-                SEARCH RESULT
-            ===================================================== --}}
-
-            @if(!empty($containers))
-
-                <div
-                    class="mb-6 overflow-hidden
-                           rounded-xl border
-                           border-[#c3c6d7]/30
-                           bg-white shadow-sm"
-                >
-
-                    {{-- HEADER --}}
-
-                    <div
-                        class="border-b border-[#c3c6d7]/30
-                               px-5 py-5 sm:px-6"
-                    >
-
-                        <div class="flex items-center gap-2">
-
-                            <span
-                                class="material-symbols-outlined
-                                       text-[#004ac6]"
-                            >
-                                inventory_2
-                            </span>
-
-
-                            <h2
-                                class="text-base font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                Search Result
-                            </h2>
-
-                        </div>
-
-
-                        <p class="mt-1 text-xs text-[#737686]">
-                            Container yang ditemukan berdasarkan pencarian.
-                        </p>
-
-                    </div>
-
-
-                    {{-- CONTAINER LIST --}}
-
-                    <div
-                        class="grid grid-cols-1
-                               gap-3 p-5
-                               sm:grid-cols-2
-                               lg:grid-cols-3 sm:p-6"
-                    >
-
-                        @foreach($containers as $container)
-
-                            <div
-                                class="group rounded-xl
-                                       border
-                                       border-[#c3c6d7]/40
-                                       bg-[#f8f9ff]
-                                       p-4"
-                            >
-
-                                <div
-                                    class="flex items-center
-                                           justify-between gap-3"
-                                >
-
-                                    <div
-                                        class="flex h-10 w-10
-                                               shrink-0
-                                               items-center
-                                               justify-center
-                                               rounded-lg
-                                               bg-[#d3e4fe]
-                                               text-[#004ac6]"
-                                    >
-
-                                        <span
-                                            class="material-symbols-outlined"
-                                        >
-                                            inventory_2
-                                        </span>
-
-                                    </div>
-
-
-                                    <span
-                                        class="material-symbols-outlined
-                                               text-[#004ac6]"
-                                    >
-                                        check_circle
-                                    </span>
-
-                                </div>
-
-
-                                <p
-                                    class="mt-4 text-sm
-                                           font-bold
-                                           text-[#0b1c30]"
-                                >
-                                    {{ $container->no_cont ?? '-' }}
-                                </p>
-
-
-                                <p
-                                    class="mt-1 text-xs
-                                           text-[#737686]"
-                                >
-                                    {{ $container->type?->name ?? 'Container' }}
-                                </p>
-
-                            </div>
-
-                        @endforeach
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-
-            {{-- ====================================================
-                OPERATION / MARSHALLING DETAIL
-            ===================================================== --}}
-
-            @if($operation)
-
-                <div
-                    class="mb-6 overflow-hidden
-                           rounded-xl border
-                           border-[#c3c6d7]/30
-                           bg-white shadow-sm"
-                >
-
-                    {{-- HEADER --}}
-
-                    <div
-                        class="border-b border-[#c3c6d7]/30
-                               px-5 py-5 sm:px-6"
-                    >
-
-                        <div class="flex items-center gap-2">
-
-                            <span
-                                class="material-symbols-outlined
-                                       text-[#004ac6]"
-                            >
-                                description
-                            </span>
-
-
-                            <div>
-
-                                <h2
-                                    class="text-base font-semibold
-                                           text-[#0b1c30]"
-                                >
-                                    Marshalling CIC Information
-                                </h2>
-
-
-                                <p class="text-xs text-[#737686]">
-                                    Informasi operation dan proses Marshalling CIC.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- INFORMATION --}}
-
-                    <div
-                        class="grid grid-cols-1
-                               gap-5 p-5
-                               sm:grid-cols-2
-                               lg:grid-cols-3 sm:p-6"
-                    >
-
-                        {{-- NO SPK --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                No SPK
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $operation->spk?->no_spk ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- CONTAINER --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                No Container
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $operation->container?->no_cont ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- PROCESS --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Current Process
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $operation->current_process ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- STATUS --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Operation Status
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $operation->status ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- TYPE --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Container Type
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $operation->container?->type?->name ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- SIZE --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Size
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $operation->container?->type?->size ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- MARSHALLING STATUS --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Marshalling Status
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $marshalling?->status ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- MARSHALLING TYPE --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Marshalling Type
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $marshalling?->marshalling_type ?? '-' }}
-                            </p>
-
-                        </div>
-
-
-                        {{-- JOB --}}
-
-                        <div>
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-widest
-                                       text-[#737686]"
-                            >
-                                Job Slip
-                            </p>
-
-
-                            <p
-                                class="mt-1 text-sm
-                                       font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                {{ $marshalling?->jobSlip?->no_job ?? '-' }}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-
-            {{-- ====================================================
-                MARSHALLING CIC TABLE
-            ===================================================== --}}
-
-            <div
-                class="overflow-hidden rounded-xl
-                       border border-[#c3c6d7]/30
-                       bg-white shadow-sm"
-            >
-
-                {{-- HEADER --}}
-
-                <div
-                    class="flex flex-col gap-4
-                           border-b
-                           border-[#c3c6d7]/30
-                           px-5 py-5
-                           sm:px-6
-                           md:flex-row
-                           md:items-center
-                           md:justify-between"
-                >
-
-                    <div>
-
-                        <div class="flex items-center gap-2">
-
-                            <span
-                                class="material-symbols-outlined
-                                       text-[#004ac6]"
-                            >
-                                warehouse
-                            </span>
-
-
-                            <h2
-                                class="text-base font-semibold
-                                       text-[#0b1c30]"
-                            >
-                                Data Marshalling CIC
-                            </h2>
-
-                        </div>
-
-
-                        <p class="mt-1 text-xs text-[#737686]">
-                            Data proses Marshalling CIC.
-                        </p>
-
-                    </div>
-
-
-                    <div
-                        class="rounded-lg
-                               border
-                               border-[#c3c6d7]/30
-                               bg-[#eff4ff]
-                               px-4 py-3"
-                    >
-
-                        <p
-                            class="text-[10px]
-                                   font-semibold
-                                   uppercase
-                                   tracking-widest
-                                   text-[#737686]"
-                        >
-                            Total Record
-                        </p>
-
-
-                        <p
-                            class="mt-1 text-sm
-                                   font-bold
-                                   text-[#004ac6]"
-                        >
-                            {{ is_countable($marshallings ?? null) ? count($marshallings) : 0 }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                {{-- TABLE --}}
 
                 <div class="overflow-x-auto">
-
-                    <table class="min-w-full">
-
-                        <thead class="bg-[#eff4ff]">
-
+                    <table class="w-full min-w-[1000px] text-left text-sm">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wider
+                                      text-slate-500 dark:bg-slate-800/70">
                             <tr>
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    No
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    No SPK
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    No Container
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Job Slip
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Marshalling Type
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Location From
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Location To
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Status
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Started
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-left
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-widest
-                                           text-[#737686]"
-                                >
-                                    Finished
-                                </th>
-
+                                <th class="px-4 py-3 text-center">No</th>
+                                <th class="px-4 py-3">ID Job</th>
+                                <th class="px-4 py-3">No Container</th>
+                                <th class="px-4 py-3">Ukuran</th>
+                                <th class="px-4 py-3">Lokasi Awal</th>
+                                <th class="px-4 py-3">Lokasi Akhir</th>
+                                <th class="px-4 py-3">Job</th>
+                                <th class="px-4 py-3">Respon</th>
+                                <th class="px-4 py-3 text-center">Proses</th>
                             </tr>
-
                         </thead>
 
-
-                        <tbody
-                            class="divide-y
-                                   divide-[#c3c6d7]/20
-                                   bg-white"
-                        >
-
-                            @forelse($marshallings as $index => $marshalling)
-
-                                <tr
-                                    class="transition-colors
-                                           hover:bg-[#eff4ff]/50"
-                                >
-
-                                    {{-- NO --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-xs
-                                               text-[#737686]"
-                                    >
-                                        {{ $index + 1 }}
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                            @forelse ($jobs as $index => $job)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                    <td class="px-4 py-3 text-center text-slate-500">
+                                        {{ $jobs->firstItem() + $index }}
                                     </td>
 
-
-                                    {{-- SPK --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               font-medium
-                                               text-[#0b1c30]"
-                                    >
-                                        {{
-                                            $marshalling->operation?->spk?->no_spk
-                                            ?? $operation?->spk?->no_spk
-                                            ?? '-'
-                                        }}
+                                    <td class="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                                        {{ $job->no_job }}
                                     </td>
 
-
-                                    {{-- CONTAINER --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               font-semibold
-                                               text-[#0b1c30]"
-                                    >
-                                        {{
-                                            $marshalling->operation?->container?->no_cont
-                                            ?? $operation?->container?->no_cont
-                                            ?? '-'
-                                        }}
+                                    <td class="px-4 py-3 font-semibold">
+                                        {{ $job->spkContainer?->container?->no_cont }}
                                     </td>
 
-
-                                    {{-- JOB SLIP --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               text-[#434655]"
-                                    >
-                                        {{ $marshalling->jobSlip?->no_job ?? '-' }}
+                                    <td class="px-4 py-3">
+                                        {{ $job->spkContainer?->container?->type?->size ?? '-' }}
                                     </td>
 
-
-                                    {{-- MARSHALLING TYPE --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               text-[#434655]"
-                                    >
-                                        {{ $marshalling->marshalling_type ?? '-' }}
+                                    <td class="px-4 py-3">
+                                        {{ $job->locationFrom?->location_code ?? '-' }}
                                     </td>
 
-
-                                    {{-- LOCATION FROM --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               text-[#434655]"
-                                    >
-                                        {{
-                                            $marshalling->locationFrom?->location_code
-                                            ?? '-'
-                                        }}
+                                    <td class="px-4 py-3">
+                                        {{ $job->locationTo?->location_code ?? '-' }}
                                     </td>
 
-
-                                    {{-- LOCATION TO --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               text-[#434655]"
-                                    >
-                                        {{
-                                            $marshalling->locationTo?->location_code
-                                            ?? '-'
-                                        }}
+                                    <td class="px-4 py-3">
+                                        {{ $job->job_type }}
                                     </td>
 
-
-                                    {{-- STATUS --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4"
-                                    >
-
-                                        @if(
-                                            strtoupper(
-                                                $marshalling->status ?? ''
-                                            ) === 'DONE'
-                                        )
-
-                                            <span
-                                                class="inline-flex
-                                                       rounded-full
-                                                       bg-[#6ffbbe]/20
-                                                       px-3 py-1
-                                                       text-[10px]
-                                                       font-semibold
-                                                       uppercase
-                                                       tracking-wider
-                                                       text-[#005236]"
-                                            >
-                                                DONE
-                                            </span>
-
-                                        @elseif(
-                                            strtoupper(
-                                                $marshalling->status ?? ''
-                                            ) === 'CANCEL'
-                                        )
-
-                                            <span
-                                                class="inline-flex
-                                                       rounded-full
-                                                       bg-[#ffdad6]
-                                                       px-3 py-1
-                                                       text-[10px]
-                                                       font-semibold
-                                                       uppercase
-                                                       tracking-wider
-                                                       text-[#93000a]"
-                                            >
-                                                CANCEL
-                                            </span>
-
-                                        @else
-
-                                            <span
-                                                class="inline-flex
-                                                       rounded-full
-                                                       bg-[#eff4ff]
-                                                       px-3 py-1
-                                                       text-[10px]
-                                                       font-semibold
-                                                       uppercase
-                                                       tracking-wider
-                                                       text-[#004ac6]"
-                                            >
-                                                {{ $marshalling->status ?? '-' }}
-                                            </span>
-
-                                        @endif
-
+                                    <td class="px-4 py-3">
+                                        {{ $job->gatepass?->jenis_kegiatan ?? '-' }}
                                     </td>
 
-
-                                    {{-- STARTED --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               text-[#434655]"
-                                    >
-                                        {{
-                                            $marshalling->started_at
-                                                ? $marshalling->started_at
-                                                    ->format('d-m-Y H:i')
-                                                : '-'
-                                        }}
+                                    <td class="px-4 py-3 text-center">
+                                        <button
+                                            type="button"
+                                            wire:click="selectJob({{ $job->id }})"
+                                            class="inline-flex items-center justify-center rounded-xl
+                                                   bg-sky-600 px-4 py-2 text-xs font-bold text-white
+                                                   hover:bg-sky-700"
+                                        >
+                                             MARSHALLING
+                                        </button>
                                     </td>
-
-
-                                    {{-- FINISHED --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4
-                                               text-sm
-                                               text-[#434655]"
-                                    >
-                                        {{
-                                            $marshalling->finished_at
-                                                ? $marshalling->finished_at
-                                                    ->format('d-m-Y H:i')
-                                                : '-'
-                                        }}
-                                    </td>
-
                                 </tr>
-
-
                             @empty
-
                                 <tr>
-
                                     <td
-                                        colspan="10"
-                                        class="px-6 py-12 text-center"
+                                        colspan="9"
+                                        class="px-4 py-10 text-center text-sm text-slate-500"
                                     >
-
-                                        <div
-                                            class="mx-auto flex h-14 w-14
-                                                   items-center justify-center
-                                                   rounded-full
-                                                   bg-[#eff4ff]
-                                                   text-[#004ac6]"
-                                        >
-
-                                            <span
-                                                class="material-symbols-outlined text-[28px]"
-                                            >
-                                                warehouse
-                                            </span>
-
-                                        </div>
-
-
-                                        <p
-                                            class="mt-4 text-sm
-                                                   font-semibold
-                                                   text-[#434655]"
-                                        >
-                                            Belum ada data MARSHALLING CIC
-                                        </p>
-
-
-                                        <p
-                                            class="mt-1 text-xs
-                                                   text-[#737686]"
-                                        >
-                                            Data proses Marshalling CIC
-                                            akan ditampilkan di sini.
-                                        </p>
-
+                                        Tidak ada pekerjaan Marshalling CIC yang menunggu.
                                     </td>
-
                                 </tr>
-
                             @endforelse
-
                         </tbody>
-
                     </table>
-
                 </div>
 
+                @if ($jobs->hasPages())
+                    <div class="border-t border-slate-200 px-4 py-4 dark:border-slate-800">
+                        {{ $jobs->links() }}
+                    </div>
+                @endif
             </div>
+        @endif
 
+        {{-- FORM --}}
+        @if ($showForm && $jobSlip)
+            <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200
+                        dark:bg-slate-900 dark:ring-slate-800">
 
+                <div class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4
+                            sm:flex-row sm:items-center sm:justify-between
+                            dark:border-slate-800">
 
-            {{-- ====================================================
-                NO RESULT
-            ===================================================== --}}
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">
+                            Informasi Marshalling CIC
+                        </h2>
 
-            @if(
-                $searchCont !== ''
-                && $messageType === 'danger'
-                && empty($containers)
-            )
+                        <p class="mt-1 text-xs text-slate-500">
+                            Job Slip #{{ $jobSlip->id }}
+                        </p>
+                    </div>
 
-                <div
-                    class="mt-6 rounded-xl border
-                           border-[#c3c6d7]/30
-                           bg-white px-6 py-12
-                           text-center shadow-sm"
-                >
+                    <span class="w-fit rounded-full bg-sky-100 px-3 py-1 text-xs font-bold
+                                 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                        {{ $jobSlip->job_type }}
+                    </span>
+                </div>
 
-                    <div
-                        class="mx-auto flex h-14 w-14
-                               items-center justify-center
-                               rounded-full
-                               bg-[#ffdad6]
-                               text-[#ba1a1a]"
-                    >
+                <div class="space-y-6 p-4 sm:p-5">
 
-                        <span
-                            class="material-symbols-outlined text-[28px]"
+                    <section>
+                        <div class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Container
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">
+                                    No Container
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value="{{ $container?->no_cont }}"
+                                    readonly
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50
+                                           px-3 py-2.5 text-sm font-semibold
+                                           dark:border-slate-700 dark:bg-slate-800"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">
+                                    Ukuran
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value="{{ $container?->type?->size ?? '-' }}"
+                                    readonly
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50
+                                           px-3 py-2.5 text-sm
+                                           dark:border-slate-700 dark:bg-slate-800"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">
+                                    Lokasi Awal
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value="{{ $jobSlip->locationFrom?->location_code ?? '-' }}"
+                                    readonly
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50
+                                           px-3 py-2.5 text-sm
+                                           dark:border-slate-700 dark:bg-slate-800"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">
+                                    Lokasi Akhir
+                                </label>
+
+                                <select
+                                    wire:model="locationToId"
+                                    class="w-full rounded-xl border border-slate-300 bg-white
+                                           px-3 py-2.5 text-sm outline-none
+                                           focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20
+                                           dark:border-slate-700 dark:bg-slate-950"
+                                >
+                                    <option value="">Pilih Lokasi CIC</option>
+
+                                    @foreach ($locations as $location)
+                                        <option value="{{ $location->id }}">
+                                            {{ $location->location_code }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">
+                                    Job
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value="{{ $jobSlip->job_type }}"
+                                    readonly
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50
+                                           px-3 py-2.5 text-sm font-semibold
+                                           dark:border-slate-700 dark:bg-slate-800"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium">
+                                    Respon
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value="{{ $respon ?: '-' }}"
+                                    readonly
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50
+                                           px-3 py-2.5 text-sm
+                                           dark:border-slate-700 dark:bg-slate-800"
+                                >
+                            </div>
+
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            Catatan
+                        </div>
+
+                        <div class="space-y-4">
+
+                            <textarea
+                                wire:model="note"
+                                rows="3"
+                                maxlength="500"
+                                placeholder="Catatan..."
+                                class="w-full resize-none rounded-xl border border-slate-300
+                                       bg-white px-3 py-2.5 text-sm outline-none
+                                       focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20
+                                       dark:border-slate-700 dark:bg-slate-950"
+                            ></textarea>
+
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl
+                                          border border-slate-200 bg-slate-50 px-4 py-3
+                                          dark:border-slate-700 dark:bg-slate-800">
+                                <input
+                                    type="checkbox"
+                                    wire:model="fumigasi"
+                                    class="h-4 w-4 rounded border-slate-300 text-sky-600"
+                                >
+
+                                <span>
+                                    <span class="block text-sm font-semibold">
+                                        Fumigasi
+                                    </span>
+
+                                    <span class="block text-xs text-slate-500">
+                                        Tandai Y jika container fumigasi.
+                                    </span>
+                                </span>
+                            </label>
+
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="mb-3">
+                            <div class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                Informasi Alat
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+
+                            {{-- ACTIVITY 1 --}}
+                            <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                                <div class="mb-4 flex items-center gap-2">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-lg
+                                                 bg-sky-100 text-xs font-bold text-sky-700
+                                                 dark:bg-sky-950 dark:text-sky-300">
+                                        1
+                                    </span>
+
+                                    <span class="text-sm font-bold">
+                                        Aktivitas 1
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Jenis Pekerjaan
+                                        </label>
+
+                                        <select
+                                            wire:model.number="jenisPekerjaan1"
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm dark:border-slate-700
+                                                   dark:bg-slate-950"
+                                        >
+                                            <option value="0">Tidak Ada Aktivitas</option>
+                                            <option value="3">LIFT ON STAGGER</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Alat
+                                        </label>
+
+                                        <select
+                                            wire:model="alat1"
+                                            @disabled($jenisPekerjaan1 === 0)
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm disabled:bg-slate-100
+                                                   dark:border-slate-700 dark:bg-slate-950
+                                                   dark:disabled:bg-slate-800"
+                                        >
+                                            <option value="">Pilih Alat</option>
+
+                                            @foreach ($equipments as $equipment)
+                                                <option value="{{ $equipment->id }}">
+                                                    {{ $equipment->code }} - {{ $equipment->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Operator
+                                        </label>
+
+                                        <select
+                                            wire:model="operator1"
+                                            @disabled($jenisPekerjaan1 === 0)
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm disabled:bg-slate-100
+                                                   dark:border-slate-700 dark:bg-slate-950
+                                                   dark:disabled:bg-slate-800"
+                                        >
+                                            <option value="">Pilih Operator</option>
+
+                                            @foreach ($operators as $operator)
+                                                <option value="{{ $operator->id }}">
+                                                    {{ $operator->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {{-- ACTIVITY 2 --}}
+                            <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                                <div class="mb-4 flex items-center gap-2">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-lg
+                                                 bg-sky-100 text-xs font-bold text-sky-700
+                                                 dark:bg-sky-950 dark:text-sky-300">
+                                        2
+                                    </span>
+
+                                    <span class="text-sm font-bold">
+                                        Aktivitas 2
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Jenis Pekerjaan
+                                        </label>
+
+                                        <select
+                                            wire:model.number="jenisPekerjaan2"
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm dark:border-slate-700
+                                                   dark:bg-slate-950"
+                                        >
+                                            <option value="0">Tidak Ada Kegiatan</option>
+                                            <option value="6">Haulage</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Truck
+                                        </label>
+
+                                        <select
+                                            wire:model="truck1"
+                                            @disabled($jenisPekerjaan2 === 0)
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm disabled:bg-slate-100
+                                                   dark:border-slate-700 dark:bg-slate-950
+                                                   dark:disabled:bg-slate-800"
+                                        >
+                                            <option value="">Pilih Truck</option>
+
+                                            @foreach ($trucks as $truck)
+                                                <option value="{{ $truck->id }}">
+                                                    {{ $truck->no_truck ?: 'Truck #' . $truck->id }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Operator
+                                        </label>
+
+                                        <select
+                                            wire:model="operator2"
+                                            @disabled($jenisPekerjaan2 === 0)
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm disabled:bg-slate-100
+                                                   dark:border-slate-700 dark:bg-slate-950
+                                                   dark:disabled:bg-slate-800"
+                                        >
+                                            <option value="">Pilih Operator</option>
+
+                                            @foreach ($operators as $operator)
+                                                <option value="{{ $operator->id }}">
+                                                    {{ $operator->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {{-- ACTIVITY 3 --}}
+                            <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                                <div class="mb-4 flex items-center gap-2">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-lg
+                                                 bg-sky-100 text-xs font-bold text-sky-700
+                                                 dark:bg-sky-950 dark:text-sky-300">
+                                        3
+                                    </span>
+
+                                    <span class="text-sm font-bold">
+                                        Aktivitas 3
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Jenis Pekerjaan
+                                        </label>
+
+                                        <select
+                                            wire:model.number="jenisPekerjaan3"
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm dark:border-slate-700
+                                                   dark:bg-slate-950"
+                                        >
+                                            <option value="0">Tidak Ada Kegiatan</option>
+                                            <option value="5">LIFT ON CHASSIS</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Alat
+                                        </label>
+
+                                        <select
+                                            wire:model="alat3"
+                                            @disabled($jenisPekerjaan3 === 0)
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm disabled:bg-slate-100
+                                                   dark:border-slate-700 dark:bg-slate-950
+                                                   dark:disabled:bg-slate-800"
+                                        >
+                                            <option value="">Pilih Alat</option>
+
+                                            @foreach ($equipments as $equipment)
+                                                <option value="{{ $equipment->id }}">
+                                                    {{ $equipment->code }} - {{ $equipment->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-medium">
+                                            Operator
+                                        </label>
+
+                                        <select
+                                            wire:model="operator3"
+                                            @disabled($jenisPekerjaan3 === 0)
+                                            class="w-full rounded-xl border border-slate-300 bg-white
+                                                   px-3 py-2.5 text-sm disabled:bg-slate-100
+                                                   dark:border-slate-700 dark:bg-slate-950
+                                                   dark:disabled:bg-slate-800"
+                                        >
+                                            <option value="">Pilih Operator</option>
+
+                                            @foreach ($operators as $operator)
+                                                <option value="{{ $operator->id }}">
+                                                    {{ $operator->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5
+                                sm:flex-row sm:justify-end dark:border-slate-800">
+
+                        <button
+                            type="button"
+                            wire:click="cancelProcess"
+                            wire:loading.attr="disabled"
+                            class="min-h-12 rounded-xl bg-slate-100 px-5 py-3 text-sm
+                                   font-bold text-slate-700 hover:bg-slate-200
+                                   dark:bg-slate-800 dark:text-slate-200"
                         >
-                            search_off
-                        </span>
+                            Kembali
+                        </button>
+
+                        <button
+                            type="button"
+                            wire:click="save"
+                            wire:confirm="Yakin ingin menyimpan Marshalling CIC untuk {{ $container?->no_cont }}?"
+                            wire:loading.attr="disabled"
+                            wire:target="save"
+                            class="min-h-12 rounded-xl bg-sky-600 px-6 py-3 text-sm
+                                   font-bold text-white hover:bg-sky-700
+                                   disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="save">
+                                Simpan Marshalling CIC
+                            </span>
+
+                            <span wire:loading wire:target="save">
+                                Menyimpan...
+                            </span>
+                        </button>
 
                     </div>
 
-
-                    <h3
-                        class="mt-4 text-sm
-                               font-semibold
-                               text-[#434655]"
-                    >
-                        Container tidak ditemukan
-                    </h3>
-
-
-                    <p
-                        class="mt-1 text-xs
-                               text-[#737686]"
-                    >
-                        Silakan periksa kembali nomor container.
-                    </p>
-
                 </div>
-
-            @endif
-
-
-
-            {{-- ====================================================
-                LOADING
-            ===================================================== --}}
-
-            <div
-                wire:loading
-                wire:target="search"
-                class="fixed inset-0 z-50
-                       flex items-center
-                       justify-center
-                       bg-[#0b1c30]/20
-                       backdrop-blur-sm"
-            >
-
-                <div
-                    class="rounded-xl border
-                           border-[#c3c6d7]/30
-                           bg-white px-6 py-5
-                           text-center shadow-xl"
-                >
-
-                    <span
-                        class="material-symbols-outlined
-                               animate-spin
-                               text-[32px]
-                               text-[#004ac6]"
-                    >
-                        progress_activity
-                    </span>
-
-
-                    <p
-                        class="mt-2 text-sm
-                               font-semibold
-                               text-[#434655]"
-                    >
-                        Searching...
-                    </p>
-
-                </div>
-
             </div>
-
-
-
-            {{-- ====================================================
-                FOOTER
-            ===================================================== --}}
-
-            <footer
-                class="mt-6 border-t
-                       border-[#c3c6d7]/30
-                       pt-5 text-center"
-            >
-
-                <p class="text-xs text-[#737686]">
-                    MARSHALLING CIC · PortOps Central
-                </p>
-
-            </footer>
-
-
-        </main>
+        @endif
 
     </div>
-
 </div>

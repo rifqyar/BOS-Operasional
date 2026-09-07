@@ -2,143 +2,244 @@
 
 namespace App\Livewire\Operation;
 
+use App\Models\SpkContainer;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Hold extends Component
 {
+    use WithPagination;
+
     public string $searchCont = '';
 
-    public array $containers = [];
+    public $container = null;
 
-    public $selectedContainer = null;
+    public bool $showForm = false;
 
-    public array $holds = [];
+    public string $warnaHold = '';
 
-    public string $warna = '';
+    public ?string $holdMessage = null;
 
-    public ?string $message = null;
+    public ?string $holdMessageType = null;
 
-    public ?string $messageType = null;
-
+    public int $perPage = 10;
 
     public function search(): void
     {
+        $this->resetResult();
+
+        $keyword = trim($this->searchCont);
+
+        if ($keyword === '') {
+            $this->setMessage(
+                'danger',
+                'Nomor kontainer wajib diisi.'
+            );
+
+            return;
+        }
+
+        $this->container = SpkContainer::query()
+            ->with([
+                'spk',
+                'container',
+            ])
+            ->where('fl_hold', 'N')
+            ->where('status', '!=', '900')
+            ->whereHas('container', function ($query) use ($keyword) {
+                $query->where(
+                    'no_cont',
+                    'like',
+                    '%' . strtoupper($keyword) . '%'
+                );
+            })
+            ->latest('id')
+            ->first();
+
+        if (! $this->container) {
+            $this->setMessage(
+                'danger',
+                'Data kontainer tidak ditemukan.'
+            );
+
+            return;
+        }
+
+        $this->holdMessage = null;
+        $this->holdMessageType = null;
+    }
+
+    public function openResult(): void
+    {
+        if (! $this->container) {
+            return;
+        }
+
+        $this->warnaHold = '';
+        $this->showForm = true;
+
+        $this->holdMessage = null;
+        $this->holdMessageType = null;
+    }
+
+    public function send(): void
+    {
+        if (! $this->container) {
+            $this->setMessage(
+                'danger',
+                'Data kontainer belum dipilih.'
+            );
+
+            return;
+        }
+
         $this->validate([
-            'searchCont' => [
+            'warnaHold' => [
                 'required',
-                'string',
-                'max:100',
+                'in:N,M,T',
             ],
-        ], [
-            'searchCont.required' => 'No Container wajib diisi.',
         ]);
 
+        $spkContainerId = $this->container->id;
 
-        $keyword = strtoupper(
-            trim($this->searchCont)
-        );
+        try {
+            DB::transaction(function () use ($spkContainerId) {
+                $spkContainer = SpkContainer::query()
+                    ->whereKey($spkContainerId)
+                    ->lockForUpdate()
+                    ->first();
 
+                if (! $spkContainer) {
+                    throw new \RuntimeException(
+                        'Data SPK Container tidak ditemukan.'
+                    );
+                }
 
-        /*
-        |--------------------------------------------------------------------------
-        | RESET HASIL SEARCH
-        |--------------------------------------------------------------------------
-        */
+                if ($spkContainer->fl_hold !== 'N') {
+                    throw new \RuntimeException(
+                        'Container sudah dalam status HOLD.'
+                    );
+                }
 
-        $this->containers = [];
+                if ($spkContainer->status === '900') {
+                    throw new \RuntimeException(
+                        'Container tidak dapat di-HOLD.'
+                    );
+                }
 
-        $this->selectedContainer = null;
+                $spkContainer->update([
+                    'fl_hold' => 'Y',
+                    'fl_warna_hold' => $this->warnaHold,
+                ]);
+            });
 
-        $this->message = null;
+            $this->showForm = false;
 
-        $this->messageType = null;
+            $this->resetPage();
 
+            $this->setMessage(
+                'success',
+                'Container berhasil di-HOLD.'
+            );
+        } catch (\Throwable $e) {
+            report($e);
 
-        /*
-        |--------------------------------------------------------------------------
-        | TEMPORARY
-        |--------------------------------------------------------------------------
-        |
-        | Database HOLD belum kita hubungkan.
-        | Ini hanya untuk memastikan template bisa berjalan.
-        |
-        */
-
-        $this->messageType = 'danger';
-
-        $this->message =
-            "NO CONTAINER : {$keyword} BELUM TERHUBUNG KE DATABASE HOLD";
+            $this->setMessage(
+                'danger',
+                $e->getMessage()
+            );
+        }
     }
 
-
-    public function selectContainer($containerId): void
+    public function release(int $id): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | TEMPORARY
-        |--------------------------------------------------------------------------
-        |
-        | Logic pemilihan container akan kita isi setelah
-        | mapping DB diagram + Controller PHP lama selesai.
-        |
-        */
+        try {
+            DB::transaction(function () use ($id) {
+                $spkContainer = SpkContainer::query()
+                    ->whereKey($id)
+                    ->lockForUpdate()
+                    ->first();
 
-        $this->selectedContainer = null;
+                if (! $spkContainer) {
+                    throw new \RuntimeException(
+                        'Data SPK Container tidak ditemukan.'
+                    );
+                }
+
+                if ($spkContainer->fl_hold !== 'Y') {
+                    throw new \RuntimeException(
+                        'Container tidak dalam status HOLD.'
+                    );
+                }
+
+                if ($spkContainer->status === '900') {
+                    throw new \RuntimeException(
+                        'Container tidak dapat di-RELEASE.'
+                    );
+                }
+
+                $spkContainer->update([
+                    'fl_hold' => 'N',
+                    'fl_warna_hold' => 'N',
+                ]);
+            });
+
+            $this->resetPage();
+
+            $this->setMessage(
+                'success',
+                'Container berhasil di-RELEASE.'
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->setMessage(
+                'danger',
+                $e->getMessage()
+            );
+        }
     }
 
-
-    public function hold(): void
+    private function resetResult(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | TEMPORARY
-        |--------------------------------------------------------------------------
-        */
-
-        $this->messageType = 'danger';
-
-        $this->message =
-            'Proses HOLD belum dihubungkan ke database.';
+        $this->container = null;
+        $this->warnaHold = '';
+        $this->showForm = false;
+        $this->holdMessage = null;
+        $this->holdMessageType = null;
     }
-
-
-    public function release($holdId = null): void
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | TEMPORARY
-        |--------------------------------------------------------------------------
-        */
-
-        $this->messageType = 'danger';
-
-        $this->message =
-            'Proses RELEASE belum dihubungkan ke database.';
-    }
-
 
     public function resetSearch(): void
     {
         $this->searchCont = '';
 
-        $this->containers = [];
-
-        $this->selectedContainer = null;
-
-        $this->holds = [];
-
-        $this->warna = '';
-
-        $this->message = null;
-
-        $this->messageType = null;
+        $this->resetResult();
     }
 
+    private function setMessage(string $type, string $message): void
+    {
+        $this->holdMessageType = $type;
+        $this->holdMessage = $message;
+    }
 
     public function render()
     {
+        $heldContainers = SpkContainer::query()
+            ->with([
+                'spk',
+                'container',
+            ])
+            ->where('fl_hold', 'Y')
+            ->where('status', '!=', '900')
+            ->latest('id')
+            ->paginate($this->perPage);
+
         return view(
-            'livewire.operation.hold'
+            'livewire.operation.hold',
+            [
+                'heldContainers' => $heldContainers,
+            ]
         );
     }
 }

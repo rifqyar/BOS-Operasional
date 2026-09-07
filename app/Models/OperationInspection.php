@@ -4,12 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-
 class OperationInspection extends Model
 {
-
     protected $table = 'operation_inspections';
-
 
     protected $fillable = [
         'operation_id',
@@ -22,16 +19,13 @@ class OperationInspection extends Model
         'started_at',
         'finished_at',
         'status',
-        'note'
+        'note',
     ];
-
 
     protected $casts = [
-        'started_at'=>'datetime',
-        'finished_at'=>'datetime'
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
     ];
-
-
 
     public function operation()
     {
@@ -41,7 +35,6 @@ class OperationInspection extends Model
         );
     }
 
-
     public function jobSlip()
     {
         return $this->belongsTo(
@@ -49,7 +42,6 @@ class OperationInspection extends Model
             'job_slip_id'
         );
     }
-
 
     public function behandlein()
     {
@@ -59,7 +51,6 @@ class OperationInspection extends Model
         );
     }
 
-
     public function equipment()
     {
         return $this->belongsTo(
@@ -68,15 +59,13 @@ class OperationInspection extends Model
         );
     }
 
-
     public function operator()
     {
         return $this->belongsTo(
-            User::class,
+            SystemUser::class,
             'operator_id'
         );
     }
-
 
     public function containerType()
     {
@@ -85,5 +74,4 @@ class OperationInspection extends Model
             'container_type_id'
         );
     }
-
 }
