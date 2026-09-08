@@ -4,6 +4,7 @@ namespace App\Livewire\Operation;
 
 use App\Models\BehandleReport;
 use App\Models\Equipment;
+use App\Models\Gatepass;
 use App\Models\JobDetail;
 use App\Models\JobSlip;
 use App\Models\Operation;
@@ -37,6 +38,15 @@ class Inspection extends Component
 
     public ?string $messageType = null;
 
+    // === TAMBAHAN: LANJUT BEHANDLE 2 ===
+    public bool $showBehandle2Form = false;
+
+    public string $b2NoDok = '';
+
+    public string $b2JnsDok = '';
+
+    public ?string $b2TglDok = null;
+
     public function mount(): void
     {
         $this->resetState();
@@ -65,35 +75,20 @@ class Inspection extends Component
         $this->resetSelection();
 
         $this->operations = Operation::query()
-            ->with([
-                'spk',
-                'container.type',
-                'container.currentLocation',
-            ])
-            ->whereHas(
-                'container',
-                function ($query) use ($keyword) {
-                    $query->where(
-                        'no_cont',
-                        'like',
-                        '%' . $keyword . '%'
-                    );
-                }
-            )
-            ->whereHas(
-                'spk',
-                function ($query) {
-                    $query->whereHas(
-                        'containers',
-                        function ($query) {
-                            $query->where(
-                                'status',
-                                '460'
-                            );
-                        }
-                    );
-                }
-            )
+            ->with(['spk', 'container.type', 'container.currentLocation'])
+            ->whereHas('container', function ($query) use ($keyword) {
+                $query->where('no_cont', 'like', '%' . $keyword . '%');
+            })
+            ->whereHas('spk', function ($query) {
+                $query->whereHas('containers', function ($query) {
+                    $query->where('status', 'READY');
+                });
+            })
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MAX(id)')
+                    ->from('operations')
+                    ->groupBy('container_id');
+            })
             ->orderByDesc('id')
             ->get();
 
@@ -235,12 +230,12 @@ class Inspection extends Component
 
                     if (
                         (string) $spkContainer->status
-                        !== '460'
+                        !== 'READY'
                     ) {
                         throw ValidationException::withMessages(
                             [
                                 'searchCont' =>
-                                    'Container tidak berada pada status 460.',
+                                    'Container tidak berada pada status READY.',
                             ]
                         );
                     }
@@ -707,6 +702,135 @@ class Inspection extends Component
         }
     }
 
+    // === TAMBAHAN: LANJUT BEHANDLE 2 ===
+
+    public function openBehandle2Form(): void
+    {
+        if (!$this->inspection || $this->inspection->status !== 'DONE') {
+            return;
+        }
+
+        $jenisKegiatan = (string) ($this->jobSlip?->gatepass?->jenis_kegiatan ?? '');
+
+        if ($jenisKegiatan !== '1') {
+            $this->messageType = 'danger';
+            $this->message = 'Fitur lanjut Behandle 2 hanya berlaku untuk Behandle 1.';
+
+            return;
+        }
+
+        $this->showBehandle2Form = true;
+    }
+
+    public function cancelBehandle2Form(): void
+    {
+        $this->showBehandle2Form = false;
+
+        $this->b2NoDok = '';
+        $this->b2JnsDok = '';
+        $this->b2TglDok = null;
+
+        $this->resetErrorBag([
+            'b2NoDok',
+            'b2JnsDok',
+            'b2TglDok',
+        ]);
+    }
+
+    public function createBehandle2(): void
+    {
+        if (!$this->selectedOperation) {
+            $this->messageType = 'danger';
+            $this->message = 'Container belum dipilih.';
+
+            return;
+        }
+
+        $this->validate(
+            [
+                'b2NoDok' => ['required', 'string', 'max:100'],
+                'b2JnsDok' => ['required', 'string', 'max:50'],
+                'b2TglDok' => ['required', 'date'],
+            ],
+            [
+                'b2NoDok.required' => 'No Dokumen wajib diisi.',
+                'b2JnsDok.required' => 'Jenis Dokumen wajib diisi.',
+                'b2TglDok.required' => 'Tanggal Dokumen wajib diisi.',
+            ]
+        );
+
+        try {
+            DB::transaction(function () {
+                $operation = Operation::query()
+                    ->with(['spk', 'container'])
+                    ->lockForUpdate()
+                    ->find($this->selectedOperation->id);
+
+                if (!$operation) {
+                    throw ValidationException::withMessages([
+                        'b2NoDok' => 'Data operation tidak ditemukan.',
+                    ]);
+                }
+
+                $container = $operation->container;
+
+                if (!$container) {
+                    throw ValidationException::withMessages([
+                        'b2NoDok' => 'Container tidak ditemukan.',
+                    ]);
+                }
+
+                $spkContainer = $operation->spk
+                    ->containers()
+                    ->where('container_id', $container->id)
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$spkContainer) {
+                    throw ValidationException::withMessages([
+                        'b2NoDok' => 'SPK Container tidak ditemukan.',
+                    ]);
+                }
+
+                // TODO: sesuaikan nama kolom dengan migration tabel `gatepasses`
+                $gatepass = Gatepass::create([
+                    'no_cont' => $container->no_cont,
+                    'no_dok' => strtoupper(trim($this->b2NoDok)),
+                    'jns_dok' => strtoupper(trim($this->b2JnsDok)),
+                    'tgl_dok' => $this->b2TglDok,
+                    'jenis_kegiatan' => '2',
+                    'status' => 'WAITING',
+                    'fl_active' => 'Y',
+                ]);
+
+                // TODO: sesuaikan nama kolom dengan migration tabel `job_slips`
+                JobSlip::create([
+                    'spk_container_id' => $spkContainer->id,
+                    'gatepass_id' => $gatepass->id,
+                    'job_type' => 'BEHANDLE 2',
+                    'status' => 'WAITING',
+                ]);
+            });
+
+            $this->cancelBehandle2Form();
+
+            $this->messageType = 'success';
+            $this->message = 'Gatepass & Job Slip BEHANDLE 2 berhasil dibuat.';
+
+        } catch (ValidationException $e) {
+            $this->messageType = 'danger';
+
+            $this->message = collect($e->errors())->flatten()->first();
+
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->messageType = 'danger';
+            $this->message = 'Gagal membuat Gatepass Behandle 2.';
+        }
+    }
+
     protected function loadCurrentInspection(): void
     {
         if (!$this->selectedOperation) {
@@ -805,6 +929,12 @@ class Inspection extends Component
         $this->message = null;
 
         $this->messageType = null;
+
+        $this->showBehandle2Form = false;
+
+        $this->b2NoDok = '';
+        $this->b2JnsDok = '';
+        $this->b2TglDok = null;
     }
 
     protected function resetState(): void

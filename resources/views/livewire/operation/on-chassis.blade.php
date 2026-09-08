@@ -1,804 +1,330 @@
-@props(['message' => null, 'messageType' => null])
+<div class="min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-white">
 
-<div class="min-h-screen bg-[#f8f9ff] text-[#0b1c30] antialiased">
+    <div class="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
 
-    {{-- ============================================================
-        SIDEBAR
-    ============================================================= --}}
+        {{-- ============================================================
+            HEADER
+        ============================================================= --}}
 
-    <aside
-        class="fixed left-0 top-0 z-40 hidden h-screen w-[260px]
-               flex-col overflow-y-auto
-               border-r border-[#c3c6d7]/20
-               bg-[#213145] md:flex"
-    >
+        <header class="mb-5 flex items-center justify-between gap-3">
 
-        {{-- BRAND --}}
-
-        <div
-            class="border-b border-[#c3c6d7]/10 p-6"
-        >
-
-            <h1 class="text-base font-bold text-[#dbe1ff]">
-                PortOps Central
-            </h1>
-
-            <p class="text-[13px] text-[#bec6e0]">
-                Terminal A-101
-            </p>
-
-        </div>
-
-
-        {{-- NAVIGATION --}}
-
-        <nav class="flex flex-1 flex-col py-4">
-
-            {{-- DASHBOARD --}}
-
-            <a
-                href="{{ route('home') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    dashboard
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    Dashboard
-                </span>
-
-            </a>
-
-
-            {{-- SECTION --}}
-
-            <div
-                class="px-6 pb-2 pt-4
-                       text-[10px]
-                       font-semibold
-                       uppercase
-                       tracking-widest
-                       text-[#bec6e0]/50"
-            >
-                Operations
-            </div>
-
-
-            {{-- PICKUP --}}
-
-            <a
-                href="{{ route('operation.pickup') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    local_shipping
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    PICKUP
-                </span>
-
-            </a>
-
-
-            {{-- BEHANDLE IN --}}
-
-            <a
-                href="{{ route('operation.behandle-in') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    move_to_inbox
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    BEHANDLE IN
-                </span>
-
-            </a>
-
-
-            {{-- HOLD --}}
-
-            <a
-                href="{{ route('operation.hold') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    front_hand
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    HOLD
-                </span>
-
-            </a>
-
-
-            {{-- MARSHALLING CIC --}}
-
-            <a
-                href="{{ route('operation.marshallingcic') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    warehouse
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    MARSHALLING CIC
-                </span>
-
-            </a>
-
-
-            {{-- MARSHALLING YARD --}}
-
-            <a
-                href="{{ route('operation.marshalling-yard') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    location_on
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    MARSHALLING YARD
-                </span>
-
-            </a>
-
-
-            {{-- INSPECTION --}}
-
-            <a
-                href="{{ route('operation.inspection') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    fact_check
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    INSPECTION
-                </span>
-
-            </a>
-
-
-            {{-- PLUG REEFER --}}
-
-            <a
-                href="{{ route('operation.plug-reefer') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    ac_unit
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    PLUG REEFER
-                </span>
-
-            </a>
-
-
-            {{-- MONITORING REEFER --}}
-
-            <a
-                href="{{ route('operation.monitoring-reefer') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    thermostat
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    MONITORING REEFER
-                </span>
-
-            </a>
-
-
-            {{-- DELIVERY --}}
-
-            <a
-                href="{{ route('operation.delivery') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    local_shipping
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    DELIVERY
-                </span>
-
-            </a>
-
-
-            {{-- INSPECTION OUT --}}
-
-            <a
-                href="{{ route('operation.inspection-out') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    fact_check
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    INSPECTION OUT
-                </span>
-
-            </a>
-
-
-            {{-- =====================================================
-                ACTIVE ON CHASSIS
-            ====================================================== --}}
-
-            <a
-                href="{{ route('operation.on-chassis') }}"
-                class="flex items-center gap-4
-                       border-l-4
-                       border-[#004ac6]
-                       bg-[#2563eb]/10
-                       px-6 py-3
-                       font-bold
-                       text-[#dbe1ff]"
-            >
-
-                <span
-                    class="material-symbols-outlined"
-                    style="font-variation-settings:'FILL' 1;"
-                >
-                    directions_car
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    ON CHASSIS
-                </span>
-
-            </a>
-
-
-            {{-- COPY YARD --}}
-
-            <a
-                href="{{ route('operation.copy-yard') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    content_copy
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    COPY YARD
-                </span>
-
-            </a>
-
-
-            {{-- LOGOUT --}}
-
-            <div class="mt-auto">
+            <div class="flex min-w-0 items-center gap-3">
 
                 <a
-                    href="#"
-                    class="flex items-center gap-4
-                           border-l-4 border-transparent
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:bg-[#d3e4fe]/10"
+                    href="{{ route('home') }}"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+                           border border-slate-200 bg-white text-slate-700 shadow-sm
+                           transition hover:bg-slate-50
+                           dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200
+                           dark:hover:bg-slate-800"
+                    aria-label="Kembali ke dashboard"
                 >
 
                     <span class="material-symbols-outlined">
-                        logout
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        Logout
+                        arrow_back
                     </span>
 
                 </a>
 
+
+                <div class="min-w-0">
+
+                    <div class="flex items-center gap-2">
+
+                        <span
+                            class="material-symbols-outlined
+                                   text-[22px] text-blue-600
+                                   dark:text-blue-400"
+                        >
+                            directions_car
+                        </span>
+
+
+                        <h1
+                            class="truncate text-lg font-black
+                                   tracking-tight sm:text-xl"
+                        >
+                            ON CHASSIS
+                        </h1>
+
+                    </div>
+
+
+                    <p
+                        class="mt-0.5 truncate text-xs
+                               text-slate-500 dark:text-slate-400"
+                    >
+                        Proses container untuk ditempatkan pada chassis
+                    </p>
+
+                </div>
+
             </div>
 
-        </nav>
 
-    </aside>
-
-
-
-    {{-- ============================================================
-        MAIN
-    ============================================================= --}}
-
-    <div class="min-h-screen md:ml-[260px]">
-
-
-        {{-- ========================================================
-            HEADER
-        ========================================================= --}}
-
-        <header
-            class="sticky top-0 z-30
-                   flex h-14 items-center
-                   justify-between
-                   border-b
-                   border-[#c3c6d7]/30
-                   bg-[#f8f9ff]
-                   px-4 sm:px-6"
-        >
-
-            <h1
-                class="text-base
-                       font-black
-                       text-[#0b1c30]
-                       md:hidden"
+            <span
+                class="hidden shrink-0 rounded-full
+                       bg-blue-50 px-3 py-1.5
+                       text-[10px] font-bold
+                       uppercase tracking-wider
+                       text-blue-700
+                       sm:inline-flex
+                       dark:bg-blue-950/50
+                       dark:text-blue-300"
             >
-                PortOps Central
-            </h1>
-
-
-            <div class="hidden sm:block">
-
-                <div class="relative">
-
-                    <span
-                        class="material-symbols-outlined
-                               absolute left-2 top-1/2
-                               -translate-y-1/2
-                               text-[18px]
-                               text-[#737686]"
-                    >
-                        search
-                    </span>
-
-
-                    <input
-                        type="text"
-                        placeholder="Search operations..."
-                        class="w-64 rounded
-                               border
-                               border-[#c3c6d7]/50
-                               bg-[#eff4ff]
-                               py-1 pl-8 pr-4
-                               text-[13px]
-                               outline-none
-                               focus:border-[#004ac6]"
-                    >
-
-                </div>
-
-            </div>
-
-
-            <div class="flex items-center gap-3">
-
-                <span
-                    class="material-symbols-outlined
-                           text-[#434655]"
-                >
-                    notifications
-                </span>
-
-                <div
-                    class="h-6 w-px
-                           bg-[#c3c6d7]/30"
-                ></div>
-
-                <div
-                    class="flex h-8 w-8
-                           items-center
-                           justify-center
-                           rounded-full
-                           bg-[#2563eb]"
-                >
-
-                    <span
-                        class="material-symbols-outlined
-                               text-white"
-                    >
-                        person
-                    </span>
-
-                </div>
-
-            </div>
+                ON CHASSIS
+            </span>
 
         </header>
 
 
 
-        {{-- ========================================================
-            CONTENT
-        ========================================================= --}}
+        {{-- ============================================================
+            SEARCH
+        ============================================================= --}}
 
-        <main
-            class="min-h-[calc(100vh-56px)]
-                   p-4 sm:p-6"
+        <section
+            class="mb-5 rounded-2xl
+                   border border-slate-200
+                   bg-white p-4 shadow-sm
+                   sm:p-5
+                   dark:border-slate-800
+                   dark:bg-slate-900"
         >
 
+            <div class="mb-4 flex items-center gap-3">
 
-            {{-- ====================================================
-                TITLE
-            ===================================================== --}}
+                <div
+                    class="flex h-11 w-11 shrink-0
+                           items-center justify-center
+                           rounded-xl
+                           bg-blue-50 text-blue-600
+                           dark:bg-blue-950/50
+                           dark:text-blue-400"
+                >
 
-            <div class="mb-6">
-
-                <div class="flex items-center gap-2">
-
-                    <span
-                        class="material-symbols-outlined
-                               text-[24px]
-                               text-[#004ac6]"
-                    >
-                        directions_car
+                    <span class="material-symbols-outlined">
+                        search
                     </span>
-
-
-                    <h1
-                        class="text-2xl
-                               font-semibold
-                               tracking-tight"
-                    >
-                        ON CHASSIS
-                    </h1>
 
                 </div>
 
 
-                <p
-                    class="mt-2 text-sm
-                           text-[#434655]"
-                >
-                    Proses container untuk ditempatkan pada chassis.
-                </p>
+                <div class="min-w-0">
+
+                    <h2 class="text-sm font-bold sm:text-base">
+                        Search No Container
+                    </h2>
+
+
+                    <p
+                        class="text-xs
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Masukkan nomor container untuk mencari data.
+                    </p>
+
+                </div>
 
             </div>
 
 
-
-            {{-- ====================================================
-                SEARCH CARD
-            ===================================================== --}}
-
-            <div
-                class="mb-6 rounded-xl
-                       border
-                       border-[#c3c6d7]/30
-                       bg-white
-                       p-5
-                       shadow-sm sm:p-6"
-            >
+            <form wire:submit="search">
 
                 <div
-                    class="mb-5 flex
-                           items-center gap-3"
+                    class="flex flex-col gap-3
+                           sm:flex-row sm:items-end"
                 >
 
-                    <div
-                        class="flex h-10 w-10
-                               items-center
-                               justify-center
-                               rounded-lg
-                               bg-[#d3e4fe]
-                               text-[#004ac6]"
+                    {{-- INPUT --}}
+
+                    <div class="w-full">
+
+                        <label
+                            for="searchCont"
+                            class="mb-2 block
+                                   text-[11px]
+                                   font-bold uppercase
+                                   tracking-wider
+                                   text-slate-600
+                                   dark:text-slate-300"
+                        >
+                            No Container
+                        </label>
+
+
+                        <input
+                            id="searchCont"
+                            type="text"
+                            wire:model="searchCont"
+                            autofocus
+                            autocomplete="off"
+                            placeholder="SEARCH NO CONT"
+                            class="h-12 w-full rounded-xl
+                                   border border-slate-300
+                                   bg-white px-4
+                                   text-sm font-semibold
+                                   uppercase outline-none
+                                   transition
+                                   focus:border-blue-600
+                                   focus:ring-2
+                                   focus:ring-blue-100
+                                   dark:border-slate-700
+                                   dark:bg-slate-950
+                                   dark:text-white
+                                   dark:focus:border-blue-500
+                                   dark:focus:ring-blue-950"
+                        >
+
+
+                        @error('searchCont')
+
+                            <p
+                                class="mt-2 text-xs
+                                       font-medium
+                                       text-red-600
+                                       dark:text-red-400"
+                            >
+                                {{ $message }}
+                            </p>
+
+                        @enderror
+
+                    </div>
+
+
+                    {{-- SEARCH BUTTON --}}
+
+                    <button
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        class="inline-flex h-12 w-full
+                               shrink-0 items-center
+                               justify-center gap-2
+                               rounded-xl bg-blue-600
+                               px-5 text-sm font-bold
+                               text-white transition
+                               hover:bg-blue-700
+                               disabled:cursor-not-allowed
+                               disabled:opacity-50
+                               sm:w-auto"
                     >
 
-                        <span class="material-symbols-outlined">
+                        <span
+                            class="material-symbols-outlined text-[20px]"
+                            wire:loading.remove
+                            wire:target="search"
+                        >
                             search
                         </span>
 
-                    </div>
 
-
-                    <div>
-
-                        <h2
-                            class="text-base
-                                   font-semibold"
+                        <span
+                            wire:loading.remove
+                            wire:target="search"
                         >
-                            Search No Container
-                        </h2>
+                            SEARCH
+                        </span>
 
 
-                        <p
-                            class="text-xs
-                                   text-[#737686]"
+                        <span
+                            wire:loading
+                            wire:target="search"
                         >
-                            Masukkan nomor container untuk mencari data.
-                        </p>
+                            SEARCHING...
+                        </span>
 
-                    </div>
-
-                </div>
+                    </button>
 
 
-                <form wire:submit="search">
+                    {{-- RESET --}}
 
-                    <div
-                        class="flex flex-col
-                               gap-3
-                               sm:flex-row
-                               sm:items-end"
-                    >
-
-                        <div
-                            class="w-full
-                                   sm:max-w-md"
-                        >
-
-                            <label
-                                for="searchCont"
-                                class="mb-2 block
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
-                            >
-                                No Container
-                            </label>
-
-
-                            <input
-                                id="searchCont"
-                                type="text"
-                                wire:model="searchCont"
-                                autofocus
-                                autocomplete="off"
-                                placeholder="SEARCH NO CONT"
-                                class="w-full rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-white
-                                       px-4 py-2.5
-                                       text-sm
-                                       outline-none
-                                       focus:border-[#004ac6]
-                                       focus:ring-2
-                                       focus:ring-[#b4c5ff]"
-                            >
-
-
-                            @error('searchCont')
-
-                                <p
-                                    class="mt-2 text-xs
-                                           text-[#ba1a1a]"
-                                >
-                                    {{ $message }}
-                                </p>
-
-                            @enderror
-
-                        </div>
-
+                    @if(
+                        $searchCont !== ''
+                        || $hasSearched
+                    )
 
                         <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            class="inline-flex
-                                   items-center
-                                   justify-center
-                                   gap-2
-                                   rounded-lg
-                                   bg-[#004ac6]
-                                   px-5 py-2.5
-                                   text-sm
-                                   font-semibold
-                                   text-white
-                                   hover:bg-[#003ea8]
-                                   disabled:opacity-50"
+                            type="button"
+                            wire:click="resetSearch"
+                            class="inline-flex h-12 w-full
+                                   shrink-0 items-center
+                                   justify-center gap-2
+                                   rounded-xl border
+                                   border-slate-300
+                                   bg-white px-5
+                                   text-sm font-bold
+                                   text-slate-700 transition
+                                   hover:bg-slate-50
+                                   dark:border-slate-700
+                                   dark:bg-slate-950
+                                   dark:text-slate-200
+                                   dark:hover:bg-slate-800
+                                   sm:w-auto"
                         >
 
                             <span
-                                wire:loading.remove
-                                wire:target="search"
+                                class="material-symbols-outlined
+                                       text-[20px]"
                             >
-                                SEARCH
+                                refresh
                             </span>
 
-
-                            <span
-                                wire:loading
-                                wire:target="search"
-                            >
-                                SEARCHING...
-                            </span>
+                            RESET
 
                         </button>
 
+                    @endif
 
-                        @if(
-                            $searchCont !== ''
-                            || $hasSearched
-                        )
+                </div>
 
-                            <button
-                                type="button"
-                                wire:click="resetSearch"
-                                class="inline-flex
-                                       items-center
-                                       justify-center
-                                       gap-2
-                                       rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-white
-                                       px-5 py-2.5
-                                       text-sm
-                                       font-semibold
-                                       text-[#434655]
-                                       hover:bg-[#eff4ff]"
-                            >
+            </form>
 
-                                <span
-                                    class="material-symbols-outlined
-                                           text-[18px]"
-                                >
-                                    refresh
-                                </span>
-
-                                RESET
-
-                            </button>
-
-                        @endif
-
-                    </div>
-
-                </form>
-
-            </div>
+        </section>
 
 
 
-            {{-- ====================================================
-                MESSAGE
-            ===================================================== --}}
+        {{-- ============================================================
+            MESSAGE
+        ============================================================= --}}
 
-            @isset($message)
+        @isset($message)
+
             @if($message)
 
                 <div
-                    class="mb-6 rounded-lg
-                           border px-4 py-3
+                    class="mb-5 rounded-xl border px-4 py-3
 
-                           @if($messageType === 'danger')
-                               border-[#ba1a1a]/30
-                               bg-[#ffdad6]
-                               text-[#93000a]
-                           @elseif($messageType === 'success')
-                               border-[#146c2e]/30
-                               bg-[#d9f7df]
-                               text-[#146c2e]
-                           @else
-                               border-[#004ac6]/20
-                               bg-[#d3e4fe]
-                               text-[#003ea8]
-                           @endif"
+                    @if($messageType === 'danger')
+                        border-red-200
+                        bg-red-50
+                        text-red-800
+                        dark:border-red-900/50
+                        dark:bg-red-950/40
+                        dark:text-red-300
+
+                    @elseif($messageType === 'success')
+                        border-green-200
+                        bg-green-50
+                        text-green-800
+                        dark:border-green-900/50
+                        dark:bg-green-950/40
+                        dark:text-green-300
+
+                    @else
+                        border-blue-200
+                        bg-blue-50
+                        text-blue-800
+                        dark:border-blue-900/50
+                        dark:bg-blue-950/40
+                        dark:text-blue-300
+                    @endif"
                 >
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-start gap-3">
 
-                        <span class="material-symbols-outlined">
+                        <span class="material-symbols-outlined shrink-0">
 
                             @if($messageType === 'danger')
                                 error
@@ -813,7 +339,8 @@
 
                         <p
                             class="text-sm
-                                   font-semibold"
+                                   font-semibold
+                                   leading-5"
                         >
                             {{ $message }}
                         </p>
@@ -823,523 +350,105 @@
                 </div>
 
             @endif
-            @endisset
+
+        @endisset
 
 
 
-            {{-- ====================================================
-                DATA TABLE
-            ===================================================== --}}
+        {{-- ============================================================
+            DATA CONTAINER
+        ============================================================= --}}
+
+        <section
+            class="overflow-hidden rounded-2xl
+                   border border-slate-200
+                   bg-white shadow-sm
+                   dark:border-slate-800
+                   dark:bg-slate-900"
+        >
+
+            {{-- HEADER --}}
 
             <div
-                class="overflow-hidden
-                       rounded-xl
-                       border
-                       border-[#c3c6d7]/30
-                       bg-white
-                       shadow-sm"
+                class="border-b border-slate-200
+                       p-4
+                       dark:border-slate-800
+                       sm:p-5"
             >
 
-                {{-- HEADER TABLE --}}
+                <div class="flex items-center justify-between gap-3">
 
-                <div
-                    class="border-b
-                           border-[#c3c6d7]/30
-                           px-5 py-4
-                           sm:px-6"
-                >
+                    <div class="flex min-w-0 items-center gap-3">
 
-                    <div
-                        class="flex items-center
-                               justify-between"
-                    >
+                        <div
+                            class="flex h-11 w-11 shrink-0
+                                   items-center justify-center
+                                   rounded-xl
+                                   bg-blue-50
+                                   text-blue-600
+                                   dark:bg-blue-950/50
+                                   dark:text-blue-400"
+                        >
 
-                        <div>
+                            <span class="material-symbols-outlined">
+                                inventory_2
+                            </span>
+
+                        </div>
+
+
+                        <div class="min-w-0">
 
                             <h2
-                                class="text-base
-                                       font-semibold"
+                                class="text-sm font-bold
+                                       sm:text-base"
                             >
                                 Data Container
                             </h2>
 
 
                             <p
-                                class="mt-1 text-xs
-                                       text-[#737686]"
+                                class="mt-0.5 text-xs
+                                       text-slate-500
+                                       dark:text-slate-400"
                             >
-                                Container yang tersedia untuk proses ON CHASSIS.
-                            </p>
-
-                        </div>
-
-
-                        <div
-                            class="rounded-lg
-                                   bg-[#eff4ff]
-                                   px-4 py-2
-                                   text-center"
-                        >
-
-                            <p
-                                class="text-[10px]
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#737686]"
-                            >
-                                Total
-                            </p>
-
-
-                            <p
-                                class="text-lg
-                                       font-bold
-                                       text-[#004ac6]"
-                            >
-                                {{ count($operations ?? []) }}
+                                Container tersedia untuk ON CHASSIS.
                             </p>
 
                         </div>
 
                     </div>
 
-                </div>
 
+                    {{-- TOTAL --}}
 
-
-                {{-- =================================================
-                    TABLE
-                ================================================== --}}
-
-                <div class="overflow-x-auto">
-
-                    <table
-                        class="min-w-full
-                               text-left"
+                    <div
+                        class="shrink-0 rounded-xl
+                               bg-blue-50 px-3 py-2
+                               text-center
+                               dark:bg-blue-950/50"
                     >
 
-                        <thead
-                            class="bg-[#eff4ff]"
+                        <p
+                            class="text-[9px]
+                                   font-bold uppercase
+                                   tracking-wider
+                                   text-slate-500
+                                   dark:text-slate-400"
                         >
-
-                            <tr>
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-[10px]
-                                           font-bold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#434655]"
-                                >
-                                    No Kontainer
-                                </th>
+                            Total
+                        </p>
 
 
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-[10px]
-                                           font-bold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#434655]"
-                                >
-                                    Ukuran
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-[10px]
-                                           font-bold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#434655]"
-                                >
-                                    No Truck
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-[10px]
-                                           font-bold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#434655]"
-                                >
-                                    Lokasi
-                                </th>
-
-
-                                <th
-                                    class="whitespace-nowrap
-                                           px-5 py-3
-                                           text-[10px]
-                                           font-bold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#434655]"
-                                >
-                                    Proses
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-
-                        <tbody
-                            class="divide-y
-                                   divide-[#c3c6d7]/20"
+                        <p
+                            class="text-lg font-black
+                                   leading-5 text-blue-600
+                                   dark:text-blue-400"
                         >
+                            {{ count($operations ?? []) }}
+                        </p>
 
-                            @forelse(
-                                $operations ?? []
-                                as $operation
-                            )
-
-                                @php
-
-                                    $container =
-                                        $operation->container;
-
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | NO CONTAINER
-                                    |--------------------------------------------------------------------------
-                                    */
-
-                                    $noContainer =
-                                        $container?->no_cont
-                                        ?? '-';
-
-
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | UKURAN
-                                    |--------------------------------------------------------------------------
-                                    */
-
-                                    $ukuran =
-                                        $container?->ukr_cont
-                                        ?? $container?->ukuran
-                                        ?? $container?->size
-                                        ?? '-';
-
-
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | NO TRUCK
-                                    |--------------------------------------------------------------------------
-                                    */
-
-                                    $noTruck =
-                                        $operation
-                                            ->chassis
-                                            ?->no_truck
-                                        ?? $operation
-                                            ->chassis
-                                            ?->truck_no
-                                        ?? $operation
-                                            ->no_truck
-                                        ?? $operation
-                                            ->truck_no
-                                        ?? '-';
-
-
-                                    /*
-                                    |--------------------------------------------------------------------------
-                                    | LOKASI
-                                    |--------------------------------------------------------------------------
-                                    */
-
-                                    $location =
-                                        $container
-                                            ?->currentLocation;
-
-
-                                    if ($location) {
-
-                                        if (
-                                            !empty(
-                                                $location->location_code
-                                            )
-                                        ) {
-
-                                            $lokasi =
-                                                $location
-                                                    ->location_code;
-
-                                        } else {
-
-                                            $lokasi =
-                                                trim(
-                                                    ($location->block ?? '')
-                                                    .
-                                                    ($location->slot ?? '')
-                                                );
-
-                                            if (
-                                                !empty(
-                                                    $location->tier
-                                                )
-                                            ) {
-
-                                                $lokasi .=
-                                                    '0'
-                                                    .
-                                                    $location->tier;
-                                            }
-
-                                            if (
-                                                $lokasi === ''
-                                            ) {
-
-                                                $lokasi = '-';
-
-                                            }
-
-                                        }
-
-                                    } else {
-
-                                        $lokasi = '-';
-
-                                    }
-
-                                @endphp
-
-
-                                <tr
-                                    class="hover:bg-[#f8f9ff]"
-                                >
-
-                                    {{-- NO CONTAINER --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4"
-                                    >
-
-                                        <input
-                                            type="text"
-                                            readonly
-                                            value="{{ $noContainer }}"
-                                            class="w-full
-                                                   min-w-[160px]
-                                                   rounded-lg
-                                                   border
-                                                   border-[#c3c6d7]
-                                                   bg-[#eff4ff]
-                                                   px-3 py-2
-                                                   text-sm
-                                                   font-semibold
-                                                   text-[#0b1c30]"
-                                        >
-
-                                    </td>
-
-
-                                    {{-- UKURAN --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4"
-                                    >
-
-                                        <input
-                                            type="text"
-                                            readonly
-                                            value="{{ $ukuran }}"
-                                            class="w-full
-                                                   min-w-[100px]
-                                                   rounded-lg
-                                                   border
-                                                   border-[#c3c6d7]
-                                                   bg-[#eff4ff]
-                                                   px-3 py-2
-                                                   text-sm
-                                                   font-semibold
-                                                   text-[#0b1c30]"
-                                        >
-
-                                    </td>
-
-
-                                    {{-- NO TRUCK --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4"
-                                    >
-
-                                        <input
-                                            type="text"
-                                            readonly
-                                            value="{{ $noTruck }}"
-                                            class="w-full
-                                                   min-w-[140px]
-                                                   rounded-lg
-                                                   border
-                                                   border-[#c3c6d7]
-                                                   bg-[#eff4ff]
-                                                   px-3 py-2
-                                                   text-sm
-                                                   font-semibold
-                                                   text-[#0b1c30]"
-                                        >
-
-                                    </td>
-
-
-                                    {{-- LOKASI --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4"
-                                    >
-
-                                        <input
-                                            type="text"
-                                            readonly
-                                            value="{{ $lokasi }}"
-                                            class="w-full
-                                                   min-w-[130px]
-                                                   rounded-lg
-                                                   border
-                                                   border-[#c3c6d7]
-                                                   bg-[#eff4ff]
-                                                   px-3 py-2
-                                                   text-sm
-                                                   font-semibold
-                                                   text-[#0b1c30]"
-                                        >
-
-                                    </td>
-
-
-                                    {{-- PROSES --}}
-
-                                    <td
-                                        class="whitespace-nowrap
-                                               px-5 py-4"
-                                    >
-
-                                        <button
-                                            type="button"
-                                            wire:click="onChassis({{ $operation->id }})"
-                                            wire:loading.attr="disabled"
-                                            wire:target="onChassis({{ $operation->id }})"
-                                            class="inline-flex
-                                                   items-center
-                                                   justify-center
-                                                   gap-2
-                                                   rounded-lg
-                                                   bg-[#004ac6]
-                                                   px-5 py-2.5
-                                                   text-sm
-                                                   font-semibold
-                                                   text-white
-                                                   hover:bg-[#003ea8]
-                                                   disabled:opacity-50"
-                                        >
-
-                                            <span
-                                                class="material-symbols-outlined
-                                                       text-[18px]"
-                                            >
-                                                directions_car
-                                            </span>
-
-
-                                            <span
-                                                wire:loading.remove
-                                                wire:target="onChassis({{ $operation->id }})"
-                                            >
-                                                ON CHASSES
-                                            </span>
-
-
-                                            <span
-                                                wire:loading
-                                                wire:target="onChassis({{ $operation->id }})"
-                                            >
-                                                PROCESS...
-                                            </span>
-
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
-                            @empty
-
-                                {{-- =================================================
-                                    EMPTY TABLE
-                                ================================================== --}}
-
-                                <tr>
-
-                                    <td
-                                        colspan="5"
-                                        class="px-5 py-14
-                                               text-center"
-                                    >
-
-                                        <div
-                                            class="mx-auto
-                                                   flex h-14 w-14
-                                                   items-center
-                                                   justify-center
-                                                   rounded-full
-                                                   bg-[#eff4ff]
-                                                   text-[#004ac6]"
-                                        >
-
-                                            <span
-                                                class="material-symbols-outlined
-                                                       text-[28px]"
-                                            >
-                                                directions_car
-                                            </span>
-
-                                        </div>
-
-
-                                        <p
-                                            class="mt-4 text-sm
-                                                   font-semibold
-                                                   text-[#434655]"
-                                        >
-                                            Belum ada data container
-                                        </p>
-
-
-                                        <p
-                                            class="mt-1 text-xs
-                                                   text-[#737686]"
-                                        >
-                                            Data container akan muncul
-                                            setelah pencarian dilakukan.
-                                        </p>
-
-                                    </td>
-
-                                </tr>
-
-                            @endforelse
-
-                        </tbody>
-
-                    </table>
+                    </div>
 
                 </div>
 
@@ -1347,230 +456,742 @@
 
 
 
-            {{-- ====================================================
-                SELECTED OPERATION
-            ===================================================== --}}
+            {{-- ========================================================
+                MOBILE / DESKTOP CARDS
+            ========================================================= --}}
 
-            @if($selectedOperation)
+            <div class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 sm:p-5">
 
-                <div
-                    class="mt-6 overflow-hidden
-                           rounded-xl
-                           border
-                           border-[#c3c6d7]/30
-                           bg-white
-                           shadow-sm"
-                >
+                @forelse(
+                    $operations ?? []
+                    as $operation
+                )
 
-                    <div
-                        class="border-b
-                               border-[#c3c6d7]/30
-                               px-5 py-4
-                               sm:px-6"
+                    @php
+
+                        $container =
+                            $operation->container;
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | NO CONTAINER
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $noContainer =
+                            $container?->no_cont
+                            ?? '-';
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | UKURAN
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $ukuran =
+                            $container?->ukr_cont
+                            ?? $container?->ukuran
+                            ?? $container?->size
+                            ?? $container?->type?->name
+                            ?? '-';
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | NO TRUCK
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $noTruck =
+                            $operation
+                                ->chassis
+                                ?->no_truck
+                            ?? $operation
+                                ->chassis
+                                ?->truck_no
+                            ?? $operation
+                                ->no_truck
+                            ?? $operation
+                                ->truck_no
+                            ?? '-';
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | LOKASI
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $location =
+                            $container
+                                ?->currentLocation;
+
+
+                        if ($location) {
+
+                            if (
+                                !empty(
+                                    $location->location_code
+                                )
+                            ) {
+
+                                $lokasi =
+                                    $location
+                                        ->location_code;
+
+                            } else {
+
+                                $lokasi =
+                                    trim(
+                                        ($location->block ?? '')
+                                        .
+                                        ($location->slot ?? '')
+                                    );
+
+
+                                if (
+                                    !empty(
+                                        $location->tier
+                                    )
+                                ) {
+
+                                    $lokasi .=
+                                        '0'
+                                        .
+                                        $location->tier;
+
+                                }
+
+
+                                if (
+                                    $lokasi === ''
+                                ) {
+
+                                    $lokasi = '-';
+
+                                }
+
+                            }
+
+                        } else {
+
+                            $lokasi = '-';
+
+                        }
+
+                    @endphp
+
+
+                    {{-- =================================================
+                        CONTAINER CARD
+                    ================================================== --}}
+
+                    <article
+                        wire:key="on-chassis-{{ $operation->id }}"
+                        class="overflow-hidden rounded-2xl
+                               border border-slate-200
+                               bg-white transition
+                               hover:border-blue-300
+                               dark:border-slate-700
+                               dark:bg-slate-950
+                               dark:hover:border-blue-700"
                     >
 
+                        {{-- CARD HEADER --}}
+
                         <div
-                            class="flex items-center
-                                   gap-3"
+                            class="flex items-start
+                                   justify-between gap-3
+                                   border-b
+                                   border-slate-200
+                                   p-4
+                                   dark:border-slate-800"
                         >
 
-                            <span
-                                class="material-symbols-outlined
-                                       text-[#004ac6]"
-                            >
-                                directions_car
-                            </span>
+                            <div class="min-w-0">
 
-
-                            <div>
-
-                                <h2
-                                    class="text-base
-                                           font-semibold"
+                                <p
+                                    class="mb-1 text-[10px]
+                                           font-bold uppercase
+                                           tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
                                 >
-                                    Container Terpilih
-                                </h2>
+                                    No Container
+                                </p>
 
 
                                 <p
-                                    class="mt-1 text-xs
-                                           text-[#737686]"
+                                    class="break-all text-xl
+                                           font-black tracking-tight
+                                           text-slate-900
+                                           dark:text-white"
                                 >
-                                    Detail operation yang dipilih.
+                                    {{ $noContainer }}
                                 </p>
+
+                            </div>
+
+
+                            <span
+                                class="inline-flex shrink-0
+                                       items-center gap-1.5
+                                       rounded-full
+                                       bg-blue-50 px-2.5 py-1.5
+                                       text-[9px] font-bold
+                                       uppercase tracking-wider
+                                       text-blue-700
+                                       dark:bg-blue-950/50
+                                       dark:text-blue-300"
+                            >
+
+                                <span
+                                    class="h-1.5 w-1.5 rounded-full
+                                           bg-blue-600
+                                           dark:bg-blue-400"
+                                ></span>
+
+                                READY
+
+                            </span>
+
+                        </div>
+
+
+
+                        {{-- CARD DATA --}}
+
+                        <div class="grid grid-cols-2 gap-3 p-4">
+
+                            {{-- UKURAN --}}
+
+                            <div
+                                class="rounded-xl
+                                       bg-slate-50 p-3
+                                       dark:bg-slate-900"
+                            >
+
+                                <p
+                                    class="text-[9px]
+                                           font-bold uppercase
+                                           tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    Ukuran
+                                </p>
+
+
+                                <p
+                                    class="mt-1 break-words
+                                           text-sm font-bold
+                                           text-slate-800
+                                           dark:text-slate-100"
+                                >
+                                    {{ $ukuran }}
+                                </p>
+
+                            </div>
+
+
+                            {{-- NO TRUCK --}}
+
+                            <div
+                                class="rounded-xl
+                                       bg-slate-50 p-3
+                                       dark:bg-slate-900"
+                            >
+
+                                <p
+                                    class="text-[9px]
+                                           font-bold uppercase
+                                           tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    No Truck
+                                </p>
+
+
+                                <p
+                                    class="mt-1 break-words
+                                           text-sm font-bold
+                                           text-slate-800
+                                           dark:text-slate-100"
+                                >
+                                    {{ $noTruck }}
+                                </p>
+
+                            </div>
+
+
+                            {{-- LOKASI --}}
+
+                            <div
+                                class="col-span-2 rounded-xl
+                                       bg-slate-50 p-3
+                                       dark:bg-slate-900"
+                            >
+
+                                <p
+                                    class="text-[9px]
+                                           font-bold uppercase
+                                           tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    Lokasi
+                                </p>
+
+
+                                <div
+                                    class="mt-1 flex items-center gap-2"
+                                >
+
+                                    <span
+                                        class="material-symbols-outlined
+                                               text-[18px]
+                                               text-blue-600
+                                               dark:text-blue-400"
+                                    >
+                                        location_on
+                                    </span>
+
+
+                                    <p
+                                        class="break-words
+                                               text-sm font-bold
+                                               text-slate-800
+                                               dark:text-slate-100"
+                                    >
+                                        {{ $lokasi }}
+                                    </p>
+
+                                </div>
 
                             </div>
 
                         </div>
 
-                    </div>
 
+
+                        {{-- ACTION --}}
+
+                        <div
+                            class="border-t
+                                   border-slate-200
+                                   p-4
+                                   dark:border-slate-800"
+                        >
+
+                            <button
+                                type="button"
+                                wire:click="onChassis({{ $operation->id }})"
+                                wire:loading.attr="disabled"
+                                wire:target="onChassis({{ $operation->id }})"
+                                class="inline-flex h-12 w-full
+                                       items-center
+                                       justify-center gap-2
+                                       rounded-xl
+                                       bg-blue-600
+                                       px-5
+                                       text-sm font-black
+                                       text-white transition
+                                       hover:bg-blue-700
+                                       disabled:cursor-not-allowed
+                                       disabled:opacity-50"
+                            >
+
+                                <span
+                                    class="material-symbols-outlined
+                                           text-[21px]"
+                                    wire:loading.remove
+                                    wire:target="onChassis({{ $operation->id }})"
+                                >
+                                    directions_car
+                                </span>
+
+
+                                <span
+                                    wire:loading.remove
+                                    wire:target="onChassis({{ $operation->id }})"
+                                >
+                                    ON CHASSIS
+                                </span>
+
+
+                                <span
+                                    wire:loading
+                                    wire:target="onChassis({{ $operation->id }})"
+                                >
+                                    PROCESSING...
+                                </span>
+
+                            </button>
+
+                        </div>
+
+                    </article>
+
+                @empty
+
+                    {{-- =================================================
+                        EMPTY
+                    ================================================== --}}
 
                     <div
-                        class="grid grid-cols-1
-                               gap-5 p-5
-                               sm:grid-cols-2
-                               sm:p-6"
+                        class="col-span-1 py-14
+                               text-center md:col-span-2"
                     >
 
-                        <div>
+                        <div
+                            class="mx-auto flex h-16 w-16
+                                   items-center justify-center
+                                   rounded-full
+                                   bg-slate-100
+                                   text-slate-500
+                                   dark:bg-slate-800
+                                   dark:text-slate-400"
+                        >
 
-                            <label
-                                class="mb-2 block
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
+                            <span
+                                class="material-symbols-outlined
+                                       text-[30px]"
                             >
-                                No Container
-                            </label>
+                                directions_car
+                            </span>
 
-                            <input
-                                type="text"
-                                readonly
-                                value="{{
+                        </div>
+
+
+                        <p
+                            class="mt-4 text-sm font-bold
+                                   text-slate-700
+                                   dark:text-slate-200"
+                        >
+                            Belum ada data container
+                        </p>
+
+
+                        <p
+                            class="mt-1 text-xs
+                                   text-slate-500
+                                   dark:text-slate-400"
+                        >
+                            Data container akan muncul
+                            setelah pencarian dilakukan.
+                        </p>
+
+                    </div>
+
+                @endforelse
+
+            </div>
+
+        </section>
+
+
+
+        {{-- ============================================================
+            SELECTED OPERATION
+        ============================================================= --}}
+
+        @if($selectedOperation)
+
+            <section
+                class="mt-5 overflow-hidden
+                       rounded-2xl
+                       border border-slate-200
+                       bg-white shadow-sm
+                       dark:border-slate-800
+                       dark:bg-slate-900"
+            >
+
+                {{-- HEADER --}}
+
+                <div
+                    class="border-b
+                           border-slate-200
+                           p-4
+                           dark:border-slate-800
+                           sm:p-5"
+                >
+
+                    <div
+                        class="flex flex-col gap-3
+                               sm:flex-row
+                               sm:items-center
+                               sm:justify-between"
+                    >
+
+                        <div class="min-w-0">
+
+                            <div class="mb-2 flex items-center gap-2">
+
+                                <span
+                                    class="material-symbols-outlined
+                                           text-[21px]
+                                           text-blue-600
+                                           dark:text-blue-400"
+                                >
+                                    directions_car
+                                </span>
+
+
+                                <span
+                                    class="text-[10px]
+                                           font-bold uppercase
+                                           tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    Container Terpilih
+                                </span>
+
+                            </div>
+
+
+                            <h2
+                                class="break-all text-2xl
+                                       font-black tracking-tight
+                                       text-slate-900
+                                       dark:text-white
+                                       sm:text-3xl"
+                            >
+                                {{
                                     $selectedOperation
                                         ->container
                                         ?->no_cont
                                     ?? '-'
-                                }}"
-                                class="w-full rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-[#eff4ff]
-                                       px-4 py-2.5
-                                       text-sm
-                                       font-semibold"
-                            >
+                                }}
+                            </h2>
 
                         </div>
 
 
-                        <div>
+                        <span
+                            class="inline-flex w-fit
+                                   items-center gap-1.5
+                                   rounded-full
+                                   bg-blue-50
+                                   px-3 py-1.5
+                                   text-[10px] font-bold
+                                   uppercase tracking-wider
+                                   text-blue-700
+                                   dark:bg-blue-950/50
+                                   dark:text-blue-300"
+                        >
 
-                            <label
-                                class="mb-2 block
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
-                            >
-                                SPK
-                            </label>
+                            <span
+                                class="h-1.5 w-1.5
+                                       rounded-full
+                                       bg-blue-600
+                                       dark:bg-blue-400"
+                            ></span>
 
-                            <input
-                                type="text"
-                                readonly
-                                value="{{
-                                    $selectedOperation
-                                        ->spk
-                                        ?->no_spk
-                                    ?? '-'
-                                }}"
-                                class="w-full rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-[#eff4ff]
-                                       px-4 py-2.5
-                                       text-sm
-                                       font-semibold"
-                            >
+                            ON CHASSIS
 
-                        </div>
-
-
-                        <div>
-
-                            <label
-                                class="mb-2 block
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
-                            >
-                                Current Process
-                            </label>
-
-                            <input
-                                type="text"
-                                readonly
-                                value="{{
-                                    $selectedOperation
-                                        ->current_process
-                                    ?? '-'
-                                }}"
-                                class="w-full rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-[#eff4ff]
-                                       px-4 py-2.5
-                                       text-sm
-                                       font-semibold"
-                            >
-
-                        </div>
-
-
-                        <div>
-
-                            <label
-                                class="mb-2 block
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
-                            >
-                                Status
-                            </label>
-
-                            <input
-                                type="text"
-                                readonly
-                                value="{{
-                                    $selectedOperation
-                                        ->status
-                                    ?? '-'
-                                }}"
-                                class="w-full rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-[#eff4ff]
-                                       px-4 py-2.5
-                                       text-sm
-                                       font-semibold"
-                            >
-
-                        </div>
+                        </span>
 
                     </div>
 
                 </div>
 
-            @endif
+
+
+                {{-- DETAIL --}}
+
+                <div
+                    class="grid grid-cols-1 gap-4
+                           p-4 sm:grid-cols-2
+                           sm:p-5"
+                >
+
+                    {{-- NO CONTAINER --}}
+
+                    <div>
+
+                        <label
+                            class="mb-2 block
+                                   text-[11px]
+                                   font-bold uppercase
+                                   tracking-wider
+                                   text-slate-600
+                                   dark:text-slate-300"
+                        >
+                            No Container
+                        </label>
+
+
+                        <input
+                            type="text"
+                            readonly
+                            value="{{
+                                $selectedOperation
+                                    ->container
+                                    ?->no_cont
+                                ?? '-'
+                            }}"
+                            class="h-12 w-full rounded-xl
+                                   border border-slate-200
+                                   bg-slate-100 px-4
+                                   text-sm font-black
+                                   uppercase text-slate-800
+                                   outline-none
+                                   dark:border-slate-700
+                                   dark:bg-slate-800
+                                   dark:text-white"
+                        >
+
+                    </div>
 
 
 
-            {{-- ====================================================
-                FOOTER
-            ===================================================== --}}
+                    {{-- SPK --}}
 
-            <footer
-                class="mt-6 border-t
-                       border-[#c3c6d7]/30
-                       pt-5 text-center"
+                    <div>
+
+                        <label
+                            class="mb-2 block
+                                   text-[11px]
+                                   font-bold uppercase
+                                   tracking-wider
+                                   text-slate-600
+                                   dark:text-slate-300"
+                        >
+                            SPK
+                        </label>
+
+
+                        <input
+                            type="text"
+                            readonly
+                            value="{{
+                                $selectedOperation
+                                    ->spk
+                                    ?->no_spk
+                                ?? '-'
+                            }}"
+                            class="h-12 w-full rounded-xl
+                                   border border-slate-200
+                                   bg-slate-100 px-4
+                                   text-sm font-bold
+                                   text-slate-800
+                                   outline-none
+                                   dark:border-slate-700
+                                   dark:bg-slate-800
+                                   dark:text-white"
+                        >
+
+                    </div>
+
+
+
+                    {{-- CURRENT PROCESS --}}
+
+                    <div>
+
+                        <label
+                            class="mb-2 block
+                                   text-[11px]
+                                   font-bold uppercase
+                                   tracking-wider
+                                   text-slate-600
+                                   dark:text-slate-300"
+                        >
+                            Current Process
+                        </label>
+
+
+                        <input
+                            type="text"
+                            readonly
+                            value="{{
+                                $selectedOperation
+                                    ->current_process
+                                ?? '-'
+                            }}"
+                            class="h-12 w-full rounded-xl
+                                   border border-slate-200
+                                   bg-slate-100 px-4
+                                   text-sm font-bold
+                                   uppercase text-slate-800
+                                   outline-none
+                                   dark:border-slate-700
+                                   dark:bg-slate-800
+                                   dark:text-white"
+                        >
+
+                    </div>
+
+
+
+                    {{-- STATUS --}}
+
+                    <div>
+
+                        <label
+                            class="mb-2 block
+                                   text-[11px]
+                                   font-bold uppercase
+                                   tracking-wider
+                                   text-slate-600
+                                   dark:text-slate-300"
+                        >
+                            Status
+                        </label>
+
+
+                        <input
+                            type="text"
+                            readonly
+                            value="{{
+                                $selectedOperation
+                                    ->status
+                                ?? '-'
+                            }}"
+                            class="h-12 w-full rounded-xl
+                                   border border-slate-200
+                                   bg-slate-100 px-4
+                                   text-sm font-bold
+                                   uppercase text-slate-800
+                                   outline-none
+                                   dark:border-slate-700
+                                   dark:bg-slate-800
+                                   dark:text-white"
+                        >
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        @endif
+
+
+
+        {{-- ============================================================
+            FOOTER
+        ============================================================= --}}
+
+        <footer
+            class="mt-6 border-t
+                   border-slate-200
+                   py-5 text-center
+                   dark:border-slate-800"
+        >
+
+            <p
+                class="text-[11px]
+                       text-slate-500
+                       dark:text-slate-500"
             >
+                ON CHASSIS · PortOps Central
+            </p>
 
-                <p class="text-xs text-[#737686]">
-                    ON CHASSIS · PortOps Central
-                </p>
-
-            </footer>
-
-        </main>
+        </footer>
 
     </div>
 

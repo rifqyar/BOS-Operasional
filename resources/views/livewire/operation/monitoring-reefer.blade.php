@@ -1,359 +1,52 @@
-@props(['message' => null, 'messageType' => null])
+<div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
 
-<div class="min-h-screen bg-[#f8f9ff] text-[#0b1c30] antialiased">
+    <div class="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
 
-    {{-- ============================================================
-        SIDEBAR
-    ============================================================= --}}
+        {{-- ============================================================
+            HEADER
+        ============================================================= --}}
 
-    <aside
-        class="fixed left-0 top-0 z-40 hidden h-screen w-[260px]
-               flex-col overflow-y-auto
-               border-r border-[#c3c6d7]/20
-               bg-[#213145] md:flex"
-    >
-
-        <div
-            class="border-b border-[#c3c6d7]/10 p-6"
-        >
-
-            <h1 class="text-base font-bold text-[#dbe1ff]">
-                PortOps Central
-            </h1>
-
-            <p class="text-[13px] text-[#bec6e0]">
-                Terminal A-101
-            </p>
-
-        </div>
-
-
-        <nav class="flex flex-1 flex-col py-4">
-
-            <a
-                href="{{ route('home') }}"
-                class="flex items-center gap-4
-                       border-l-4 border-transparent
-                       px-6 py-3
-                       text-[#bec6e0]/70
-                       hover:bg-[#d3e4fe]/10"
-            >
-
-                <span class="material-symbols-outlined">
-                    dashboard
-                </span>
-
-                <span class="text-xs font-semibold tracking-wider">
-                    Dashboard
-                </span>
-
-            </a>
-
-
-            <div
-                class="px-6 pb-2 pt-4
-                       text-[10px]
-                       font-semibold
-                       uppercase
-                       tracking-widest
-                       text-[#bec6e0]/50"
-            >
-                Operations
-            </div>
-
-
-            @php
-
-                $menus = [
-
-                    [
-                        'route' => 'operation.pickup',
-                        'label' => 'PICKUP',
-                        'icon' => 'local_shipping',
-                    ],
-
-                    [
-                        'route' => 'operation.behandle-in',
-                        'label' => 'BEHANDLE IN',
-                        'icon' => 'move_to_inbox',
-                    ],
-
-                    [
-                        'route' => 'operation.hold',
-                        'label' => 'HOLD',
-                        'icon' => 'front_hand',
-                    ],
-
-                    [
-                        'route' => 'operation.marshallingcic',
-                        'label' => 'MARSHALLING CIC',
-                        'icon' => 'warehouse',
-                    ],
-
-                    [
-                        'route' => 'operation.marshalling-yard',
-                        'label' => 'MARSHALLING YARD',
-                        'icon' => 'location_on',
-                    ],
-
-                    [
-                        'route' => 'operation.inspection',
-                        'label' => 'INSPECTION',
-                        'icon' => 'fact_check',
-                    ],
-
-                    [
-                        'route' => 'operation.plug-reefer',
-                        'label' => 'PLUG REEFER',
-                        'icon' => 'ac_unit',
-                    ],
-
-                ];
-
-            @endphp
-
-
-            @foreach($menus as $menu)
-
-                <a
-                    href="{{ route($menu['route']) }}"
-                    class="flex items-center gap-4
-                           border-l-4 border-transparent
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:bg-[#d3e4fe]/10"
-                >
-
-                    <span class="material-symbols-outlined">
-                        {{ $menu['icon'] }}
-                    </span>
-
-                    <span
-                        class="text-xs
-                               font-semibold
-                               tracking-wider"
-                    >
-                        {{ $menu['label'] }}
-                    </span>
-
-                </a>
-
-            @endforeach
-
-
-            {{-- ACTIVE MONITORING REEFER --}}
-
-            <a
-                href="{{ route('operation.monitoring-reefer') }}"
-                class="flex items-center gap-4
-                       border-l-4
-                       border-[#004ac6]
-                       bg-[#2563eb]/10
-                       px-6 py-3
-                       font-bold text-[#dbe1ff]"
-            >
-
-                <span
-                    class="material-symbols-outlined"
-                    style="font-variation-settings:'FILL' 1;"
-                >
-                    thermostat
-                </span>
-
-                <span
-                    class="text-xs
-                           font-semibold
-                           tracking-wider"
-                >
-                    MONITORING REEFER
-                </span>
-
-            </a>
-
-
-            @php
-
-                $menusAfter = [
-
-                    [
-                        'route' => 'operation.delivery',
-                        'label' => 'DELIVERY',
-                        'icon' => 'local_shipping',
-                    ],
-
-                    [
-                        'route' => 'operation.inspection-out',
-                        'label' => 'INSPECTION OUT',
-                        'icon' => 'fact_check',
-                    ],
-
-                    [
-                        'route' => 'operation.on-chassis',
-                        'label' => 'ON CHASSIS',
-                        'icon' => 'directions_car',
-                    ],
-
-                    [
-                        'route' => 'operation.copy-yard',
-                        'label' => 'COPY YARD',
-                        'icon' => 'content_copy',
-                    ],
-
-                ];
-
-            @endphp
-
-
-            @foreach($menusAfter as $menu)
-
-                <a
-                    href="{{ route($menu['route']) }}"
-                    class="flex items-center gap-4
-                           border-l-4 border-transparent
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:bg-[#d3e4fe]/10"
-                >
-
-                    <span class="material-symbols-outlined">
-                        {{ $menu['icon'] }}
-                    </span>
-
-                    <span
-                        class="text-xs
-                               font-semibold
-                               tracking-wider"
-                    >
-                        {{ $menu['label'] }}
-                    </span>
-
-                </a>
-
-            @endforeach
-
-
-            <div class="mt-auto">
-
-                <a
-                    href="#"
-                    class="flex items-center gap-4
-                           border-l-4 border-transparent
-                           px-6 py-3
-                           text-[#bec6e0]/70
-                           hover:bg-[#d3e4fe]/10"
-                >
-
-                    <span class="material-symbols-outlined">
-                        logout
-                    </span>
-
-                    <span class="text-xs font-semibold tracking-wider">
-                        Logout
-                    </span>
-
-                </a>
-
-            </div>
-
-        </nav>
-
-    </aside>
-
-
-
-    {{-- ============================================================
-        MAIN
-    ============================================================= --}}
-
-    <div class="min-h-screen md:ml-[260px]">
-
-
-        {{-- HEADER --}}
-
-        <header
-            class="sticky top-0 z-30
-                   flex h-14 items-center
-                   justify-between
-                   border-b
-                   border-[#c3c6d7]/30
-                   bg-[#f8f9ff]
-                   px-4 sm:px-6"
-        >
-
-            <h1
-                class="text-base
-                       font-black
-                       text-[#0b1c30]
-                       md:hidden"
-            >
-                PortOps Central
-            </h1>
-
-
-            <div class="hidden sm:block">
-
-                <div class="relative">
-
-                    <span
-                        class="material-symbols-outlined
-                               absolute left-2 top-1/2
-                               -translate-y-1/2
-                               text-[18px]
-                               text-[#737686]"
-                    >
-                        search
-                    </span>
-
-
-                    <input
-                        type="text"
-                        placeholder="Search operations..."
-                        class="w-64 rounded
-                               border
-                               border-[#c3c6d7]/50
-                               bg-[#eff4ff]
-                               py-1 pl-8 pr-4
-                               text-[13px]
-                               outline-none
-                               focus:border-[#004ac6]"
-                    >
-
-                </div>
-
-            </div>
-
+        <header class="mb-5 flex items-center justify-between">
 
             <div class="flex items-center gap-3">
 
-                <span
-                    class="material-symbols-outlined
-                           text-[#434655]"
+                <a
+                    href="{{ route('home') }}"
+                    class="flex h-10 w-10 items-center justify-center rounded-xl
+                           border border-slate-200 bg-white text-slate-600
+                           shadow-sm transition hover:bg-slate-100
+                           dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    title="Kembali"
                 >
-                    notifications
-                </span>
-
-                <div
-                    class="h-6 w-px
-                           bg-[#c3c6d7]/30"
-                ></div>
-
-                <div
-                    class="flex h-8 w-8
-                           items-center
-                           justify-center
-                           rounded-full
-                           bg-[#2563eb]"
-                >
-
-                    <span
-                        class="material-symbols-outlined
-                               text-white"
-                    >
-                        person
+                    <span class="material-symbols-outlined">
+                        arrow_back
                     </span>
+                </a>
 
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        PortOps Central
+                    </p>
+
+                    <h1 class="text-base font-bold tracking-tight sm:text-lg">
+                        Monitoring Reefer
+                    </h1>
                 </div>
 
+            </div>
+
+
+            <div
+                class="flex items-center gap-2 rounded-full
+                       bg-blue-50 px-3 py-1.5
+                       text-xs font-bold text-blue-700
+                       dark:bg-blue-950/40 dark:text-blue-300"
+            >
+                <span class="material-symbols-outlined text-[17px]">
+                    thermostat
+                </span>
+
+                REEFER
             </div>
 
         </header>
@@ -361,184 +54,153 @@
 
 
         {{-- ============================================================
-            CONTENT
+            TITLE
         ============================================================= --}}
 
-        <main
-            class="min-h-[calc(100vh-56px)]
-                   p-4 sm:p-6"
+        <div class="mb-5">
+
+            <div class="flex items-center gap-2">
+
+                <span
+                    class="material-symbols-outlined
+                           text-[25px] text-blue-600
+                           dark:text-blue-400"
+                >
+                    thermostat
+                </span>
+
+                <h2
+                    class="text-xl font-black tracking-tight
+                           sm:text-2xl"
+                >
+                    MONITORING REEFER
+                </h2>
+
+            </div>
+
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Monitoring temperatur container reefer.
+            </p>
+
+        </div>
+
+
+
+        {{-- ============================================================
+            SEARCH
+        ============================================================= --}}
+
+        <section
+            class="mb-5 rounded-2xl border border-slate-200
+                   bg-white p-4 shadow-sm
+                   dark:border-slate-800 dark:bg-slate-900
+                   sm:p-5"
         >
 
+            <div class="mb-4 flex items-center gap-3">
 
-            {{-- TITLE --}}
-
-            <div class="mb-6">
-
-                <div class="flex items-center gap-2">
-
-                    <span
-                        class="material-symbols-outlined
-                               text-[24px]
-                               text-[#004ac6]"
-                    >
-                        thermostat
+                <div
+                    class="flex h-10 w-10 shrink-0 items-center
+                           justify-center rounded-xl
+                           bg-blue-50 text-blue-600
+                           dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <span class="material-symbols-outlined">
+                        search
                     </span>
-
-
-                    <h1
-                        class="text-2xl
-                               font-semibold
-                               tracking-tight"
-                    >
-                        MONITORING REEFER
-                    </h1>
-
                 </div>
 
+                <div>
+                    <h3 class="text-sm font-bold sm:text-base">
+                        Cari Container
+                    </h3>
 
-                <p
-                    class="mt-2 text-sm
-                           text-[#434655]"
-                >
-                    Monitoring temperatur container reefer.
-                </p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Masukkan nomor container reefer.
+                    </p>
+                </div>
 
             </div>
 
 
+            <form wire:submit="search">
 
-            {{-- ====================================================
-                SEARCH
-            ===================================================== --}}
+                <div class="flex flex-col gap-3 sm:flex-row">
 
-            <div
-                class="mb-6 rounded-xl
-                       border
-                       border-[#c3c6d7]/30
-                       bg-white
-                       p-5
-                       shadow-sm sm:p-6"
-            >
+                    <div class="w-full">
 
-                <div
-                    class="mb-5 flex
-                           items-center gap-3"
-                >
+                        <label
+                            for="searchCont"
+                            class="mb-1.5 block text-xs font-bold
+                                   uppercase tracking-wider
+                                   text-slate-600 dark:text-slate-400"
+                        >
+                            No Container
+                        </label>
 
-                    <div
-                        class="flex h-10 w-10
-                               items-center
-                               justify-center
-                               rounded-lg
-                               bg-[#d3e4fe]
-                               text-[#004ac6]"
-                    >
+                        <input
+                            id="searchCont"
+                            type="text"
+                            wire:model="searchCont"
+                            autofocus
+                            autocomplete="off"
+                            placeholder="Contoh: HLCU9988776"
+                            class="h-12 w-full rounded-xl
+                                   border border-slate-300
+                                   bg-white px-4
+                                   text-base font-semibold
+                                   uppercase outline-none
+                                   placeholder:font-normal
+                                   placeholder:text-slate-400
+                                   focus:border-blue-600
+                                   focus:ring-2 focus:ring-blue-100
+                                   dark:border-slate-700
+                                   dark:bg-slate-950
+                                   dark:placeholder:text-slate-600
+                                   dark:focus:border-blue-500
+                                   dark:focus:ring-blue-950"
+                        >
 
-                        <span class="material-symbols-outlined">
-                            search
-                        </span>
+                        @error('searchCont')
+                            <p class="mt-2 text-xs font-medium text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
 
                     </div>
 
 
-                    <div>
-
-                        <h2
-                            class="text-base
-                                   font-semibold"
-                        >
-                            Search No Container
-                        </h2>
-
-
-                        <p
-                            class="text-xs
-                                   text-[#737686]"
-                        >
-                            Masukkan nomor container reefer.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <form wire:submit="search">
-
-                    <div
-                        class="flex flex-col
-                               gap-3
-                               sm:flex-row
-                               sm:items-end"
-                    >
-
-                        <div
-                            class="w-full
-                                   sm:max-w-md"
-                        >
-
-                            <label
-                                for="searchCont"
-                                class="mb-2 block
-                                       text-xs
-                                       font-semibold
-                                       uppercase
-                                       tracking-wider
-                                       text-[#434655]"
-                            >
-                                No Container
-                            </label>
-
-
-                            <input
-                                id="searchCont"
-                                type="text"
-                                wire:model="searchCont"
-                                autofocus
-                                autocomplete="off"
-                                placeholder="SEARCH NO CONT"
-                                class="w-full rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-white
-                                       px-4 py-2.5
-                                       text-sm
-                                       outline-none
-                                       focus:border-[#004ac6]
-                                       focus:ring-2
-                                       focus:ring-[#b4c5ff]"
-                            >
-
-
-                            @error('searchCont')
-
-                                <p
-                                    class="mt-2 text-xs
-                                           text-[#ba1a1a]"
-                                >
-                                    {{ $message }}
-                                </p>
-
-                            @enderror
-
-                        </div>
-
+                    <div class="flex gap-2 sm:items-end">
 
                         <button
                             type="submit"
                             wire:loading.attr="disabled"
-                            class="inline-flex
-                                   items-center
-                                   justify-center
-                                   gap-2 rounded-lg
-                                   bg-[#004ac6]
-                                   px-5 py-2.5
-                                   text-sm
-                                   font-semibold
-                                   text-white
-                                   hover:bg-[#003ea8]
-                                   disabled:opacity-50"
+                            class="inline-flex h-12 flex-1 items-center
+                                   justify-center gap-2 rounded-xl
+                                   bg-blue-600 px-5 text-sm font-bold
+                                   text-white transition
+                                   hover:bg-blue-700
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-50
+                                   sm:flex-none"
                         >
+
+                            <span
+                                wire:loading.remove
+                                wire:target="search"
+                            >
+                                <span class="material-symbols-outlined text-[19px]">
+                                    search
+                                </span>
+                            </span>
+
+                            <span
+                                wire:loading
+                                wire:target="search"
+                                class="material-symbols-outlined animate-spin text-[19px]"
+                            >
+                                progress_activity
+                            </span>
 
                             <span
                                 wire:loading.remove
@@ -546,7 +208,6 @@
                             >
                                 SEARCH
                             </span>
-
 
                             <span
                                 wire:loading
@@ -567,71 +228,60 @@
                             <button
                                 type="button"
                                 wire:click="resetSearch"
-                                class="inline-flex
-                                       items-center
-                                       justify-center
-                                       gap-2 rounded-lg
-                                       border
-                                       border-[#c3c6d7]
-                                       bg-white
-                                       px-5 py-2.5
-                                       text-sm
-                                       font-semibold
-                                       text-[#434655]
-                                       hover:bg-[#eff4ff]"
+                                class="inline-flex h-12 w-12 shrink-0
+                                       items-center justify-center
+                                       rounded-xl border
+                                       border-slate-300
+                                       bg-white text-slate-600
+                                       transition hover:bg-slate-100
+                                       dark:border-slate-700
+                                       dark:bg-slate-900
+                                       dark:text-slate-300"
+                                title="Reset"
                             >
-
-                                <span
-                                    class="material-symbols-outlined
-                                           text-[18px]"
-                                >
+                                <span class="material-symbols-outlined">
                                     refresh
                                 </span>
-
-                                RESET
-
                             </button>
 
                         @endif
 
                     </div>
 
-                </form>
+                </div>
 
-            </div>
+            </form>
+
+        </section>
 
 
 
-            {{-- ====================================================
-                MESSAGE
-            ===================================================== --}}
+        {{-- ============================================================
+            MESSAGE
+        ============================================================= --}}
 
-            @isset($message)
+        @isset($message)
+
             @if($message)
 
                 <div
-                    class="mb-6 rounded-lg
-                           border px-4 py-3
+                    class="mb-5 rounded-xl border px-4 py-3
 
-                           @if($messageType === 'danger')
-                               border-[#ba1a1a]/30
-                               bg-[#ffdad6]
-                               text-[#93000a]
-                           @elseif($messageType === 'success')
-                               border-[#146c2e]/30
-                               bg-[#d9f7df]
-                               text-[#146c2e]
-                           @else
-                               border-[#004ac6]/20
-                               bg-[#d3e4fe]
-                               text-[#003ea8]
-                           @endif"
+                    @if($messageType === 'danger')
+                        border-red-200 bg-red-50 text-red-700
+                        dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300
+                    @elseif($messageType === 'success')
+                        border-green-200 bg-green-50 text-green-700
+                        dark:border-green-900/50 dark:bg-green-950/30 dark:text-green-300
+                    @else
+                        border-blue-200 bg-blue-50 text-blue-700
+                        dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300
+                    @endif"
                 >
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-start gap-3">
 
-                        <span class="material-symbols-outlined">
-
+                        <span class="material-symbols-outlined shrink-0">
                             @if($messageType === 'danger')
                                 error
                             @elseif($messageType === 'success')
@@ -639,14 +289,9 @@
                             @else
                                 info
                             @endif
-
                         </span>
 
-
-                        <p
-                            class="text-sm
-                                   font-semibold"
-                        >
+                        <p class="text-sm font-semibold">
                             {{ $message }}
                         </p>
 
@@ -655,370 +300,382 @@
                 </div>
 
             @endif
-            @endisset
+
+        @endisset
 
 
 
-            {{-- ====================================================
-                MULTIPLE CONTAINER
-            ===================================================== --}}
+        {{-- ============================================================
+            MULTIPLE CONTAINER
+        ============================================================= --}}
 
-            @if(
-                !empty($operations)
-                && !$selectedOperation
-            )
+        @if(
+            !empty($operations)
+            && !$selectedOperation
+        )
+
+            <section
+                class="mb-5 overflow-hidden rounded-2xl
+                       border border-slate-200 bg-white
+                       shadow-sm
+                       dark:border-slate-800 dark:bg-slate-900"
+            >
 
                 <div
-                    class="mb-6 overflow-hidden
-                           rounded-xl
-                           border
-                           border-[#c3c6d7]/30
-                           bg-white
-                           shadow-sm"
+                    class="border-b border-slate-200 px-4 py-4
+                           dark:border-slate-800"
                 >
 
-                    <div
-                        class="border-b
-                               border-[#c3c6d7]/30
-                               px-5 py-4"
-                    >
+                    <div class="flex items-center gap-2">
 
-                        <h2
-                            class="text-base
-                                   font-semibold"
+                        <span
+                            class="material-symbols-outlined
+                                   text-blue-600 dark:text-blue-400"
                         >
-                            Pilih Container Reefer
-                        </h2>
+                            inventory_2
+                        </span>
+
+                        <div>
+
+                            <h3 class="text-sm font-bold sm:text-base">
+                                Pilih Container Reefer
+                            </h3>
+
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                Ditemukan {{ count($operations) }} container.
+                            </p>
+
+                        </div>
 
                     </div>
 
-
-                    <div class="grid gap-3 p-5">
-
-                        @foreach($operations as $operation)
-
-                            <button
-                                type="button"
-                                wire:click="selectOperation({{ $operation->id }})"
-                                class="flex w-full
-                                       items-center
-                                       justify-between
-                                       rounded-lg
-                                       border
-                                       border-[#c3c6d7]/40
-                                       bg-white
-                                       px-4 py-3
-                                       text-left
-                                       transition
-                                       hover:border-[#004ac6]
-                                       hover:bg-[#eff4ff]"
-                            >
-
-                                <div>
-
-                                    <p
-                                        class="text-sm
-                                               font-bold"
-                                    >
-                                        {{
-                                            $operation
-                                                ->container
-                                                ?->no_cont
-                                            ?? '-'
-                                        }}
-                                    </p>
+                </div>
 
 
-                                    <p
-                                        class="mt-1 text-xs
-                                               text-[#737686]"
-                                    >
-                                        SPK:
+                <div class="grid gap-3 p-4 sm:grid-cols-2">
+
+                    @foreach($operations as $operation)
+
+                        <button
+                            type="button"
+                            wire:click="selectOperation({{ $operation->id }})"
+                            class="group flex min-h-[76px] w-full
+                                   items-center justify-between
+                                   rounded-xl border
+                                   border-slate-200
+                                   bg-white px-4 py-3
+                                   text-left transition
+                                   hover:border-blue-500
+                                   hover:bg-blue-50
+                                   active:scale-[0.99]
+                                   dark:border-slate-700
+                                   dark:bg-slate-950
+                                   dark:hover:border-blue-500
+                                   dark:hover:bg-blue-950/30"
+                        >
+
+                            <div class="min-w-0">
+
+                                <p
+                                    class="truncate text-base font-black
+                                           tracking-wide
+                                           text-slate-900
+                                           dark:text-white"
+                                >
+                                    {{
+                                        $operation
+                                            ->container
+                                            ?->no_cont
+                                        ?? '-'
+                                    }}
+                                </p>
+
+                                <p
+                                    class="mt-1 text-xs
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    SPK:
+                                    <span class="font-semibold">
                                         {{
                                             $operation
                                                 ->spk
                                                 ?->no_spk
                                             ?? '-'
                                         }}
-                                    </p>
-
-                                </div>
-
-
-                                <span
-                                    class="material-symbols-outlined
-                                           text-[#004ac6]"
-                                >
-                                    chevron_right
-                                </span>
-
-                            </button>
-
-                        @endforeach
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-
-            {{-- ====================================================
-                SELECTED CONTAINER
-            ===================================================== --}}
-
-            @if($selectedOperation)
-
-                <div
-                    class="mb-6 overflow-hidden
-                           rounded-xl
-                           border
-                           border-[#c3c6d7]/30
-                           bg-white
-                           shadow-sm"
-                >
-
-                    <div
-                        class="border-b
-                               border-[#c3c6d7]/30
-                               px-5 py-5
-                               sm:px-6"
-                    >
-
-                        <div
-                            class="flex flex-col
-                                   gap-3
-                                   sm:flex-row
-                                   sm:items-center
-                                   sm:justify-between"
-                        >
-
-                            <div>
-
-                                <div class="flex items-center gap-2">
-
-                                    <span
-                                        class="material-symbols-outlined
-                                               text-[#004ac6]"
-                                    >
-                                        thermostat
                                     </span>
-
-
-                                    <h2
-                                        class="text-base
-                                               font-semibold"
-                                    >
-                                        Monitoring Reefer
-                                    </h2>
-
-                                </div>
-
-
-                                <p
-                                    class="mt-1 text-xs
-                                           text-[#737686]"
-                                >
-                                    Container:
-
-                                    <span
-                                        class="font-bold
-                                               text-[#0b1c30]"
-                                    >
-                                        {{
-                                            $selectedOperation
-                                                ->container
-                                                ?->no_cont
-                                            ?? '-'
-                                        }}
-                                    </span>
-
                                 </p>
 
                             </div>
 
 
-                            @if($condition === 1)
+                            <span
+                                class="material-symbols-outlined shrink-0
+                                       text-blue-600
+                                       transition group-hover:translate-x-1
+                                       dark:text-blue-400"
+                            >
+                                chevron_right
+                            </span>
+
+                        </button>
+
+                    @endforeach
+
+                </div>
+
+            </section>
+
+        @endif
+
+
+
+        {{-- ============================================================
+            SELECTED CONTAINER
+        ============================================================= --}}
+
+        @if($selectedOperation)
+
+            <section
+                class="mb-5 overflow-hidden rounded-2xl
+                       border border-slate-200 bg-white
+                       shadow-sm
+                       dark:border-slate-800 dark:bg-slate-900"
+            >
+
+                {{-- CONTAINER HEADER --}}
+
+                <div
+                    class="border-b border-slate-200 px-4 py-4
+                           dark:border-slate-800 sm:px-5"
+                >
+
+                    <div
+                        class="flex flex-col gap-3
+                               sm:flex-row sm:items-center
+                               sm:justify-between"
+                    >
+
+                        <div class="min-w-0">
+
+                            <div class="mb-2 flex items-center gap-2">
 
                                 <span
-                                    class="inline-flex
-                                           w-fit
-                                           rounded-full
-                                           bg-[#d9f7df]
-                                           px-3 py-1
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#146c2e]"
+                                    class="material-symbols-outlined
+                                           text-blue-600
+                                           dark:text-blue-400"
                                 >
-                                    AKTIF
+                                    thermostat
                                 </span>
-
-                            @else
 
                                 <span
-                                    class="inline-flex
-                                           w-fit
-                                           rounded-full
-                                           bg-[#ffdad6]
-                                           px-3 py-1
-                                           text-[10px]
-                                           font-semibold
-                                           uppercase
+                                    class="text-xs font-bold uppercase
                                            tracking-wider
-                                           text-[#93000a]"
+                                           text-slate-500
+                                           dark:text-slate-400"
                                 >
-                                    UNPLUGIN
+                                    Monitoring Reefer
                                 </span>
 
-                            @endif
+                            </div>
+
+
+                            <p
+                                class="break-all text-2xl font-black
+                                       tracking-tight
+                                       text-slate-950
+                                       dark:text-white
+                                       sm:text-3xl"
+                            >
+                                {{
+                                    $selectedOperation
+                                        ->container
+                                        ?->no_cont
+                                    ?? '-'
+                                }}
+                            </p>
+
+
+                            <p
+                                class="mt-1 text-xs
+                                       text-slate-500
+                                       dark:text-slate-400"
+                            >
+                                SPK:
+                                <span class="font-semibold">
+                                    {{
+                                        $selectedOperation
+                                            ->spk
+                                            ?->no_spk
+                                        ?? '-'
+                                    }}
+                                </span>
+                            </p>
 
                         </div>
 
+
+                        @if($condition === 1)
+
+                            <span
+                                class="inline-flex w-fit items-center gap-1.5
+                                       rounded-full bg-green-100
+                                       px-3 py-1.5 text-[10px]
+                                       font-black uppercase tracking-wider
+                                       text-green-700
+                                       dark:bg-green-950/40
+                                       dark:text-green-300"
+                            >
+                                <span
+                                    class="h-2 w-2 rounded-full bg-green-500"
+                                ></span>
+
+                                AKTIF
+                            </span>
+
+                        @else
+
+                            <span
+                                class="inline-flex w-fit items-center gap-1.5
+                                       rounded-full bg-red-100
+                                       px-3 py-1.5 text-[10px]
+                                       font-black uppercase tracking-wider
+                                       text-red-700
+                                       dark:bg-red-950/40
+                                       dark:text-red-300"
+                            >
+                                <span
+                                    class="h-2 w-2 rounded-full bg-red-500"
+                                ></span>
+
+                                UNPLUGIN
+                            </span>
+
+                        @endif
+
                     </div>
 
+                </div>
 
 
-                    <div class="p-5 sm:p-6">
+
+                <div class="p-4 sm:p-5">
 
 
-                        {{-- ====================================================
-                            STATUS SUDAH UNPLUGIN
-                        ===================================================== --}}
+                    {{-- ====================================================
+                        SUDAH UNPLUGIN
+                    ===================================================== --}}
 
-                        @if($condition !== 1)
+                    @if($condition !== 1)
 
-                            <div
-                                class="rounded-lg
-                                       border
-                                       border-[#ba1a1a]/30
-                                       bg-[#ffdad6]
-                                       p-5"
-                            >
+                        <div
+                            class="rounded-xl border border-red-200
+                                   bg-red-50 p-4
+                                   dark:border-red-900/50
+                                   dark:bg-red-950/30"
+                        >
+
+                            <div class="flex items-start gap-3">
 
                                 <div
-                                    class="flex items-start
-                                           gap-3"
+                                    class="flex h-10 w-10 shrink-0
+                                           items-center justify-center
+                                           rounded-full bg-red-100
+                                           text-red-600
+                                           dark:bg-red-950
+                                           dark:text-red-400"
                                 >
-
-                                    <span
-                                        class="material-symbols-outlined
-                                               text-[#93000a]"
-                                    >
+                                    <span class="material-symbols-outlined">
                                         warning
                                     </span>
+                                </div>
 
 
-                                    <div>
+                                <div>
 
-                                        <p
-                                            class="text-sm
-                                                   font-bold
-                                                   text-[#93000a]"
-                                        >
-                                            Container Sudah Unplugin
-                                        </p>
+                                    <p
+                                        class="text-sm font-bold
+                                               text-red-700
+                                               dark:text-red-300"
+                                    >
+                                        Container Sudah Unplugin
+                                    </p>
 
-
-                                        <p
-                                            class="mt-1 text-xs
-                                                   text-[#93000a]/80"
-                                        >
-                                            Monitoring tidak dapat dilakukan
-                                            karena container sudah UNPLUGIN.
-                                        </p>
-
-                                    </div>
+                                    <p
+                                        class="mt-1 text-xs leading-5
+                                               text-red-600
+                                               dark:text-red-400"
+                                    >
+                                        Monitoring tidak dapat dilakukan
+                                        karena container sudah UNPLUGIN.
+                                    </p>
 
                                 </div>
 
                             </div>
 
+                        </div>
 
-                        {{-- ====================================================
-                            MONITORING FORM
-                        ===================================================== --}}
 
-                        @else
+                    {{-- ====================================================
+                        MONITORING FORM
+                    ===================================================== --}}
+
+                    @else
+
+                        <div class="space-y-5">
+
+
+                            {{-- TEMPERATURE INFO --}}
 
                             <div
-                                class="grid grid-cols-1
-                                       gap-5
-                                       md:grid-cols-2"
+                                class="grid grid-cols-1 gap-4
+                                       sm:grid-cols-2"
                             >
-
-                                {{-- NO CONTAINER --}}
-
-                                <div>
-
-                                    <label
-                                        class="mb-2 block
-                                               text-xs
-                                               font-semibold
-                                               uppercase
-                                               tracking-wider
-                                               text-[#434655]"
-                                    >
-                                        No Container
-                                    </label>
-
-
-                                    <input
-                                        type="text"
-                                        readonly
-                                        value="{{
-                                            $selectedOperation
-                                                ->container
-                                                ?->no_cont
-                                            ?? '-'
-                                        }}"
-                                        class="w-full rounded-lg
-                                               border
-                                               border-[#c3c6d7]
-                                               bg-[#eff4ff]
-                                               px-4 py-2.5
-                                               text-sm
-                                               font-semibold"
-                                    >
-
-                                </div>
-
-
 
                                 {{-- TEMPERATURE SEBELUMNYA --}}
 
                                 <div>
 
                                     <label
-                                        class="mb-2 block
-                                               text-xs
-                                               font-semibold
-                                               uppercase
+                                        class="mb-1.5 block text-xs
+                                               font-bold uppercase
                                                tracking-wider
-                                               text-[#434655]"
+                                               text-slate-600
+                                               dark:text-slate-400"
                                     >
                                         Temperature Sebelumnya
                                     </label>
 
-
-                                    <input
-                                        type="text"
-                                        readonly
-                                        value="{{
-                                            $lastMonitoring
-                                                ?->temperature
-                                            ?? '-'
-                                        }}"
-                                        class="w-full rounded-lg
-                                               border
-                                               border-[#c3c6d7]
-                                               bg-[#eff4ff]
-                                               px-4 py-2.5
-                                               text-sm
-                                               font-semibold"
+                                    <div
+                                        class="flex h-14 items-center
+                                               rounded-xl border
+                                               border-slate-200
+                                               bg-slate-50 px-4
+                                               dark:border-slate-700
+                                               dark:bg-slate-950"
                                     >
+
+                                        <span
+                                            class="material-symbols-outlined
+                                                   mr-3 text-slate-400"
+                                        >
+                                            history
+                                        </span>
+
+                                        <span
+                                            class="text-lg font-bold
+                                                   text-slate-700
+                                                   dark:text-slate-200"
+                                        >
+                                            {{
+                                                $lastMonitoring
+                                                    ?->temperature
+                                                ?? '-'
+                                            }}
+                                        </span>
+
+                                    </div>
 
                                 </div>
 
@@ -1030,92 +687,57 @@
 
                                     <label
                                         for="temperature"
-                                        class="mb-2 block
-                                               text-xs
-                                               font-semibold
-                                               uppercase
+                                        class="mb-1.5 block text-xs
+                                               font-bold uppercase
                                                tracking-wider
-                                               text-[#434655]"
+                                               text-slate-600
+                                               dark:text-slate-400"
                                     >
                                         Temperature Saat Ini
                                     </label>
 
+                                    <div class="relative">
 
-                                    <input
-                                        id="temperature"
-                                        type="text"
-                                        wire:model="temperature"
-                                        placeholder="Masukkan temperature"
-                                        class="w-full rounded-lg
-                                               border
-                                               border-[#c3c6d7]
-                                               bg-white
-                                               px-4 py-2.5
-                                               text-sm
-                                               outline-none
-                                               focus:border-[#004ac6]
-                                               focus:ring-2
-                                               focus:ring-[#b4c5ff]"
-                                    >
+                                        <span
+                                            class="material-symbols-outlined
+                                                   absolute left-4 top-1/2
+                                                   -translate-y-1/2
+                                                   text-blue-600
+                                                   dark:text-blue-400"
+                                        >
+                                            thermostat
+                                        </span>
 
+                                        <input
+                                            id="temperature"
+                                            type="text"
+                                            wire:model="temperature"
+                                            inputmode="decimal"
+                                            placeholder="Masukkan temperature"
+                                            class="h-14 w-full rounded-xl
+                                                   border
+                                                   border-slate-300
+                                                   bg-white
+                                                   pl-12 pr-4
+                                                   text-lg font-bold
+                                                   outline-none
+                                                   focus:border-blue-600
+                                                   focus:ring-2
+                                                   focus:ring-blue-100
+                                                   dark:border-slate-700
+                                                   dark:bg-slate-950
+                                                   dark:focus:border-blue-500
+                                                   dark:focus:ring-blue-950"
+                                        >
+
+                                    </div>
 
                                     @error('temperature')
 
                                         <p
-                                            class="mt-2 text-xs
-                                                   text-[#ba1a1a]"
-                                        >
-                                            {{ $message }}
-                                        </p>
-
-                                    @enderror
-
-                                </div>
-
-
-
-                                {{-- NOTE --}}
-
-                                <div
-                                    class="md:col-span-2"
-                                >
-
-                                    <label
-                                        for="note"
-                                        class="mb-2 block
-                                               text-xs
-                                               font-semibold
-                                               uppercase
-                                               tracking-wider
-                                               text-[#434655]"
-                                    >
-                                        Catatan
-                                    </label>
-
-
-                                    <textarea
-                                        id="note"
-                                        wire:model="note"
-                                        rows="7"
-                                        placeholder="Masukkan catatan monitoring..."
-                                        class="w-full rounded-lg
-                                               border
-                                               border-[#c3c6d7]
-                                               bg-white
-                                               px-4 py-3
-                                               text-sm
-                                               outline-none
-                                               focus:border-[#004ac6]
-                                               focus:ring-2
-                                               focus:ring-[#b4c5ff]"
-                                    ></textarea>
-
-
-                                    @error('note')
-
-                                        <p
-                                            class="mt-2 text-xs
-                                                   text-[#ba1a1a]"
+                                            class="mt-2 text-xs font-medium
+                                                   text-red-600
+                                                   dark:text-red-400"
                                         >
                                             {{ $message }}
                                         </p>
@@ -1128,15 +750,64 @@
 
 
 
+                            {{-- NOTE --}}
+
+                            <div>
+
+                                <label
+                                    for="note"
+                                    class="mb-1.5 block text-xs
+                                           font-bold uppercase
+                                           tracking-wider
+                                           text-slate-600
+                                           dark:text-slate-400"
+                                >
+                                    Catatan
+                                </label>
+
+                                <textarea
+                                    id="note"
+                                    wire:model="note"
+                                    rows="4"
+                                    placeholder="Masukkan catatan monitoring..."
+                                    class="w-full rounded-xl
+                                           border border-slate-300
+                                           bg-white px-4 py-3
+                                           text-sm outline-none
+                                           placeholder:text-slate-400
+                                           focus:border-blue-600
+                                           focus:ring-2
+                                           focus:ring-blue-100
+                                           dark:border-slate-700
+                                           dark:bg-slate-950
+                                           dark:placeholder:text-slate-600
+                                           dark:focus:border-blue-500
+                                           dark:focus:ring-blue-950"
+                                ></textarea>
+
+                                @error('note')
+
+                                    <p
+                                        class="mt-2 text-xs font-medium
+                                               text-red-600
+                                               dark:text-red-400"
+                                    >
+                                        {{ $message }}
+                                    </p>
+
+                                @enderror
+
+                            </div>
+
+
+
                             {{-- ACTION --}}
 
                             <div
-                                class="mt-6
-                                       flex flex-col
-                                       gap-3
-                                       border-t
-                                       border-[#c3c6d7]/30
+                                class="flex flex-col gap-3
+                                       border-t border-slate-200
                                        pt-5
+                                       dark:border-slate-800
                                        sm:flex-row"
                             >
 
@@ -1144,28 +815,50 @@
                                     type="button"
                                     wire:click="monitoring"
                                     wire:loading.attr="disabled"
-                                    class="inline-flex
-                                           items-center
-                                           justify-center
-                                           gap-2
-                                           rounded-lg
-                                           bg-[#004ac6]
-                                           px-6 py-3
-                                           text-sm
-                                           font-semibold
-                                           text-white
-                                           hover:bg-[#003ea8]
-                                           disabled:opacity-50"
+                                    class="inline-flex h-12 w-full
+                                           items-center justify-center
+                                           gap-2 rounded-xl
+                                           bg-blue-600 px-6
+                                           text-sm font-bold text-white
+                                           transition
+                                           hover:bg-blue-700
+                                           active:scale-[0.99]
+                                           disabled:cursor-not-allowed
+                                           disabled:opacity-50
+                                           sm:w-auto"
                                 >
 
                                     <span
+                                        wire:loading.remove
+                                        wire:target="monitoring"
                                         class="material-symbols-outlined
-                                               text-[19px]"
+                                               text-[20px]"
                                     >
                                         thermostat
                                     </span>
 
-                                    MONITORING
+                                    <span
+                                        wire:loading
+                                        wire:target="monitoring"
+                                        class="material-symbols-outlined
+                                               animate-spin text-[20px]"
+                                    >
+                                        progress_activity
+                                    </span>
+
+                                    <span
+                                        wire:loading.remove
+                                        wire:target="monitoring"
+                                    >
+                                        MONITORING
+                                    </span>
+
+                                    <span
+                                        wire:loading
+                                        wire:target="monitoring"
+                                    >
+                                        MENYIMPAN...
+                                    </span>
 
                                 </button>
 
@@ -1173,19 +866,20 @@
                                 <button
                                     type="button"
                                     wire:click="resetSearch"
-                                    class="inline-flex
-                                           items-center
-                                           justify-center
-                                           gap-2
-                                           rounded-lg
-                                           border
-                                           border-[#c3c6d7]
-                                           bg-white
-                                           px-6 py-3
-                                           text-sm
-                                           font-semibold
-                                           text-[#434655]
-                                           hover:bg-[#eff4ff]"
+                                    class="inline-flex h-12 w-full
+                                           items-center justify-center
+                                           gap-2 rounded-xl
+                                           border border-slate-300
+                                           bg-white px-6
+                                           text-sm font-bold
+                                           text-slate-700
+                                           transition
+                                           hover:bg-slate-100
+                                           dark:border-slate-700
+                                           dark:bg-slate-900
+                                           dark:text-slate-200
+                                           dark:hover:bg-slate-800
+                                           sm:w-auto"
                                 >
 
                                     <span
@@ -1201,227 +895,382 @@
 
                             </div>
 
-                        @endif
+                        </div>
+
+                    @endif
+
+                </div>
+
+            </section>
+
+
+
+            {{-- ============================================================
+                MONITORING HISTORY
+            ============================================================= --}}
+
+            <section
+                class="overflow-hidden rounded-2xl
+                       border border-slate-200 bg-white
+                       shadow-sm
+                       dark:border-slate-800 dark:bg-slate-900"
+            >
+
+                <div
+                    class="border-b border-slate-200 px-4 py-4
+                           dark:border-slate-800 sm:px-5"
+                >
+
+                    <div
+                        class="flex items-center
+                               justify-between gap-3"
+                    >
+
+                        <div class="min-w-0">
+
+                            <div class="flex items-center gap-2">
+
+                                <span
+                                    class="material-symbols-outlined
+                                           text-blue-600
+                                           dark:text-blue-400"
+                                >
+                                    history
+                                </span>
+
+                                <h3 class="text-sm font-bold sm:text-base">
+                                    Riwayat Monitoring
+                                </h3>
+
+                            </div>
+
+                            <p
+                                class="mt-1 text-xs
+                                       text-slate-500
+                                       dark:text-slate-400"
+                            >
+                                Data monitoring container.
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            class="shrink-0 rounded-xl
+                                   bg-blue-50 px-3 py-2
+                                   text-center
+                                   dark:bg-blue-950/40"
+                        >
+
+                            <p
+                                class="text-[9px] font-bold uppercase
+                                       tracking-wider
+                                       text-slate-500
+                                       dark:text-slate-400"
+                            >
+                                Total
+                            </p>
+
+                            <p
+                                class="text-lg font-black
+                                       text-blue-600
+                                       dark:text-blue-400"
+                            >
+                                {{ count($monitoringLogs) }}
+                            </p>
+
+                        </div>
 
                     </div>
 
                 </div>
 
-            @endif
 
 
+                {{-- ========================================================
+                    MOBILE HISTORY CARD
+                ========================================================= --}}
 
-            {{-- ====================================================
-                MONITORING HISTORY
-            ===================================================== --}}
+                <div class="space-y-3 p-4 sm:hidden">
 
-            @if($selectedOperation)
-
-                <div
-                    class="overflow-hidden
-                           rounded-xl
-                           border
-                           border-[#c3c6d7]/30
-                           bg-white
-                           shadow-sm"
-                >
-
-                    <div
-                        class="border-b
-                               border-[#c3c6d7]/30
-                               px-5 py-4
-                               sm:px-6"
-                    >
+                    @forelse(
+                        $monitoringLogs
+                        as $index => $log
+                    )
 
                         <div
-                            class="flex items-center
-                                   justify-between"
+                            class="rounded-xl border
+                                   border-slate-200
+                                   bg-slate-50 p-4
+                                   dark:border-slate-700
+                                   dark:bg-slate-950"
                         >
 
-                            <div>
+                            <div
+                                class="mb-3 flex items-center
+                                       justify-between"
+                            >
 
-                                <h2
-                                    class="text-base
-                                           font-semibold"
+                                <span
+                                    class="text-xs font-bold
+                                           text-slate-500
+                                           dark:text-slate-400"
                                 >
-                                    Riwayat Monitoring
-                                </h2>
+                                    #{{ $index + 1 }}
+                                </span>
 
+                                <span
+                                    class="inline-flex items-center gap-1
+                                           rounded-full
+                                           bg-blue-100 px-3 py-1
+                                           text-sm font-black
+                                           text-blue-700
+                                           dark:bg-blue-950/50
+                                           dark:text-blue-300"
+                                >
+
+                                    <span
+                                        class="material-symbols-outlined
+                                               text-[16px]"
+                                    >
+                                        thermostat
+                                    </span>
+
+                                    {{ $log->temperature ?? '-' }}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="mb-3">
 
                                 <p
-                                    class="mt-1 text-xs
-                                           text-[#737686]"
+                                    class="mb-1 text-[10px] font-bold
+                                           uppercase tracking-wider
+                                           text-slate-400"
                                 >
-                                    Data monitoring container.
+                                    Catatan
+                                </p>
+
+                                <p
+                                    class="text-sm leading-5
+                                           text-slate-700
+                                           dark:text-slate-300"
+                                >
+                                    {{ $log->note ?? '-' }}
                                 </p>
 
                             </div>
 
 
                             <div
-                                class="rounded-lg
-                                       bg-[#eff4ff]
-                                       px-4 py-2
-                                       text-center"
+                                class="flex items-center gap-2
+                                       border-t border-slate-200
+                                       pt-3 text-xs
+                                       text-slate-500
+                                       dark:border-slate-700
+                                       dark:text-slate-400"
                             >
 
-                                <p
-                                    class="text-[10px]
-                                           font-semibold
-                                           uppercase
-                                           tracking-wider
-                                           text-[#737686]"
+                                <span
+                                    class="material-symbols-outlined
+                                           text-[16px]"
                                 >
-                                    Total
-                                </p>
+                                    schedule
+                                </span>
 
-
-                                <p
-                                    class="text-lg
-                                           font-bold
-                                           text-[#004ac6]"
-                                >
-                                    {{ count($monitoringLogs) }}
-                                </p>
+                                {{
+                                    optional(
+                                        $log->created_at
+                                    )->format('d-m-Y H:i')
+                                    ?? '-'
+                                }}
 
                             </div>
 
                         </div>
 
-                    </div>
+                    @empty
+
+                        <div class="py-10 text-center">
+
+                            <div
+                                class="mx-auto flex h-12 w-12
+                                       items-center justify-center
+                                       rounded-full bg-blue-50
+                                       text-blue-600
+                                       dark:bg-blue-950/40
+                                       dark:text-blue-400"
+                            >
+                                <span class="material-symbols-outlined">
+                                    thermostat
+                                </span>
+                            </div>
+
+                            <p
+                                class="mt-3 text-sm font-semibold
+                                       text-slate-700
+                                       dark:text-slate-300"
+                            >
+                                Belum ada data monitoring
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs
+                                       text-slate-500
+                                       dark:text-slate-400"
+                            >
+                                Riwayat monitoring akan muncul di sini.
+                            </p>
+
+                        </div>
+
+                    @endforelse
+
+                </div>
 
 
 
-                    {{-- TABLE --}}
+                {{-- ========================================================
+                    DESKTOP HISTORY TABLE
+                ========================================================= --}}
 
-                    <div class="overflow-x-auto">
+                <div class="hidden overflow-x-auto sm:block">
 
-                        <table
-                            class="min-w-full
-                                   text-left"
+                    <table class="min-w-full text-left">
+
+                        <thead
+                            class="bg-slate-50
+                                   dark:bg-slate-950"
                         >
 
-                            <thead
-                                class="bg-[#eff4ff]"
-                            >
+                            <tr>
 
-                                <tr>
+                                <th
+                                    class="whitespace-nowrap px-5 py-3
+                                           text-[10px] font-bold
+                                           uppercase tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    No
+                                </th>
 
-                                    <th
-                                        class="whitespace-nowrap
-                                               px-5 py-3
-                                               text-[10px]
-                                               font-bold
-                                               uppercase
-                                               tracking-wider
-                                               text-[#434655]"
+                                <th
+                                    class="whitespace-nowrap px-5 py-3
+                                           text-[10px] font-bold
+                                           uppercase tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    Temperature
+                                </th>
+
+                                <th
+                                    class="px-5 py-3
+                                           text-[10px] font-bold
+                                           uppercase tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    Catatan
+                                </th>
+
+                                <th
+                                    class="whitespace-nowrap px-5 py-3
+                                           text-[10px] font-bold
+                                           uppercase tracking-wider
+                                           text-slate-500
+                                           dark:text-slate-400"
+                                >
+                                    Waktu
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody
+                            class="divide-y divide-slate-100
+                                   dark:divide-slate-800"
+                        >
+
+                            @forelse(
+                                $monitoringLogs
+                                as $index => $log
+                            )
+
+                                <tr
+                                    class="transition
+                                           hover:bg-slate-50
+                                           dark:hover:bg-slate-950"
+                                >
+
+                                    <td
+                                        class="whitespace-nowrap px-5 py-4
+                                               text-sm
+                                               text-slate-700
+                                               dark:text-slate-300"
                                     >
-                                        No
-                                    </th>
+                                        {{ $index + 1 }}
+                                    </td>
 
 
-                                    <th
-                                        class="whitespace-nowrap
-                                               px-5 py-3
-                                               text-[10px]
-                                               font-bold
-                                               uppercase
-                                               tracking-wider
-                                               text-[#434655]"
-                                    >
-                                        Temperature
-                                    </th>
-
-
-                                    <th
-                                        class="whitespace-nowrap
-                                               px-5 py-3
-                                               text-[10px]
-                                               font-bold
-                                               uppercase
-                                               tracking-wider
-                                               text-[#434655]"
-                                    >
-                                        Catatan
-                                    </th>
-
-
-                                    <th
-                                        class="whitespace-nowrap
-                                               px-5 py-3
-                                               text-[10px]
-                                               font-bold
-                                               uppercase
-                                               tracking-wider
-                                               text-[#434655]"
-                                    >
-                                        Waktu
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody
-                                class="divide-y
-                                       divide-[#c3c6d7]/20"
-                            >
-
-                                @forelse(
-                                    $monitoringLogs
-                                    as $index => $log
-                                )
-
-                                    <tr
-                                        class="hover:bg-[#f8f9ff]"
+                                    <td
+                                        class="whitespace-nowrap px-5 py-4"
                                     >
 
-                                        <td
-                                            class="whitespace-nowrap
-                                                   px-5 py-4
-                                                   text-sm"
-                                        >
-                                            {{ $index + 1 }}
-                                        </td>
-
-
-                                        <td
-                                            class="whitespace-nowrap
-                                                   px-5 py-4"
+                                        <span
+                                            class="inline-flex items-center
+                                                   gap-1.5 rounded-full
+                                                   bg-blue-100 px-3 py-1
+                                                   text-xs font-black
+                                                   text-blue-700
+                                                   dark:bg-blue-950/50
+                                                   dark:text-blue-300"
                                         >
 
                                             <span
-                                                class="inline-flex
-                                                       rounded-full
-                                                       bg-[#d3e4fe]
-                                                       px-3 py-1
-                                                       text-xs
-                                                       font-bold
-                                                       text-[#004ac6]"
+                                                class="material-symbols-outlined
+                                                       text-[15px]"
                                             >
-                                                {{ $log->temperature ?? '-' }}
+                                                thermostat
                                             </span>
 
-                                        </td>
+                                            {{ $log->temperature ?? '-' }}
+
+                                        </span>
+
+                                    </td>
 
 
-                                        <td
-                                            class="min-w-[250px]
-                                                   px-5 py-4
-                                                   text-sm
-                                                   text-[#434655]"
-                                        >
-                                            {{ $log->note ?? '-' }}
-                                        </td>
+                                    <td
+                                        class="min-w-[250px] px-5 py-4
+                                               text-sm
+                                               text-slate-600
+                                               dark:text-slate-300"
+                                    >
+                                        {{ $log->note ?? '-' }}
+                                    </td>
 
 
-                                        <td
-                                            class="whitespace-nowrap
-                                                   px-5 py-4
-                                                   text-xs
-                                                   text-[#737686]"
-                                        >
+                                    <td
+                                        class="whitespace-nowrap px-5 py-4
+                                               text-xs
+                                               text-slate-500
+                                               dark:text-slate-400"
+                                    >
+
+                                        <div class="flex items-center gap-1.5">
+
+                                            <span
+                                                class="material-symbols-outlined
+                                                       text-[15px]"
+                                            >
+                                                schedule
+                                            </span>
 
                                             {{
                                                 optional(
@@ -1430,159 +1279,151 @@
                                                 ?? '-'
                                             }}
 
-                                        </td>
+                                        </div>
 
-                                    </tr>
+                                    </td>
 
-                                @empty
+                                </tr>
 
-                                    <tr>
+                            @empty
 
-                                        <td
-                                            colspan="4"
-                                            class="px-5 py-12
-                                                   text-center"
+                                <tr>
+
+                                    <td
+                                        colspan="4"
+                                        class="px-5 py-12 text-center"
+                                    >
+
+                                        <div
+                                            class="mx-auto flex h-12 w-12
+                                                   items-center justify-center
+                                                   rounded-full bg-blue-50
+                                                   text-blue-600
+                                                   dark:bg-blue-950/40
+                                                   dark:text-blue-400"
                                         >
 
-                                            <div
-                                                class="mx-auto
-                                                       flex h-12 w-12
-                                                       items-center
-                                                       justify-center
-                                                       rounded-full
-                                                       bg-[#eff4ff]
-                                                       text-[#004ac6]"
+                                            <span
+                                                class="material-symbols-outlined"
                                             >
+                                                thermostat
+                                            </span>
 
-                                                <span
-                                                    class="material-symbols-outlined"
-                                                >
-                                                    thermostat
-                                                </span>
+                                        </div>
 
-                                            </div>
+                                        <p
+                                            class="mt-3 text-sm font-semibold
+                                                   text-slate-700
+                                                   dark:text-slate-300"
+                                        >
+                                            Belum ada data monitoring
+                                        </p>
 
+                                        <p
+                                            class="mt-1 text-xs
+                                                   text-slate-500
+                                                   dark:text-slate-400"
+                                        >
+                                            Riwayat monitoring akan muncul
+                                            di sini.
+                                        </p>
 
-                                            <p
-                                                class="mt-3 text-sm
-                                                       font-semibold
-                                                       text-[#434655]"
-                                            >
-                                                Belum ada data monitoring
-                                            </p>
+                                    </td>
 
+                                </tr>
 
-                                            <p
-                                                class="mt-1 text-xs
-                                                       text-[#737686]"
-                                            >
-                                                Riwayat monitoring akan
-                                                muncul di sini.
-                                            </p>
+                            @endforelse
 
-                                        </td>
+                        </tbody>
 
-                                    </tr>
-
-                                @endforelse
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
+                    </table>
 
                 </div>
 
-            @endif
+            </section>
+
+        @endif
 
 
 
-            {{-- ====================================================
-                EMPTY SEARCH
-            ===================================================== --}}
+        {{-- ============================================================
+            EMPTY SEARCH
+        ============================================================= --}}
 
-            @if(
-                $hasSearched
-                && empty($operations)
-                && !$selectedOperation
-            )
+        @if(
+            $hasSearched
+            && empty($operations)
+            && !$selectedOperation
+        )
 
-                <div
-                    class="overflow-hidden
-                           rounded-xl
-                           border
-                           border-[#c3c6d7]/30
-                           bg-white
-                           shadow-sm"
-                >
-
-                    <div
-                        class="px-6 py-14
-                               text-center"
-                    >
-
-                        <div
-                            class="mx-auto
-                                   flex h-14 w-14
-                                   items-center
-                                   justify-center
-                                   rounded-full
-                                   bg-[#eff4ff]
-                                   text-[#004ac6]"
-                        >
-
-                            <span
-                                class="material-symbols-outlined
-                                       text-[28px]"
-                            >
-                                search_off
-                            </span>
-
-                        </div>
-
-
-                        <p
-                            class="mt-4 text-sm
-                                   font-semibold
-                                   text-[#434655]"
-                        >
-                            Data container tidak ditemukan
-                        </p>
-
-
-                        <p
-                            class="mt-1 text-xs
-                                   text-[#737686]"
-                        >
-                            Silakan periksa kembali nomor container.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-
-            {{-- ====================================================
-                FOOTER
-            ===================================================== --}}
-
-            <footer
-                class="mt-6 border-t
-                       border-[#c3c6d7]/30
-                       pt-5 text-center"
+            <section
+                class="overflow-hidden rounded-2xl
+                       border border-slate-200 bg-white
+                       shadow-sm
+                       dark:border-slate-800 dark:bg-slate-900"
             >
 
-                <p class="text-xs text-[#737686]">
-                    MONITORING REEFER · PortOps Central
-                </p>
+                <div class="px-5 py-14 text-center">
 
-            </footer>
+                    <div
+                        class="mx-auto flex h-14 w-14
+                               items-center justify-center
+                               rounded-full bg-slate-100
+                               text-slate-500
+                               dark:bg-slate-800
+                               dark:text-slate-400"
+                    >
 
-        </main>
+                        <span
+                            class="material-symbols-outlined text-[28px]"
+                        >
+                            search_off
+                        </span>
+
+                    </div>
+
+                    <p
+                        class="mt-4 text-sm font-bold
+                               text-slate-700
+                               dark:text-slate-300"
+                    >
+                        Data container tidak ditemukan
+                    </p>
+
+                    <p
+                        class="mt-1 text-xs
+                               text-slate-500
+                               dark:text-slate-400"
+                    >
+                        Silakan periksa kembali nomor container.
+                    </p>
+
+                </div>
+
+            </section>
+
+        @endif
+
+
+
+        {{-- ============================================================
+            FOOTER
+        ============================================================= --}}
+
+        <footer
+            class="mt-6 border-t border-slate-200
+                   py-5 text-center
+                   dark:border-slate-800"
+        >
+
+            <p
+                class="text-[11px] font-medium
+                       text-slate-400 dark:text-slate-500"
+            >
+                MONITORING REEFER · PortOps Central
+            </p>
+
+        </footer>
 
     </div>
 
