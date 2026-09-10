@@ -50,7 +50,7 @@ class Login extends Component
         Auth::login($user, $this->remember);
 
         DB::table('reff_user')
-            ->where('ID', $record->ID)
+            ->where('ID', $record->id)
             ->update(['LAST_LOGIN' => now()]);
 
         RateLimiter::clear($this->throttleKey());

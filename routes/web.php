@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\Operation\BehandleController;
+use App\Http\Controllers\Operation\PickupController;
 use App\Livewire\Dashboard;
-use App\Http\Controllers\PickupController;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Operation\MarshallingYard;
 use App\Livewire\Operation\Index;
@@ -23,173 +24,168 @@ use App\Livewire\Operation\OnChassis;
 |--------------------------------------------------------------------------
 */
 
-// Route::middleware(['auth', 'verified'])->group(function () {
-//     Route::get('dashboard', Dashboard::class)->name('dashboard');
-//     Route::get('/', Dashboard::class)->name('home');
-//     Route::get('pickup', Dashboard::class)->name('pickup.index');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('dashboard', Dashboard::class)->name('dashboard');
+    Route::get('/', Dashboard::class)->name('home');
 
-//     Route::post('pickup/search', [PickupController::class, 'search'])->name('pickup.search');
-//     Route::post('pickup/store', [PickupController::class, 'store'])->name('pickup.store');
+    /** Pickup */
+    Route::get('pickup', Dashboard::class)->name('pickup');
+    Route::post('pickup/search', [PickupController::class, 'search'])->name('pickup.search');
+    Route::post('pickup/store', [PickupController::class, 'store'])->name('pickup.store');
 
-//     Route::redirect('settings', 'settings/profile');
+    /** Behandle In */
+    Route::get('/behandle-in', Dashboard::class)->name('behandlein');
+    Route::post('behandle/search', [BehandleController::class, 'search'])->name('behandlein.search');
+    Route::post('behandle/store', [BehandleController::class, 'store'])->name('behandlein.store');
 
-//     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-//     Volt::route('settings/password', 'settings.password')->name('settings.password');
-//     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
-// });
+    // Route::redirect('settings', 'settings/profile');
 
-Route::livewire(
-    '/',
-    Index::class
-)->name('home');
+    // Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
+    // Volt::route('settings/password', 'settings.password')->name('settings.password');
+    // Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+});
 
-Route::livewire(
-    '/dashboard',
-    Index::class
-)->name('dashboard');
+// Route::livewire(
+//     '/',
+//     Index::class
+// )->name('home');
 
-
-/*
-|--------------------------------------------------------------------------
-| OPERATION - PICKUP
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/operation/pickup',
-    Pickup::class
-)->name('operation.pickup');
+// Route::livewire(
+//     '/dashboard',
+//     Index::class
+// )->name('dashboard');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - BEHANDLE IN
-|--------------------------------------------------------------------------
-*/
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - PICKUP
+// |--------------------------------------------------------------------------
+// */
 
-Route::get(
-    '/operation/behandle-in',
-    BehandleIn::class
-)->name('operation.behandle-in');
+// Route::get(
+//     '/operation/pickup',
+//     Pickup::class
+// )->name('operation.pickup');
 
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - HOLD
+// |--------------------------------------------------------------------------
+// */
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - HOLD
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/operation/hold',
-    Hold::class
-)->name('operation.hold');
-
-
-/*
-|--------------------------------------------------------------------------
-| OPERATION - MARSHALLING CIC
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/operation/marshallingcic',
-    MarshallingCic::class
-)->name('operation.marshallingcic');
+// Route::get(
+//     '/operation/hold',
+//     Hold::class
+// )->name('operation.hold');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - MARSHALLING YARD
-|--------------------------------------------------------------------------
-*/
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - MARSHALLING CIC
+// |--------------------------------------------------------------------------
+// */
 
-Route::get(
-    '/operation/marshalling-yard',
-    MarshallingYard::class
-)->name('operation.marshalling-yard');
-
-
-/*
-|--------------------------------------------------------------------------
-| OPERATION - INSPECTION
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/operation/inspection',
-    Inspection::class
-)->name('operation.inspection');
+// Route::get(
+//     '/operation/marshallingcic',
+//     MarshallingCic::class
+// )->name('operation.marshallingcic');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - PLUG REEFER
-|--------------------------------------------------------------------------
-*/
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - MARSHALLING YARD
+// |--------------------------------------------------------------------------
+// */
 
-Route::get(
-    '/operation/plug-reefer',
-    PlugReefer::class
-)->name('operation.plug-reefer');
-
-
-/*
-|--------------------------------------------------------------------------
-| OPERATION - MONITORING REEFER
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/operation/monitoring-reefer',
-    MonitoringReefer::class
-)->name('operation.monitoring-reefer');
+// Route::get(
+//     '/operation/marshalling-yard',
+//     MarshallingYard::class
+// )->name('operation.marshalling-yard');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - DELIVERY
-|--------------------------------------------------------------------------
-*/
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - INSPECTION
+// |--------------------------------------------------------------------------
+// */
 
-Route::get(
-    '/operation/delivery',
-    Delivery::class
-)->name('operation.delivery');
-
-
-/*
-|--------------------------------------------------------------------------
-| OPERATION - INSPECTION OUT
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/operation/inspection-out',
-    InspectionOut::class
-)->name('operation.inspection-out');
+// Route::get(
+//     '/operation/inspection',
+//     Inspection::class
+// )->name('operation.inspection');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - ON CHASSIS
-|--------------------------------------------------------------------------
-*/
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - PLUG REEFER
+// |--------------------------------------------------------------------------
+// */
 
-Route::get(
-    '/operation/on-chassis',
-    OnChassis::class
-)->name('operation.on-chassis');
+// Route::get(
+//     '/operation/plug-reefer',
+//     PlugReefer::class
+// )->name('operation.plug-reefer');
 
 
-/*
-|--------------------------------------------------------------------------
-| OPERATION - COPY YARD
-|--------------------------------------------------------------------------
-*/
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - MONITORING REEFER
+// |--------------------------------------------------------------------------
+// */
 
-Route::get(
-    '/operation/copy-yard',
-    function () {
-        return 'COPY YARD - Coming Soon';
-    }
-)->name('operation.copy-yard');
+// Route::get(
+//     '/operation/monitoring-reefer',
+//     MonitoringReefer::class
+// )->name('operation.monitoring-reefer');
+
+
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - DELIVERY
+// |--------------------------------------------------------------------------
+// */
+
+// Route::get(
+//     '/operation/delivery',
+//     Delivery::class
+// )->name('operation.delivery');
+
+
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - INSPECTION OUT
+// |--------------------------------------------------------------------------
+// */
+
+// Route::get(
+//     '/operation/inspection-out',
+//     InspectionOut::class
+// )->name('operation.inspection-out');
+
+
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - ON CHASSIS
+// |--------------------------------------------------------------------------
+// */
+
+// Route::get(
+//     '/operation/on-chassis',
+//     OnChassis::class
+// )->name('operation.on-chassis');
+
+
+// /*
+// |--------------------------------------------------------------------------
+// | OPERATION - COPY YARD
+// |--------------------------------------------------------------------------
+// */
+
+// Route::get(
+//     '/operation/copy-yard',
+//     function () {
+//         return 'COPY YARD - Coming Soon';
+//     }
+// )->name('operation.copy-yard');
+
+require __DIR__ . '/auth.php';

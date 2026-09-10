@@ -25,12 +25,7 @@
 
 
         {{-- SEARCH --}}
-        <div
-            class="rounded-lg border border-slate-200
-                   bg-white p-4 shadow-sm
-                   dark:border-white/10 dark:bg-slate-950"
-        >
-
+        <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-smdark:border-white/10 dark:bg-slate-950">
             <label
                 for="search-cont"
                 class="text-sm font-semibold"

@@ -16,7 +16,7 @@ class User extends Authenticatable // implements MustVerifyEmail
 
     protected $table = 'reff_user';
 
-    protected $primaryKey = 'ID';
+    protected $primaryKey = 'id';
 
     public $timestamps = false;
 
@@ -30,21 +30,21 @@ class User extends Authenticatable // implements MustVerifyEmail
      * @var list<string>
      */
     protected $fillable = [
-        'USER_NAME',
-        'PASS',
-        'NAMA',
-        'NOTELP',
-        'EMAIL',
-        'KD_GA',
-        'KD_TPS',
-        'KD_GUDANG',
-        'KD_GROUP',
-        'STATUS',
-        'ROLE',
-        'LAST_LOGIN',
-        'WK_REKAM',
-        'NPWP',
-        'PASS_BOSBARU',
+        'user_name',
+        'pass',
+        'nama',
+        'notelp',
+        'email',
+        'kd_ga',
+        'kd_tps',
+        'kd_gudang',
+        'kd_group',
+        'status',
+        'role',
+        'last_login',
+        'wk_rekam',
+        'npwp',
+        'pass_bosbaru',
     ];
 
     /**
@@ -53,37 +53,37 @@ class User extends Authenticatable // implements MustVerifyEmail
      * @var list<string>
      */
     protected $hidden = [
-        'PASS',
-        'PASS_BOSBARU',
+        'pass',
+        'pass_bosbaru',
     ];
 
     protected function casts(): array
     {
         return [
-            'ID'         => 'integer',
-            'LAST_LOGIN' => 'datetime',
-            'WK_REKAM'   => 'datetime',
+            'id'         => 'integer',
+            'last_login' => 'datetime',
+            'wk_rekam'   => 'datetime',
         ];
     }
 
     public function getAuthPassword(): string
     {
-        return (string) ($this->attributes['PASS'] ?? '');
+        return (string) ($this->attributes['pass'] ?? '');
     }
 
     public function getNameAttribute(): string
     {
-        return (string) ($this->attributes['NAMA'] ?? '');
+        return (string) ($this->attributes['nama'] ?? '');
     }
 
     public function getEmailAttribute(): string
     {
-        return (string) ($this->attributes['EMAIL'] ?? '');
+        return (string) ($this->attributes['email'] ?? '');
     }
 
     public function getUsernameAttribute(): string
     {
-        return (string) ($this->attributes['USER_NAME'] ?? '');
+        return (string) ($this->attributes['user_name'] ?? '');
     }
 
     /**
@@ -93,7 +93,7 @@ class User extends Authenticatable // implements MustVerifyEmail
     {
         return Str::of($this->name)
             ->explode(' ')
-            ->map(fn (string $name) => Str::of($name)->substr(0, 1))
+            ->map(fn(string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
 }

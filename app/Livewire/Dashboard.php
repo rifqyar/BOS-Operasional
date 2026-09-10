@@ -15,7 +15,7 @@ class Dashboard extends Component
         $countWaitingInspectionCont = $this->getWaitingInspectionCont();
         $countOnInspectionCont = $this->getOnInspectionCont();
         $countInspectionDoneCont = $this->getInspectionDoneCont();
-        return view('livewire.operation.dashboard', compact('countWaitingPickupCont', 'countWaitingInspectionCont', 'countOnInspectionCont', 'countInspectionDoneCont'));
+        return view('livewire.dashboard', compact('countWaitingPickupCont', 'countWaitingInspectionCont', 'countOnInspectionCont', 'countInspectionDoneCont'));
     }
 
     private function getPickupListContainer(){

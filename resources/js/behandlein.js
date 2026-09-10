@@ -4,21 +4,21 @@
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Pickup panel elements & selectors                                 */
+    /*  Behandle In panel elements & selectors                           */
     /* ------------------------------------------------------------------ */
 
-    const getPanel = () => $('[data-panel][data-panel-name="pickup"], [data-pickup-panel]').first();
+    const getPanel = () => $('[data-panel][data-panel-name="behandlein"]').first();
     const hasPanel = () => getPanel().length > 0;
 
-    const getSpkInput = () => $('#panel-no-spk, #pickup-no-spk', getPanel());
-    const getSearchForm = () => $('[data-search-form], [data-pickup-search-form]', getPanel());
-    const getSearchButton = () => $('[data-search-button], [data-pickup-search-button]', getPanel());
-    const getResultWrapper = () => $('[data-result], [data-pickup-result]', getPanel());
-    const getResultSpk = () => $('[data-result-spk], [data-pickup-result-spk]', getPanel());
-    const getRowsContainer = () => $('[data-rows], [data-pickup-rows]', getPanel());
+    const getNoContInput = () => $('#panel-no-container', getPanel());
+    const getSearchForm = () => $('[data-search-form]', getPanel());
+    const getSearchButton = () => $('[data-search-button]', getPanel());
+    const getResultWrapper = () => $('[data-result]', getPanel());
+    const getResultContainer = () => $('[data-result-container]', getPanel());
+    const getRowsContainer = () => $('[data-rows]', getPanel());
 
-    const getSearchUrl = () => getPanel().data('searchUrl') || getPanel().data('pickupSearchUrl');
-    const getStoreUrl = () => getPanel().data('storeUrl') || getPanel().data('pickupStoreUrl');
+    const getSearchUrl = () => getPanel().data('searchUrl');
+    const getStoreUrl = () => getPanel().data('storeUrl');
 
     /* ------------------------------------------------------------------ */
     /*  Helpers                                                           */
@@ -62,10 +62,10 @@
     /*  Init panel state                                                  */
     /* ------------------------------------------------------------------ */
 
-    const initPickupPanel = () => {
+    const initBehandleInPanel = () => {
         if (hasPanel()) {
             $('[data-handheld-menu]').addClass('hidden');
-            getSpkInput().trigger('focus');
+            getNoContInput().trigger('focus');
         }
     };
 
@@ -73,37 +73,37 @@
     /*  Bind event handlers                                               */
     /* ------------------------------------------------------------------ */
 
-    const bindPickupHandlers = () => {
+    const bindBehandleInHandlers = () => {
         /* ---- Reload data listener ---- */
-        $(document).off('bos:reload-data.bosPickup');
-        $(document).on('bos:reload-data.bosPickup', () => {
-            const noSpk = getSpkInput().val()?.trim();
-            if (hasPanel() && noSpk) {
+        $(document).off('bos:reload-data.bosBehandleIn');
+        $(document).on('bos:reload-data.bosBehandleIn', () => {
+            const noCont = getNoContInput().val()?.trim();
+            if (hasPanel() && noCont) {
                 getSearchForm().trigger('submit');
             }
         });
 
-        /* ---- Search SPK submit ---- */
-        $(document).off('submit.bosPickupSearch', '[data-search-form], [data-pickup-search-form]');
-        $(document).on('submit.bosPickupSearch', '[data-search-form], [data-pickup-search-form]', function (event) {
+        /* ---- Search No Container submit ---- */
+        $(document).off('submit.bosBehandleInSearch', '[data-search-form]');
+        $(document).on('submit.bosBehandleInSearch', '[data-search-form]', function (event) {
             if (! hasPanel()) return;
 
             event.preventDefault();
 
-            const noSpk = getSpkInput().val()?.trim();
+            const noCont = getNoContInput().val()?.trim();
             const $button = getSearchButton();
             const defaultLabel = $button.data('default-label') || $button.html();
             const searchUrl = getSearchUrl();
 
             $button.data('default-label', defaultLabel);
 
-            if (! noSpk) {
-                showAlert('warning', 'Nomor SPK kosong', 'Silakan isi nomor SPK terlebih dahulu.');
+            if (! noCont) {
+                showAlert('warning', 'Nomor Container kosong', 'Silakan isi nomor Container terlebih dahulu.');
                 return;
             }
 
             if (! searchUrl) {
-                showAlert('error', 'Konfigurasi belum lengkap', 'URL pencarian pickup tidak ditemukan.');
+                showAlert('info', 'Dalam Pengembangan', 'Fitur pencarian Behandle In sedang dalam pengembangan.');
                 return;
             }
 
@@ -112,15 +112,17 @@
             $.ajax({
                 url: searchUrl,
                 method: 'POST',
-                data: { no_spk: noSpk },
+                data: { no_cont: noCont },
                 success: (response) => {
-                    getResultSpk().text(noSpk);
+                    getResultContainer().text(noCont);
                     getRowsContainer().empty().html(response.data || '');
                     getResultWrapper().removeClass('hidden');
                 },
                 error: (xhr) => {
                     getResultWrapper().addClass('hidden');
-                    showAlert('info', 'SPK tidak ditemukan', xhr.responseJSON?.message || 'Data SPK tidak ditemukan.');
+                    let alertType = xhr.status >= '500' ? 'error' : 'info';
+                    let alertTitle = xhr.status >= '500' ? 'Terjadi Kesalahan' : 'Container tidak ditemukan';
+                    showAlert(alertType, alertTitle, xhr.responseJSON?.message || 'Gagal mengambil data container, harap hubungi tim IT');
                 },
                 complete: () => {
                     setButtonLoading($button, false, defaultLabel);
@@ -129,8 +131,8 @@
         });
 
         /* ---- Send / Store form submit ---- */
-        $(document).off('submit.bosPickupSend', '[data-send-form], [data-pickup-send-form]');
-        $(document).on('submit.bosPickupSend', '[data-send-form], [data-pickup-send-form]', function (event) {
+        $(document).off('submit.bosBehandleInSend', '[data-send-form]');
+        $(document).on('submit.bosBehandleInSend', '[data-send-form]', function (event) {
             if (! hasPanel()) return;
 
             event.preventDefault();
@@ -143,7 +145,7 @@
             $button.data('default-label', defaultLabel);
 
             if (! storeUrl) {
-                showAlert('error', 'Konfigurasi belum lengkap', 'URL simpan pickup tidak ditemukan.');
+                showAlert('info', 'Dalam Pengembangan', 'Fitur simpan Behandle In sedang dalam pengembangan.');
                 return;
             }
 
@@ -154,14 +156,14 @@
                 method: 'POST',
                 data: $form.serialize(),
                 success: (response) => {
-                    showAlert('success', 'Berhasil', response.message || 'Data pickup berhasil dikirim.');
+                    showAlert('success', 'Berhasil', response.message || 'Data Behandle In berhasil dikirim.');
                     $button
                         .text('Terkirim')
                         .removeClass('bg-emerald-600 hover:bg-emerald-700')
                         .addClass('bg-slate-500');
                 },
                 error: (xhr) => {
-                    showAlert('error', 'Gagal', xhr.responseJSON?.message || 'Data pickup gagal dikirim.');
+                    showAlert('error', 'Gagal', xhr.responseJSON?.message || 'Data Behandle In gagal dikirim.');
                 },
                 complete: () => {
                     if ($button.text().trim() !== 'Terkirim') {
@@ -173,12 +175,12 @@
     };
 
     // Execute
-    bindPickupHandlers();
-    initPickupPanel();
+    bindBehandleInHandlers();
+    initBehandleInPanel();
 
-    $(() => initPickupPanel());
+    $(() => initBehandleInPanel());
     $(document).on('livewire:navigated', () => {
-        bindPickupHandlers();
-        initPickupPanel();
+        bindBehandleInHandlers();
+        initBehandleInPanel();
     });
 })(window.jQuery);

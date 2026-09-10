@@ -1,4 +1,4 @@
-<form data-pickup-send-form
+<form data-send-form
     class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(5rem,0.45fr)_minmax(0,1.55fr)_auto] lg:items-end">
     <input type="hidden" name="no_spk" value="{{ $rows->no_spk }}">
     <input type="hidden" name="no_container" value="{{ $rows->no_container }}">
