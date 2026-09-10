@@ -50,8 +50,36 @@
     /*  Core AJAX setup (CSRF token)                                      */
     /* ------------------------------------------------------------------ */
 
+    window.getCsrfToken = () => {
+        // 1. Current active panel data attribute (always fresh on page load / navigate)
+        const panelToken = $('[data-panel]').first().attr('data-csrf-token') || $('[data-panel]').first().data('csrfToken');
+        if (panelToken) {
+            return panelToken;
+        }
+
+        // 2. Meta tag
+        const metaToken = $('meta[name="csrf-token"]').attr('content');
+        if (metaToken) {
+            return metaToken;
+        }
+
+        // 3. Form input _token
+        const inputToken = $('input[name="_token"]').val();
+        if (inputToken) {
+            return inputToken;
+        }
+
+        // 4. XSRF-TOKEN cookie
+        const match = document.cookie.match(/(^|;)\s*XSRF-TOKEN\s*=\s*([^;]+)/);
+        if (match) {
+            return decodeURIComponent(match[2]);
+        }
+
+        return '';
+    };
+
     const setupAjaxCsrf = () => {
-        const token = $('meta[name="csrf-token"]').attr('content');
+        const token = window.getCsrfToken();
         if (token) {
             $.ajaxSetup({
                 headers: {
@@ -60,6 +88,17 @@
             });
         }
     };
+
+    // Use ajaxPrefilter to automatically attach the latest CSRF token to EVERY outgoing jQuery AJAX request
+    $.ajaxPrefilter((options, originalOptions, xhr) => {
+        if (! options.crossDomain) {
+            const token = window.getCsrfToken();
+            if (token) {
+                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                $('meta[name="csrf-token"]').attr('content', token);
+            }
+        }
+    });
 
     /* ------------------------------------------------------------------ */
     /*  Core Handheld UI event handlers                                   */
@@ -72,7 +111,12 @@
         $(document).off('click.bosReloadHandheld', '[data-reload-handheld]');
         $(document).on('click.bosReloadHandheld', '[data-reload-handheld]', function () {
             const $button = $(this);
-            const originalHtml = $button.html();
+            if ($button.data('reloading')) {
+                return;
+            }
+            $button.data('reloading', true);
+            const originalHtml = $button.data('default-html') || $button.html();
+            $button.data('default-html', originalHtml);
 
             $button.prop('disabled', true);
             $button.html(
@@ -84,7 +128,8 @@
 
             setTimeout(() => {
                 $button.prop('disabled', false);
-                $button.html(originalHtml);
+                $button.html($button.data('default-html') || originalHtml);
+                $button.data('reloading', false);
             }, 800);
         });
 

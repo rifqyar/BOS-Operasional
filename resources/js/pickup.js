@@ -19,6 +19,13 @@
 
     const getSearchUrl = () => getPanel().data('searchUrl') || getPanel().data('pickupSearchUrl');
     const getStoreUrl = () => getPanel().data('storeUrl') || getPanel().data('pickupStoreUrl');
+    const getCsrfToken = () => {
+        return getPanel().attr('data-csrf-token')
+            || getPanel().data('csrfToken')
+            || (typeof window.getCsrfToken === 'function' ? window.getCsrfToken() : '')
+            || $('meta[name="csrf-token"]').attr('content')
+            || '';
+    };
 
     /* ------------------------------------------------------------------ */
     /*  Helpers                                                           */
@@ -109,10 +116,18 @@
 
             setButtonLoading($button, true, defaultLabel);
 
+            const token = getCsrfToken();
+
             $.ajax({
                 url: searchUrl,
                 method: 'POST',
-                data: { no_spk: noSpk },
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                },
+                data: {
+                    no_spk: noSpk,
+                    _token: token,
+                },
                 success: (response) => {
                     getResultSpk().text(noSpk);
                     getRowsContainer().empty().html(response.data || '');
@@ -149,9 +164,14 @@
 
             setButtonLoading($button, true, defaultLabel);
 
+            const token = getCsrfToken();
+
             $.ajax({
                 url: storeUrl,
                 method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                },
                 data: $form.serialize(),
                 success: (response) => {
                     showAlert('success', 'Berhasil', response.message || 'Data pickup berhasil dikirim.');

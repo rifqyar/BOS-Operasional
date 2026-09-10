@@ -9,13 +9,59 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Dashboard extends Component
 {
+    public ?string $activePanel = null;
+
+    public function mount(): void
+    {
+        $this->activePanel = $this->resolveActivePanel();
+    }
+
     public function render()
     {
+        $this->activePanel = $this->resolveActivePanel();
+
+        $activePanel = $this->activePanel;
         $countWaitingPickupCont = $this->getPickupListContainer();
         $countWaitingInspectionCont = $this->getWaitingInspectionCont();
         $countOnInspectionCont = $this->getOnInspectionCont();
         $countInspectionDoneCont = $this->getInspectionDoneCont();
-        return view('livewire.dashboard', compact('countWaitingPickupCont', 'countWaitingInspectionCont', 'countOnInspectionCont', 'countInspectionDoneCont'));
+
+        return view('livewire.dashboard', compact(
+            'activePanel',
+            'countWaitingPickupCont',
+            'countWaitingInspectionCont',
+            'countOnInspectionCont',
+            'countInspectionDoneCont'
+        ));
+    }
+
+    private function resolveActivePanel(): ?string
+    {
+        $validPanels = ['pickup', 'behandlein'];
+
+        $routeName = request()->route()?->getName();
+        if ($routeName && in_array($routeName, $validPanels, true)) {
+            return $routeName;
+        }
+
+        // If currently in a Livewire update ($refresh), preserve existing activePanel
+        if (!empty($this->activePanel) && in_array($this->activePanel, $validPanels, true)) {
+            return $this->activePanel;
+        }
+
+        // Check referer or X-Livewire-URL
+        $url = request()->header('X-Livewire-URL') ?? url()->previous();
+        $path = trim((string) parse_url($url, PHP_URL_PATH), '/');
+
+        if ($path === 'pickup' || str_ends_with($path, '/pickup')) {
+            return 'pickup';
+        }
+
+        if ($path === 'behandle-in' || $path === 'behandlein' || str_ends_with($path, '/behandle-in')) {
+            return 'behandlein';
+        }
+
+        return null;
     }
 
     private function getPickupListContainer(){

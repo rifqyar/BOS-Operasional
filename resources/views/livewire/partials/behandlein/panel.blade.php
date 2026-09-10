@@ -1,4 +1,5 @@
 <div class="mx-auto mb-5 max-w-3xl"
+    wire:ignore
     data-panel
     data-panel-name="behandlein"
     data-search-url="{{ Route::has('behandlein.search') ? route('behandlein.search') : '' }}"
