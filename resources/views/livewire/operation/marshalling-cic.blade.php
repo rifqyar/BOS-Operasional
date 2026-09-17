@@ -4,7 +4,7 @@
         <div class="mb-5 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <a
-                    href="{{ route('operation.pickup') }}"
+                    href="{{ route('pickup') }}"
                     wire:navigate
                     class="inline-flex h-10 w-10 items-center justify-center rounded-xl
                            bg-white text-slate-600 shadow-sm ring-1 ring-slate-200

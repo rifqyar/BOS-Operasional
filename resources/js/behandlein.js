@@ -3,10 +3,6 @@
         return;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Behandle In panel elements & selectors                           */
-    /* ------------------------------------------------------------------ */
-
     const getPanel = () => $('[data-panel][data-panel-name="behandlein"]').first();
     const hasPanel = () => getPanel().length > 0;
 
@@ -19,10 +15,6 @@
 
     const getSearchUrl = () => getPanel().data('searchUrl');
     const getStoreUrl = () => getPanel().data('storeUrl');
-
-    /* ------------------------------------------------------------------ */
-    /*  Helpers                                                           */
-    /* ------------------------------------------------------------------ */
 
     const showAlert = (icon, title, text) => {
         if (typeof window.showAlert === 'function') {
@@ -58,10 +50,6 @@
         );
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Init panel state                                                  */
-    /* ------------------------------------------------------------------ */
-
     const initBehandleInPanel = () => {
         if (hasPanel()) {
             $('[data-handheld-menu]').addClass('hidden');
@@ -69,12 +57,7 @@
         }
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Bind event handlers                                               */
-    /* ------------------------------------------------------------------ */
-
     const bindBehandleInHandlers = () => {
-        /* ---- Reload data listener ---- */
         $(document).off('bos:reload-data.bosBehandleIn');
         $(document).on('bos:reload-data.bosBehandleIn', () => {
             const noCont = getNoContInput().val()?.trim();
@@ -83,7 +66,6 @@
             }
         });
 
-        /* ---- Search No Container submit ---- */
         $(document).off('submit.bosBehandleInSearch', '[data-search-form]');
         $(document).on('submit.bosBehandleInSearch', '[data-search-form]', function (event) {
             if (! hasPanel()) return;
@@ -130,7 +112,6 @@
             });
         });
 
-        /* ---- Send / Store form submit ---- */
         $(document).off('submit.bosBehandleInSend', '[data-send-form]');
         $(document).on('submit.bosBehandleInSend', '[data-send-form]', function (event) {
             if (! hasPanel()) return;

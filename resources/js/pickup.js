@@ -3,10 +3,6 @@
         return;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Pickup panel elements & selectors                                 */
-    /* ------------------------------------------------------------------ */
-
     const getPanel = () => $('[data-panel][data-panel-name="pickup"], [data-pickup-panel]').first();
     const hasPanel = () => getPanel().length > 0;
 
@@ -19,10 +15,6 @@
 
     const getSearchUrl = () => getPanel().data('searchUrl') || getPanel().data('pickupSearchUrl');
     const getStoreUrl = () => getPanel().data('storeUrl') || getPanel().data('pickupStoreUrl');
-
-    /* ------------------------------------------------------------------ */
-    /*  Helpers                                                           */
-    /* ------------------------------------------------------------------ */
 
     const showAlert = (icon, title, text) => {
         if (typeof window.showAlert === 'function') {
@@ -58,10 +50,6 @@
         );
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Init panel state                                                  */
-    /* ------------------------------------------------------------------ */
-
     const initPickupPanel = () => {
         if (hasPanel()) {
             $('[data-handheld-menu]').addClass('hidden');
@@ -69,12 +57,7 @@
         }
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Bind event handlers                                               */
-    /* ------------------------------------------------------------------ */
-
     const bindPickupHandlers = () => {
-        /* ---- Reload data listener ---- */
         $(document).off('bos:reload-data.bosPickup');
         $(document).on('bos:reload-data.bosPickup', () => {
             const noSpk = getSpkInput().val()?.trim();
@@ -83,7 +66,6 @@
             }
         });
 
-        /* ---- Search SPK submit ---- */
         $(document).off('submit.bosPickupSearch', '[data-search-form], [data-pickup-search-form]');
         $(document).on('submit.bosPickupSearch', '[data-search-form], [data-pickup-search-form]', function (event) {
             if (! hasPanel()) return;
@@ -128,7 +110,6 @@
             });
         });
 
-        /* ---- Send / Store form submit ---- */
         $(document).off('submit.bosPickupSend', '[data-send-form], [data-pickup-send-form]');
         $(document).on('submit.bosPickupSend', '[data-send-form], [data-pickup-send-form]', function (event) {
             if (! hasPanel()) return;

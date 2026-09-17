@@ -3,10 +3,6 @@
         return;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Global UI helpers                                                 */
-    /* ------------------------------------------------------------------ */
-
     window.showAlert = (icon, title, text) => {
         if (window.Swal) {
             Swal.fire({
@@ -31,10 +27,6 @@
         );
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Core navigation & redirection                                      */
-    /* ------------------------------------------------------------------ */
-
     window.navigateTo = (url) => {
         if (! url) return;
 
@@ -45,10 +37,6 @@
 
         window.location.href = url;
     };
-
-    /* ------------------------------------------------------------------ */
-    /*  Core AJAX setup (CSRF token)                                      */
-    /* ------------------------------------------------------------------ */
 
     const setupAjaxCsrf = () => {
         const token = $('meta[name="csrf-token"]').attr('content');
@@ -61,14 +49,9 @@
         }
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Core Handheld UI event handlers                                   */
-    /* ------------------------------------------------------------------ */
-
     const bindCoreHandlers = () => {
         setupAjaxCsrf();
 
-        /* ---- Global Handheld Reload button ---- */
         $(document).off('click.bosReloadHandheld', '[data-reload-handheld]');
         $(document).on('click.bosReloadHandheld', '[data-reload-handheld]', function () {
             const $button = $(this);
@@ -88,7 +71,6 @@
             }, 800);
         });
 
-        /* ---- Generic data-navigate links ---- */
         $(document).off('click.bosNavigate', '[data-navigate]');
         $(document).on('click.bosNavigate', '[data-navigate]', function (event) {
             event.preventDefault();
