@@ -1,4 +1,5 @@
 <div class="mx-auto mb-5 max-w-3xl"
+    wire:ignore
     data-panel
     data-panel-name="pickup"
     data-search-url="{{ route('pickup.search') }}"

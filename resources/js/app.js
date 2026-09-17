@@ -38,8 +38,12 @@
         window.location.href = url;
     };
 
+    /* ------------------------------------------------------------------ */
+    /*  Core AJAX setup (CSRF token)                                      */
+    /* ------------------------------------------------------------------ */
+
     const setupAjaxCsrf = () => {
-        const token = $('meta[name="csrf-token"]').attr('content');
+        const token = window.getCsrfToken();
         if (token) {
             $.ajaxSetup({
                 headers: {
@@ -49,13 +53,22 @@
         }
     };
 
+    /* ------------------------------------------------------------------ */
+    /*  Core Handheld UI event handlers                                   */
+    /* ------------------------------------------------------------------ */
+
     const bindCoreHandlers = () => {
         setupAjaxCsrf();
 
         $(document).off('click.bosReloadHandheld', '[data-reload-handheld]');
         $(document).on('click.bosReloadHandheld', '[data-reload-handheld]', function () {
             const $button = $(this);
-            const originalHtml = $button.html();
+            if ($button.data('reloading')) {
+                return;
+            }
+            $button.data('reloading', true);
+            const originalHtml = $button.data('default-html') || $button.html();
+            $button.data('default-html', originalHtml);
 
             $button.prop('disabled', true);
             $button.html(
@@ -67,7 +80,8 @@
 
             setTimeout(() => {
                 $button.prop('disabled', false);
-                $button.html(originalHtml);
+                $button.html($button.data('default-html') || originalHtml);
+                $button.data('reloading', false);
             }, 800);
         });
 

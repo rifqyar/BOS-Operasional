@@ -32,10 +32,7 @@
             return $currentMinutes >= $shift['starts_at'] || $currentMinutes < $shift['ends_at'];
         });
         $currentRoute = request()->route()?->getName();
-        $activePanel = in_array($currentRoute, ['dashboard', 'home', null])
-            ? null
-            : str($currentRoute)->afterLast('.')->toString();
-        $activePanel = $activePanel === 'hold' ? 'Hold' : $activePanel;
+        $activePanel = in_array($currentRoute, ['dashboard', 'home', null]) ? null : $currentRoute;
     @endphp
 
     <div class="min-h-[calc(100vh-5rem)] bg-slate-50 pb-24 text-slate-950 dark:bg-slate-950 dark:text-white lg:pb-6">
@@ -216,7 +213,7 @@
                     </a>
                 </div>
 
-                <div id="panel">
+                <div id="panel" wire:key="panel-container-{{ $activePanel ?? 'none' }}">
                     @if ($activePanel && view()->exists('livewire.partials.' . $activePanel . '.panel'))
                         @include('livewire.partials.' . $activePanel . '.panel')
                     @endif
@@ -413,7 +410,6 @@
 </div>
 
 @push('scripts')
-    @vite('resources/js/app.js')
     @if ($activePanel && file_exists(resource_path('js/' . $activePanel . '.js')))
         @vite('resources/js/' . $activePanel . '.js')
     @endif

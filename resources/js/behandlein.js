@@ -15,6 +15,13 @@
 
     const getSearchUrl = () => getPanel().data('searchUrl');
     const getStoreUrl = () => getPanel().data('storeUrl');
+    const getCsrfToken = () => {
+        return getPanel().attr('data-csrf-token')
+            || getPanel().data('csrfToken')
+            || (typeof window.getCsrfToken === 'function' ? window.getCsrfToken() : '')
+            || $('meta[name="csrf-token"]').attr('content')
+            || '';
+    };
 
     const showAlert = (icon, title, text) => {
         if (typeof window.showAlert === 'function') {
@@ -91,10 +98,18 @@
 
             setButtonLoading($button, true, defaultLabel);
 
+            const token = getCsrfToken();
+
             $.ajax({
                 url: searchUrl,
                 method: 'POST',
-                data: { no_cont: noCont },
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                },
+                data: {
+                    no_cont: noCont,
+                    _token: token,
+                },
                 success: (response) => {
                     getResultContainer().text(noCont);
                     getRowsContainer().empty().html(response.data || '');
@@ -132,9 +147,14 @@
 
             setButtonLoading($button, true, defaultLabel);
 
+            const token = getCsrfToken();
+
             $.ajax({
                 url: storeUrl,
                 method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                },
                 data: $form.serialize(),
                 success: (response) => {
                     showAlert('success', 'Berhasil', response.message || 'Data Behandle In berhasil dikirim.');
