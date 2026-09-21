@@ -50,32 +50,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('behandle/store', [BehandleController::class, 'store'])->name('behandlein.store');
 
     /** Hold */
-    Route::get('/hold', Dashboard::class)->name('hold');
 
-    Route::prefix('hold')
-    ->name('hold.')
-    ->group(function () {
+ /** Hold */
+Route::get('/hold', Dashboard::class)->name('hold');
 
-        Route::post('/search', [
-            HoldController::class,
-            'search'
-        ])->name('search');
+Route::post('/hold/search', [HoldController::class, 'search'])
+    ->name('hold.search');
 
-        Route::get('/data', [
-            HoldController::class,
-            'indexData'
-        ])->name('data');
+Route::post('/hold/detail', [HoldController::class, 'detail'])
+    ->name('hold.detail');
 
-        Route::post('/store', [
-            HoldController::class,
-            'store'
-        ])->name('store');
+Route::get('/hold/data', [HoldController::class, 'indexData'])
+    ->name('hold.data');
 
-        Route::post('/release', [
-            HoldController::class,
-            'release'
-        ])->name('release');
-    });
+Route::post('/hold/store', [HoldController::class, 'store'])
+    ->name('hold.store');
+
+Route::post('/hold/release', [HoldController::class, 'release'])
+    ->name('hold.release');
 
 
 /** Marshalling CIC */

@@ -1,594 +1,567 @@
-@php
-    $items = collect($data ?? []);
-@endphp
+@if (($status ?? null) === 2)
 
-<div class="space-y-4">
+    {{-- ============================================================
+         STATUS 2
+         HASIL PENCARIAN CONTAINER
+    ============================================================= --}}
 
-    <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <div class="divide-y divide-slate-200 dark:divide-white/10">
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="px-4 py-3">
 
-            <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Hasil Pencarian
+            </p>
 
-                <div class="flex items-center gap-2">
-
-                    <flux:icon
-                        name="archive-box"
-                        class="size-5 text-amber-600"
-                    />
-
-                    <h2 class="text-sm font-semibold text-zinc-900 dark:text-white">
-                        Container Sedang HOLD
-                    </h2>
-
-                </div>
-
-                <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {{ $items->count() }} container sedang dalam kondisi HOLD.
-                </p>
-
-            </div>
-
-            <span class="inline-flex w-fit rounded-full bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                SEDANG HOLD
-            </span>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Pilih container yang akan diproses HOLD.
+            </p>
 
         </div>
 
-    </div>
 
-    <div class="hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm md:block dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="divide-y divide-slate-200 dark:divide-white/10">
 
-        <div class="overflow-x-auto">
+            @foreach ($data as $row)
 
-            <table class="w-full min-w-[1000px] text-left text-sm">
+                <button
+                    type="button"
+                    data-hold-detail
+                    data-no-cont="{{ $row->NO_CONT }}"
+                    class="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500 dark:hover:bg-white/[0.03]">
 
-                <thead class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
+                    <div class="min-w-0">
 
-                    <tr>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                            No Container
+                        </p>
 
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            NO
-                        </th>
+                        <p class="mt-1 truncate text-sm font-semibold text-slate-950 dark:text-white">
+                            {{ $row->NO_CONT }}
+                        </p>
 
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            NO CONT
-                        </th>
-
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            NO SPK
-                        </th>
-
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            NO DOK
-                        </th>
-
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            TGL DOK
-                        </th>
-
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            JENIS DOK
-                        </th>
-
-                        <th class="px-4 py-3 text-xs font-semibold text-zinc-500">
-                            WARNA
-                        </th>
-
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-zinc-500">
-                            ACTION
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-
-                    @forelse($items as $index => $item)
-
-                        @php
-                            $warna = match (
-                                strtoupper((string) ($item->FL_WARNA_HOLD ?? ''))
-                            ) {
-                                'N' => 'PUTIH',
-                                'M' => 'MERAH',
-                                'T' => 'TIMAH',
-                                default => '-',
-                            };
-                        @endphp
-
-                        <tr class="transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-
-                            <td class="px-4 py-4 text-zinc-500">
-                                {{ $index + 1 }}
-                            </td>
-
-                            <td class="px-4 py-4">
-
-                                <div class="font-bold text-zinc-900 dark:text-white">
-                                    {{ $item->NO_CONT }}
-                                </div>
-
-                            </td>
-
-                            <td class="px-4 py-4 text-zinc-700 dark:text-zinc-300">
-                                {{ $item->NO_SPK ?? '-' }}
-                            </td>
-
-                            <td class="px-4 py-4 text-zinc-700 dark:text-zinc-300">
-                                {{ $item->NO_DOK ?? '-' }}
-                            </td>
-
-                            <td class="px-4 py-4 text-zinc-700 dark:text-zinc-300">
-                                {{ $item->TGL_DOK ?? '-' }}
-                            </td>
-
-                            <td class="px-4 py-4 text-zinc-700 dark:text-zinc-300">
-                                {{ $item->JNS_DOK_NAMA ?? '-' }}
-                            </td>
-
-                            <td class="px-4 py-4">
-
-                                <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                                    {{ $warna }}
-                                </span>
-
-                            </td>
-
-                            <td class="px-4 py-4 text-right">
-
-                                <button
-                                    type="button"
-                                    class="hold-release-button inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
-                                    data-id="{{ $item->ID }}"
-                                    data-no-cont="{{ $item->NO_CONT }}"
-                                    data-no-spk="{{ $item->NO_SPK ?? '' }}"
-                                >
-
-                                    <flux:icon
-                                        name="arrow-uturn-left"
-                                        class="size-4"
-                                    />
-
-                                    RELEASE
-
-                                </button>
-
-                            </td>
-
-                        </tr>
-
-                    @empty
-
-                        <tr>
-
-                            <td
-                                colspan="8"
-                                class="px-4 py-12 text-center"
-                            >
-
-                                <flux:icon
-                                    name="archive-box-x-mark"
-                                    class="mx-auto size-8 text-zinc-400"
-                                />
-
-                                <div class="mt-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                                    Belum ada container HOLD.
-                                </div>
-
-                                <div class="mt-1 text-xs text-zinc-400">
-                                    Container yang di-HOLD akan muncul di sini.
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                    @endforelse
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-    <div class="space-y-3 md:hidden">
-
-        @forelse($items as $item)
-
-            @php
-                $warna = match (
-                    strtoupper((string) ($item->FL_WARNA_HOLD ?? ''))
-                ) {
-                    'N' => 'PUTIH',
-                    'M' => 'MERAH',
-                    'T' => 'TIMAH',
-                    default => '-',
-                };
-            @endphp
-
-            <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-
-                <div class="flex items-start justify-between gap-3">
-
-                    <div>
-
-                        <div class="text-base font-bold text-zinc-900 dark:text-white">
-                            {{ $item->NO_CONT }}
-                        </div>
-
-                        <div class="mt-1 text-xs text-zinc-500">
-                            {{ $item->NO_SPK ?? '-' }}
-                        </div>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            SPK: {{ $row->NO_SPK }}
+                        </p>
 
                     </div>
 
-                    <span class="shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-                        HOLD
+
+                    <div class="flex shrink-0 items-center gap-2">
+
+                        <span class="hidden text-xs font-semibold text-sky-600 sm:inline dark:text-sky-400">
+                            Pilih
+                        </span>
+
+                        <span
+                            class="inline-flex size-8 items-center justify-center rounded-md bg-sky-100 text-sky-700 transition group-hover:bg-sky-600 group-hover:text-white dark:bg-sky-400/10 dark:text-sky-300">
+
+                            <flux:icon.arrow-right class="size-4" />
+
+                        </span>
+
+                    </div>
+
+                </button>
+
+            @endforeach
+
+        </div>
+
+    </div>
+
+
+@elseif (($status ?? null) === 1)
+
+    {{-- ============================================================
+         STATUS 1
+         FORM HOLD
+    ============================================================= --}}
+
+    @php
+        $item = $item ?? null;
+    @endphp
+
+    @if ($item)
+
+        <div class="divide-y divide-slate-200 dark:divide-white/10">
+
+            {{-- HEADER --}}
+
+            <div class="px-4 py-3">
+
+                <div class="flex items-start justify-between gap-3">
+
+                    <div class="min-w-0">
+
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Detail Container
+                        </p>
+
+                        <p class="mt-1 truncate text-base font-semibold text-slate-950 dark:text-white">
+                            {{ $item->NO_CONT }}
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="shrink-0 rounded-sm bg-sky-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
+
+                        Ready Hold
+
                     </span>
 
                 </div>
 
-                <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
+            </div>
+
+
+            {{-- FORM --}}
+
+            <form
+                data-hold-store-form
+                action="{{ route('hold.store') }}"
+                method="POST"
+                class="p-4">
+
+                @csrf
+
+                <input
+                    type="hidden"
+                    name="id"
+                    value="{{ $item->ID }}">
+
+                <input
+                    type="hidden"
+                    name="nospk"
+                    value="{{ $item->NO_SPK }}">
+
+                <input
+                    type="hidden"
+                    name="nomercont"
+                    value="{{ $item->NO_CONT }}">
+
+                <input
+                    type="hidden"
+                    name="nodok"
+                    value="{{ $item->NO_DOK }}">
+
+                <input
+                    type="hidden"
+                    name="tgldok"
+                    value="{{ $item->TGL_DOK }}">
+
+                <input
+                    type="hidden"
+                    name="jnsdok"
+                    value="{{ $item->JNS_DOK }}">
+
+
+                {{-- DATA CONTAINER --}}
+
+                <div class="grid gap-3 sm:grid-cols-2">
 
                     <div>
 
-                        <div class="text-zinc-400">
-                            NO DOK
-                        </div>
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            No SPK
+                        </label>
 
-                        <div class="mt-1 font-medium text-zinc-700 dark:text-zinc-300">
-                            {{ $item->NO_DOK ?? '-' }}
-                        </div>
+                        <input
+                            type="text"
+                            value="{{ $item->NO_SPK }}"
+                            readonly
+                            class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
 
                     </div>
+
 
                     <div>
 
-                        <div class="text-zinc-400">
-                            TGL DOK
-                        </div>
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            No Container
+                        </label>
 
-                        <div class="mt-1 font-medium text-zinc-700 dark:text-zinc-300">
-                            {{ $item->TGL_DOK ?? '-' }}
-                        </div>
-
-                    </div>
-
-                    <div class="col-span-2">
-
-                        <div class="text-zinc-400">
-                            JENIS DOK
-                        </div>
-
-                        <div class="mt-1 font-medium text-zinc-700 dark:text-zinc-300">
-                            {{ $item->JNS_DOK_NAMA ?? '-' }}
-                        </div>
+                        <input
+                            type="text"
+                            value="{{ $item->NO_CONT }}"
+                            readonly
+                            class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white">
 
                     </div>
+
 
                     <div>
 
-                        <div class="text-zinc-400">
-                            WARNA
-                        </div>
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            No Dokumen
+                        </label>
 
-                        <div class="mt-1 font-semibold text-zinc-700 dark:text-zinc-300">
-                            {{ $warna }}
-                        </div>
+                        <input
+                            type="text"
+                            value="{{ $item->NO_DOK }}"
+                            readonly
+                            class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Tanggal Dokumen
+                        </label>
+
+                        <input
+                            type="text"
+                            value="{{ $item->TGL_DOK }}"
+                            readonly
+                            class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Jenis Dokumen
+                        </label>
+
+                        <input
+                            type="text"
+                            value="{{ $item->JNS_DOK ?? '-' }}"
+                            readonly
+                            class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Keterangan
+                        </label>
+
+                        <input
+                            type="text"
+                            value="{{ $item->KETERANGAN ?? '-' }}"
+                            readonly
+                            class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
 
                     </div>
 
                 </div>
 
-                <div class="mt-4">
+
+                {{-- WARNA HOLD --}}
+
+                <div class="mt-5">
+
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        Warna Hold
+                    </label>
+
+                    <div class="mt-2 grid grid-cols-3 gap-2">
+
+                        {{-- PUTIH --}}
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="warna"
+                                value="N"
+                                class="peer sr-only">
+
+                            <div
+                                class="flex min-h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-sky-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-sky-500 dark:peer-checked:border-sky-500 dark:peer-checked:bg-sky-400/10 dark:peer-checked:text-sky-300">
+
+                                Putih
+
+                            </div>
+
+                        </label>
+
+
+                        {{-- MERAH --}}
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="warna"
+                                value="M"
+                                class="peer sr-only">
+
+                            <div
+                                class="flex min-h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-sky-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-sky-500 dark:peer-checked:border-sky-500 dark:peer-checked:bg-sky-400/10 dark:peer-checked:text-sky-300">
+
+                                Merah
+
+                            </div>
+
+                        </label>
+
+
+                        {{-- TIMAH --}}
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="warna"
+                                value="T"
+                                class="peer sr-only">
+
+                            <div
+                                class="flex min-h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-sky-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-sky-500 dark:peer-checked:border-sky-500 dark:peer-checked:bg-sky-400/10 dark:peer-checked:text-sky-300">
+
+                                Timah
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+
+                {{-- ACTION --}}
+
+                <div class="mt-5 flex justify-end">
 
                     <button
-                        type="button"
-                        class="hold-release-button flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
-                        data-id="{{ $item->ID }}"
-                        data-no-cont="{{ $item->NO_CONT }}"
-                        data-no-spk="{{ $item->NO_SPK ?? '' }}"
-                    >
+                        type="submit"
+                        data-hold-submit
+                        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto dark:focus:ring-offset-slate-950">
 
-                        <flux:icon
-                            name="arrow-uturn-left"
-                            class="size-4"
-                        />
+                        <flux:icon.lock-closed class="size-4" />
 
-                        RELEASE CONTAINER
+                        HOLD
 
                     </button>
 
                 </div>
 
-            </div>
-
-        @empty
-
-            <div class="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
-
-                <flux:icon
-                    name="archive-box-x-mark"
-                    class="mx-auto size-8 text-zinc-400"
-                />
-
-                <p class="mt-3 text-sm text-zinc-500">
-                    Belum ada container HOLD.
-                </p>
-
-            </div>
-
-        @endforelse
-
-    </div>
-
-    @if(($status ?? 0) === 2)
-
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-900/20">
-
-            <div class="flex items-start gap-3">
-
-                <flux:icon
-                    name="check-circle"
-                    class="mt-0.5 size-5 shrink-0 text-emerald-600"
-                />
-
-                <div>
-
-                    <div class="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                        Container siap di-HOLD
-                    </div>
-
-                    <div class="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
-                        Pilih tombol HOLD pada data container di atas.
-                    </div>
-
-                </div>
-
-            </div>
+            </form>
 
         </div>
 
     @endif
 
-    <div
-        id="hold-modal"
-        class="fixed inset-0 z-50 hidden"
-    >
 
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+@elseif (($status ?? null) === 3)
 
-        <div class="relative flex min-h-full items-center justify-center p-4">
+    {{-- ============================================================
+         STATUS 3
+         SUDAH HOLD
+    ============================================================= --}}
 
-            <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
+    <div class="divide-y divide-slate-200 dark:divide-white/10">
 
-                <div class="flex items-start justify-between">
+        <div class="bg-amber-50 px-4 py-3 dark:bg-amber-400/5">
 
-                    <div>
+            <div class="flex items-center justify-between gap-3">
 
-                        <h3 class="text-base font-semibold text-zinc-900 dark:text-white">
-                            HOLD Container
-                        </h3>
+                <div>
 
-                        <p class="mt-1 text-xs text-zinc-500">
-                            Pilih warna HOLD.
-                        </p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-300">
+                        Container Sedang HOLD
+                    </p>
 
-                    </div>
-
-                    <button
-                        type="button"
-                        id="hold-modal-close"
-                        class="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    >
-
-                        <flux:icon
-                            name="x-mark"
-                            class="size-5"
-                        />
-
-                    </button>
+                    <p class="mt-1 text-sm text-amber-700 dark:text-amber-200">
+                        Container yang dicari sudah dalam status HOLD.
+                    </p>
 
                 </div>
 
-                <div class="mt-5 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800">
+                <span
+                    class="shrink-0 rounded-sm bg-amber-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
 
-                    <div class="text-xs text-zinc-500">
-                        Container
-                    </div>
+                    HOLD
 
-                    <div
-                        id="hold-modal-container"
-                        class="mt-1 text-lg font-bold text-zinc-900 dark:text-white"
-                    >
-                        -
-                    </div>
-
-                </div>
-
-                <div class="mt-5 space-y-3">
-
-                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-
-                        <input
-                            type="radio"
-                            name="hold_warna"
-                            value="N"
-                            checked
-                            class="size-4"
-                        >
-
-                        <div>
-
-                            <div class="text-sm font-semibold text-zinc-900 dark:text-white">
-                                PUTIH
-                            </div>
-
-                            <div class="text-xs text-zinc-500">
-                                Kode N
-                            </div>
-
-                        </div>
-
-                    </label>
-
-                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-
-                        <input
-                            type="radio"
-                            name="hold_warna"
-                            value="M"
-                            class="size-4"
-                        >
-
-                        <div>
-
-                            <div class="text-sm font-semibold text-zinc-900 dark:text-white">
-                                MERAH
-                            </div>
-
-                            <div class="text-xs text-zinc-500">
-                                Kode M
-                            </div>
-
-                        </div>
-
-                    </label>
-
-                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-
-                        <input
-                            type="radio"
-                            name="hold_warna"
-                            value="T"
-                            class="size-4"
-                        >
-
-                        <div>
-
-                            <div class="text-sm font-semibold text-zinc-900 dark:text-white">
-                                TIMAH
-                            </div>
-
-                            <div class="text-xs text-zinc-500">
-                                Kode T
-                            </div>
-
-                        </div>
-
-                    </label>
-
-                </div>
-
-                <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-
-                    <button
-                        type="button"
-                        id="hold-modal-cancel"
-                        class="min-h-11 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 dark:border-zinc-600 dark:text-zinc-300"
-                    >
-                        Batal
-                    </button>
-
-                    <button
-                        type="button"
-                        id="hold-modal-submit"
-                        class="min-h-11 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
-                    >
-                        HOLD CONTAINER
-                    </button>
-
-                </div>
+                </span>
 
             </div>
 
         </div>
 
-    </div>
 
-    <div
-        id="release-modal"
-        class="fixed inset-0 z-50 hidden"
-    >
+        <div class="divide-y divide-slate-200 dark:divide-white/10">
 
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+            @foreach ($data as $row)
 
-        <div class="relative flex min-h-full items-center justify-center p-4">
+                <form
+                    data-release-form
+                    action="{{ route('hold.release') }}"
+                    method="POST"
+                    class="p-4">
 
-            <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
+                    @csrf
 
-                <div class="flex items-start justify-between">
+                    <input
+                        type="hidden"
+                        name="id"
+                        value="{{ $row->ID }}">
 
-                    <div>
+                    <input
+                        type="hidden"
+                        name="nospk"
+                        value="{{ $row->NO_SPK }}">
 
-                        <h3 class="text-base font-semibold text-zinc-900 dark:text-white">
-                            RELEASE Container
-                        </h3>
+                    <input
+                        type="hidden"
+                        name="nomercont"
+                        value="{{ $row->NO_CONT }}">
 
-                        <p class="mt-1 text-xs text-zinc-500">
-                            Konfirmasi release container.
-                        </p>
+                    <input
+                        type="hidden"
+                        name="nodok"
+                        value="{{ $row->NO_DOK }}">
+
+
+                    <div class="mb-4 flex items-start justify-between gap-3">
+
+                        <div class="min-w-0">
+
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                No Container
+                            </p>
+
+                            <p class="mt-1 truncate text-base font-semibold text-slate-950 dark:text-white">
+                                {{ $row->NO_CONT }}
+                            </p>
+
+                        </div>
+
+                        <span
+                            class="shrink-0 rounded-sm bg-amber-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
+
+                            {{ $row->WARNA ?? 'HOLD' }}
+
+                        </span>
 
                     </div>
 
-                    <button
-                        type="button"
-                        id="release-modal-close"
-                        class="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    >
 
-                        <flux:icon
-                            name="x-mark"
-                            class="size-5"
-                        />
+                    <div class="grid gap-3 sm:grid-cols-2">
 
-                    </button>
+                        <div>
 
-                </div>
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                No SPK
+                            </label>
 
-                <div class="mt-5 rounded-xl bg-red-50 p-4 dark:bg-red-900/20">
+                            <input
+                                type="text"
+                                value="{{ $row->NO_SPK }}"
+                                readonly
+                                class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
 
-                    <div class="text-xs text-red-600 dark:text-red-400">
-                        Container
+                        </div>
+
+
+                        <div>
+
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                No Dokumen
+                            </label>
+
+                            <input
+                                type="text"
+                                value="{{ $row->NO_DOK }}"
+                                readonly
+                                class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Tanggal Dokumen
+                            </label>
+
+                            <input
+                                type="text"
+                                value="{{ $row->TGL_DOK }}"
+                                readonly
+                                class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Jenis Dokumen
+                            </label>
+
+                            <input
+                                type="text"
+                                value="{{ $row->JNS_DOK ?? '-' }}"
+                                readonly
+                                class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Keterangan
+                            </label>
+
+                            <input
+                                type="text"
+                                value="{{ $row->KETERANGAN ?? '-' }}"
+                                readonly
+                                class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Warna Hold
+                            </label>
+
+                            <input
+                                type="text"
+                                value="{{ $row->WARNA ?? '-' }}"
+                                readonly
+                                class="mt-1.5 h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+
+                        </div>
+
                     </div>
 
-                    <div
-                        id="release-modal-container"
-                        class="mt-1 text-lg font-bold text-red-700 dark:text-red-400"
-                    >
-                        -
+
+                    {{-- RELEASE --}}
+
+                    <div class="mt-5 flex justify-end">
+
+                        <button
+                            type="submit"
+                            data-release-submit
+                            class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-amber-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto dark:focus:ring-offset-slate-950">
+
+                            <flux:icon.arrow-uturn-left class="size-4" />
+
+                            RELEASE
+
+                        </button>
+
                     </div>
 
-                </div>
+                </form>
 
-                <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-
-                    <button
-                        type="button"
-                        id="release-modal-cancel"
-                        class="min-h-11 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 dark:border-zinc-600 dark:text-zinc-300"
-                    >
-                        Batal
-                    </button>
-
-                    <button
-                        type="button"
-                        id="release-modal-submit"
-                        class="min-h-11 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                    >
-                        RELEASE
-                    </button>
-
-                </div>
-
-            </div>
+            @endforeach
 
         </div>
 
     </div>
 
-</div>
+@endif
