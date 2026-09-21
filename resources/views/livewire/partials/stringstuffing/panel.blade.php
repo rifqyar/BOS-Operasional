@@ -1,14 +1,11 @@
 <div
     class="mx-auto mb-5 w-full max-w-4xl"
     data-panel
-    data-panel-name="hold"
-    data-search-url="{{ route('hold.search') }}"
-    data-data-url="{{ route('hold.data') }}"
-    data-store-url="{{ route('hold.store') }}"
-    data-release-url="{{ route('hold.release') }}"
+    data-panel-name="stringstuffing"
+    data-search-url="{{ route('stringstuffing.search') }}"
+    data-store-url="{{ route('stringstuffing.store') }}"
     data-csrf-token="{{ csrf_token() }}">
 
-    {{-- Header --}}
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
         <a
@@ -23,20 +20,19 @@
         </a>
 
         <span
-            class="w-fit rounded-md bg-amber-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
-            Hold Container
+            class="w-fit rounded-md bg-sky-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-300">
+            Stripping & Stuffing
         </span>
 
     </div>
 
 
-    {{-- Search --}}
     <form
         data-search-form
         class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950">
 
         <label
-            for="hold-search"
+            for="stringstuffing-search"
             class="text-sm font-semibold text-slate-700 dark:text-slate-200">
             No Container
         </label>
@@ -49,21 +45,21 @@
                     class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
 
                 <input
-                    id="hold-search"
+                    id="stringstuffing-search"
                     name="search_cont"
                     type="text"
                     autocomplete="off"
                     autofocus
                     required
                     placeholder="SEARCH NO CONTAINER"
-                    class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium uppercase text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500">
+                    class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium uppercase text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500">
 
             </div>
 
             <button
                 type="submit"
                 data-search-button
-                class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-amber-600 px-6 text-sm font-bold text-white transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-70">
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-6 text-sm font-bold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-70">
 
                 <flux:icon.magnifying-glass class="size-4" />
 
@@ -76,14 +72,6 @@
     </form>
 
 
-    {{-- Message --}}
-    <div
-        data-message
-        class="mt-4 hidden rounded-md px-4 py-3 text-sm">
-    </div>
-
-
-    {{-- Content --}}
     <div
         data-content
         class="mt-5">

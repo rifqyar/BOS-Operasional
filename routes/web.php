@@ -12,6 +12,7 @@ use App\Http\Controllers\Operation\DeliveryController;
 use App\Http\Controllers\Operation\InspectionOutController;
 use App\Http\Controllers\Operation\OnChassisController;
 use App\Http\Controllers\Operation\CopyYardController;
+use App\Http\Controllers\Operation\StringStuffingController;
 use App\Livewire\Dashboard;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Operation\MarshallingYard;
@@ -134,6 +135,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/copy-yard/search', [CopyYardController::class, 'search'])->name('copyyard.search');
     Route::post('/copy-yard/store', [CopyYardController::class, 'store'])->name('copyyard.store');
 
+
+    Route::get('/string-stuffing', Dashboard::class)->name('stringstuffing');
+    Route::post('/string-stuffing/search', [StringStuffingController::class, 'search'])->name('stringstuffing.search');
+    Route::post('/string-stuffing/store', [StringStuffingController::class, 'store'])->name('stringstuffing.store');
 
     // Route::redirect('settings', 'settings/profile');
 
