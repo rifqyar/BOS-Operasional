@@ -2,18 +2,8 @@
 
     <div class="px-4 py-8 text-center">
 
-        <div class="mx-auto flex size-10 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400">
-
-            <flux:icon.inbox class="size-5" />
-
-        </div>
-
-        <p class="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Belum ada container HOLD
-        </p>
-
-        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Tidak terdapat container yang sedang berstatus HOLD.
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Tidak ada container yang sedang HOLD.
         </p>
 
     </div>
@@ -22,37 +12,45 @@
 
     <div class="overflow-x-auto">
 
-        <table class="w-full min-w-[720px] text-left">
+        <table class="w-full min-w-[1000px] text-left">
 
             <thead class="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
 
                 <tr>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        No SPK
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        No
                     </th>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        No Container
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        No. Container
                     </th>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        No Dokumen
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        No. SPK
                     </th>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        Tanggal
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        No. Dokumen
                     </th>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Tanggal Dokumen
+                    </th>
+
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
                         Jenis Dokumen
                     </th>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Status
+                    </th>
+
+                    <th class="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
                         Warna
                     </th>
 
-                    <th class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
                         Action
                     </th>
 
@@ -63,60 +61,72 @@
 
             <tbody class="divide-y divide-slate-200 dark:divide-white/10">
 
-                @foreach ($data as $row)
+                @foreach ($data as $index => $row)
 
-                    <tr class="transition hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                    <tr class="transition hover:bg-slate-50 dark:hover:bg-white/5">
 
-                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                            {{ $row->NO_SPK }}
+                        <td class="px-5 py-4 text-sm text-slate-500">
+                            {{ $index + 1 }}
                         </td>
 
 
-                        <td class="whitespace-nowrap px-4 py-3">
+                        <td class="px-5 py-4">
 
-                            <span class="text-sm font-semibold text-slate-950 dark:text-white">
-                                {{ $row->NO_CONT }}
+                            <span class="font-bold text-slate-950 dark:text-white">
+                                {{ $row->NO_CONT ?? '-' }}
                             </span>
 
                         </td>
 
 
-                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                            {{ $row->NO_DOK }}
+                        <td class="px-5 py-4 text-sm text-slate-700 dark:text-slate-300">
+                            {{ $row->NO_SPK ?? '-' }}
                         </td>
 
 
-                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                            {{ $row->TGL_DOK }}
+                        <td class="px-5 py-4 text-sm text-slate-700 dark:text-slate-300">
+                            {{ $row->NO_DOK ?? '-' }}
                         </td>
 
 
-                        <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                        <td class="px-5 py-4 text-sm text-slate-700 dark:text-slate-300">
+                            {{ $row->TGL_DOK ?? '-' }}
+                        </td>
+
+
+                        <td class="px-5 py-4 text-sm text-slate-700 dark:text-slate-300">
                             {{ $row->JNS_DOK ?? '-' }}
                         </td>
 
 
-                        <td class="whitespace-nowrap px-4 py-3">
+                        <td class="px-5 py-4">
 
-                            <span
-                                class="inline-flex rounded-sm bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
-
-                                {{ $row->WARNA ?? '-' }}
-
+                            <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
+                                {{ $row->KETERANGAN ?? 'HOLD' }}
                             </span>
 
                         </td>
 
 
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-5 py-4">
+
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                {{ $row->WARNA ?? '-' }}
+                            </span>
+
+                        </td>
+
+
+                        <td class="px-5 py-4 text-right">
 
                             <button
                                 type="button"
                                 data-release-row
-                                data-id="{{ $row->ID }}"
-                                data-no-spk="{{ $row->NO_SPK }}"
-                                data-no-cont="{{ $row->NO_CONT }}"
-                                class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-slate-950">
+                                data-id="{{ $row->ID ?? '' }}"
+                                data-no-spk="{{ $row->NO_SPK ?? '' }}"
+                                data-no-cont="{{ $row->NO_CONT ?? '' }}"
+                                class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                            >
 
                                 <flux:icon.arrow-uturn-left class="size-3.5" />
 

@@ -3,39 +3,68 @@
 
     let initializedPanel = null;
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | PANEL
+    |--------------------------------------------------------------------------
+    */
+
     function getPanel() {
-        return document.querySelector('[data-panel-name="hold"]');
+        return document.querySelector(
+            '[data-panel-name="hold"]'
+        );
     }
+
 
     function getCsrfToken() {
         const panel = getPanel();
 
-        if (!panel) {
-            return '';
-        }
-
-        return panel.dataset.csrfToken || '';
+        return panel?.dataset.csrfToken || '';
     }
+
 
     function getUrl(name) {
         const panel = getPanel();
 
-        if (!panel) {
-            return '';
-        }
-
-        return panel.dataset[name] || '';
+        return panel?.dataset[name] || '';
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ELEMENT
+    |--------------------------------------------------------------------------
+    */
 
     function getContent() {
-        return document.querySelector('[data-content]');
+        const panel = getPanel();
+
+        return panel?.querySelector(
+            '[data-rows]'
+        ) || null;
     }
+
 
     function getMessage() {
-        return document.querySelector('[data-message]');
+        const panel = getPanel();
+
+        return panel?.querySelector(
+            '[data-message]'
+        ) || null;
     }
 
-    function showMessage(message, type = 'danger') {
+
+    /*
+    |--------------------------------------------------------------------------
+    | MESSAGE
+    |--------------------------------------------------------------------------
+    */
+
+    function showMessage(
+        message,
+        type = 'danger'
+    ) {
         const element = getMessage();
 
         if (!element) {
@@ -45,29 +74,50 @@
         element.className =
             'mt-4 rounded-lg border px-4 py-3 text-sm font-medium';
 
+
         if (type === 'success') {
+
             element.classList.add(
                 'border-emerald-200',
                 'bg-emerald-50',
-                'text-emerald-700'
+                'text-emerald-700',
+                'dark:border-emerald-900/40',
+                'dark:bg-emerald-900/20',
+                'dark:text-emerald-300'
             );
+
         } else if (type === 'warning') {
+
             element.classList.add(
                 'border-amber-200',
                 'bg-amber-50',
-                'text-amber-700'
+                'text-amber-700',
+                'dark:border-amber-900/40',
+                'dark:bg-amber-900/20',
+                'dark:text-amber-300'
             );
+
         } else {
+
             element.classList.add(
                 'border-red-200',
                 'bg-red-50',
-                'text-red-700'
+                'text-red-700',
+                'dark:border-red-900/40',
+                'dark:bg-red-900/20',
+                'dark:text-red-300'
             );
         }
 
-        element.textContent = message;
-        element.classList.remove('hidden');
+
+        element.textContent =
+            message;
+
+        element.classList.remove(
+            'hidden'
+        );
     }
+
 
     function hideMessage() {
         const element = getMessage();
@@ -77,72 +127,161 @@
         }
 
         element.textContent = '';
-        element.classList.add('hidden');
+
+        element.classList.add(
+            'hidden'
+        );
     }
 
-    function setLoading(button, loading, text = 'SEARCH') {
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH BUTTON
+    |--------------------------------------------------------------------------
+    */
+
+    function setLoading(
+        button,
+        loading
+    ) {
         if (!button) {
             return;
         }
 
-        button.disabled = loading;
 
         if (loading) {
-            button.dataset.originalText = button.textContent;
-            button.textContent = 'SEARCHING...';
-        } else {
+
+            button.disabled = true;
+
+            button.dataset.originalText =
+                button.textContent;
+
             button.textContent =
-                button.dataset.originalText || text;
+                'SEARCHING...';
+
+            return;
         }
+
+
+        button.disabled = false;
+
+        button.textContent =
+            button.dataset.originalText ||
+            'Search';
     }
 
-    async function postJson(url, payload) {
-        const response = await fetch(url, {
-            method: 'POST',
 
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
-                'X-Requested-With': 'XMLHttpRequest',
-            },
+    /*
+    |--------------------------------------------------------------------------
+    | POST JSON
+    |--------------------------------------------------------------------------
+    */
 
-            body: JSON.stringify(payload),
-        });
+    async function postJson(
+        url,
+        payload
+    ) {
+
+        if (!url) {
+            throw new Error(
+                'URL request HOLD tidak ditemukan.'
+            );
+        }
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+
+                        'Accept':
+                            'application/json',
+
+                        'X-CSRF-TOKEN':
+                            getCsrfToken(),
+
+                        'X-Requested-With':
+                            'XMLHttpRequest',
+                    },
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        ),
+                }
+            );
+
 
         let data = {};
 
+
         try {
-            data = await response.json();
+
+            data =
+                await response.json();
+
         } catch (error) {
+
             throw new Error(
                 'Response server tidak dapat diproses.'
             );
         }
 
-        if (!response.ok) {
-            const error = new Error(
-                data.message ||
-                'Terjadi kesalahan pada server.'
-            );
 
-            error.status = response.status;
-            error.response = data;
+        if (!response.ok) {
+
+            const error =
+                new Error(
+                    data.message ||
+                    'Terjadi kesalahan pada server.'
+                );
+
+            error.status =
+                response.status;
+
+            error.response =
+                data;
 
             throw error;
         }
 
+
         return data;
     }
 
-    async function searchContainer(noCont) {
-        const content = getContent();
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    async function searchContainer(
+        noCont
+    ) {
+
+        const content =
+            getContent();
+
 
         if (!content) {
+
+            showMessage(
+                'Area hasil pencarian HOLD tidak ditemukan.',
+                'danger'
+            );
+
             return;
         }
 
+
         hideMessage();
+
 
         content.innerHTML = `
             <div class="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -152,22 +291,34 @@
             </div>
         `;
 
-        try {
-            const data = await postJson(
-                getUrl('searchUrl'),
-                {
-                    search_cont: noCont,
-                }
-            );
 
-            if (data.html) {
-                content.innerHTML = data.html;
-            } else {
-                content.innerHTML = '';
-            }
+        try {
+
+            const data =
+                await postJson(
+                    getUrl('searchUrl'),
+                    {
+                        search_cont:
+                            noCont,
+                    }
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Controller langsung mengembalikan FORM
+            |--------------------------------------------------------------------------
+            */
+
+            content.innerHTML =
+                data.html || '';
+
 
         } catch (error) {
-            content.innerHTML = '';
+
+            content.innerHTML =
+                '';
+
 
             showMessage(
                 error.message ||
@@ -177,82 +328,84 @@
         }
     }
 
-    async function getDetail(noCont) {
-        const content = getContent();
 
-        if (!content) {
+    /*
+    |--------------------------------------------------------------------------
+    | LOAD DATA HOLD
+    |--------------------------------------------------------------------------
+    */
+
+    async function loadHeldContainers() {
+
+        const panel =
+            getPanel();
+
+
+        if (!panel) {
             return;
         }
 
-        hideMessage();
 
-        content.innerHTML = `
-            <div class="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div class="text-sm text-slate-500 dark:text-slate-400">
-                    Mengambil detail container...
-                </div>
-            </div>
-        `;
-
-        try {
-            const data = await postJson(
-                getUrl('detailUrl'),
-                {
-                    no_cont: noCont,
-                }
+        const container =
+            panel.querySelector(
+                '[data-hold-list]'
             );
 
-            if (data.html) {
-                content.innerHTML = data.html;
-            } else {
-                content.innerHTML = '';
-            }
-
-        } catch (error) {
-            content.innerHTML = '';
-
-            showMessage(
-                error.message ||
-                'Terjadi kesalahan saat mengambil detail container.',
-                'danger'
-            );
-        }
-    }
-
-    async function loadHeldContainers() {
-        const container = document.querySelector('[data-hold-list]');
 
         if (!container) {
             return;
         }
 
+
+        const url =
+            getUrl('dataUrl');
+
+
+        if (!url) {
+            return;
+        }
+
+
         try {
-            const response = await fetch(
-                getUrl('dataUrl'),
-                {
-                    method: 'GET',
 
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                }
-            );
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: 'GET',
 
-            const data = await response.json();
+                        headers: {
+                            'Accept':
+                                'application/json',
+
+                            'X-Requested-With':
+                                'XMLHttpRequest',
+                        },
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
 
             if (!response.ok) {
+
                 throw new Error(
                     data.message ||
                     'Gagal mengambil data HOLD.'
                 );
             }
 
-            container.innerHTML = data.html || '';
+
+            container.innerHTML =
+                data.html || '';
+
 
         } catch (error) {
+
             container.innerHTML = `
-                <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
                     ${escapeHtml(
                         error.message ||
                         'Gagal mengambil data container HOLD.'
@@ -262,13 +415,33 @@
         }
     }
 
-    async function handleHoldSubmit(form) {
-        const button = form.querySelector('[data-hold-submit]');
-        const formData = new FormData(form);
 
-        const warna = formData.get('warna');
+    /*
+    |--------------------------------------------------------------------------
+    | HOLD
+    |--------------------------------------------------------------------------
+    */
+
+    async function handleHoldSubmit(
+        form
+    ) {
+
+        const button =
+            form.querySelector(
+                '[data-hold-submit]'
+            );
+
+
+        const formData =
+            new FormData(form);
+
+
+        const warna =
+            formData.get('warna');
+
 
         if (!warna) {
+
             showMessage(
                 'Silakan pilih warna segel terlebih dahulu.',
                 'warning'
@@ -277,35 +450,53 @@
             return;
         }
 
+
         if (button) {
+
             button.disabled = true;
-            button.textContent = 'MEMPROSES...';
+
+            button.textContent =
+                'MEMPROSES...';
         }
 
+
         try {
-            const response = await fetch(
-                form.action,
-                {
-                    method: 'POST',
 
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': getCsrfToken(),
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
+            const response =
+                await fetch(
+                    form.action,
+                    {
+                        method: 'POST',
 
-                    body: formData,
-                }
-            );
+                        headers: {
+                            'Accept':
+                                'application/json',
 
-            const data = await response.json();
+                            'X-CSRF-TOKEN':
+                                getCsrfToken(),
+
+                            'X-Requested-With':
+                                'XMLHttpRequest',
+                        },
+
+                        body:
+                            formData,
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
 
             if (!response.ok) {
+
                 throw new Error(
                     data.message ||
                     'Container gagal diproses HOLD.'
                 );
             }
+
 
             showMessage(
                 data.message ||
@@ -313,63 +504,131 @@
                 'success'
             );
 
-            /*
-             * Read-only:
-             * Tidak mengubah database.
-             */
-            if (button) {
-                button.disabled = false;
-                button.textContent = 'HOLD';
-            }
 
         } catch (error) {
+
             showMessage(
                 error.message ||
                 'Terjadi kesalahan saat proses HOLD.',
                 'danger'
             );
 
+
+        } finally {
+
             if (button) {
+
                 button.disabled = false;
-                button.textContent = 'HOLD';
+
+                button.textContent =
+                    'HOLD';
             }
         }
     }
 
-    async function handleReleaseSubmit(form) {
-        const button = form.querySelector('[data-release-submit]');
 
-        if (button) {
-            button.disabled = true;
-            button.textContent = 'MEMPROSES...';
-        }
+    /*
+    |--------------------------------------------------------------------------
+    | RELEASE
+    |--------------------------------------------------------------------------
+    */
 
-        try {
-            const formData = new FormData(form);
+    async function handleRelease(
+        button
+    ) {
 
-            const response = await fetch(
-                form.action,
-                {
-                    method: 'POST',
+        const url =
+            getUrl('releaseUrl');
 
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': getCsrfToken(),
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
 
-                    body: formData,
-                }
+        if (!url) {
+
+            showMessage(
+                'URL RELEASE tidak ditemukan.',
+                'danger'
             );
 
-            const data = await response.json();
+            return;
+        }
+
+
+        const id =
+            button.dataset.id || '';
+
+
+        const noSpk =
+            button.dataset.noSpk || '';
+
+
+        const noCont =
+            button.dataset.noCont || '';
+
+
+        if (!id || !noCont) {
+
+            showMessage(
+                'Data container RELEASE tidak lengkap.',
+                'danger'
+            );
+
+            return;
+        }
+
+
+        const originalText =
+            button.textContent.trim();
+
+
+        button.disabled = true;
+
+        button.textContent =
+            'MEMPROSES...';
+
+
+        try {
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+
+                            'Accept':
+                                'application/json',
+
+                            'X-CSRF-TOKEN':
+                                getCsrfToken(),
+
+                            'X-Requested-With':
+                                'XMLHttpRequest',
+                        },
+
+                        body:
+                            JSON.stringify({
+                                id: id,
+                                nomercont: noCont,
+                                nospk: noSpk,
+                            }),
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
 
             if (!response.ok) {
+
                 throw new Error(
                     data.message ||
                     'Container gagal diproses RELEASE.'
                 );
             }
+
 
             showMessage(
                 data.message ||
@@ -377,71 +636,119 @@
                 'success'
             );
 
-            if (button) {
-                button.disabled = false;
-                button.textContent = 'RELEASE';
-            }
 
         } catch (error) {
+
             showMessage(
                 error.message ||
                 'Terjadi kesalahan saat proses RELEASE.',
                 'danger'
             );
 
-            if (button) {
-                button.disabled = false;
-                button.textContent = 'RELEASE';
-            }
+
+        } finally {
+
+            button.disabled = false;
+
+            button.textContent =
+                originalText || 'Release';
         }
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESCAPE HTML
+    |--------------------------------------------------------------------------
+    */
+
     function escapeHtml(value) {
-        const div = document.createElement('div');
-        div.textContent = value ?? '';
+
+        const div =
+            document.createElement(
+                'div'
+            );
+
+        div.textContent =
+            value ?? '';
+
         return div.innerHTML;
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | INIT
+    |--------------------------------------------------------------------------
+    */
+
     function init() {
-        const panel = getPanel();
+
+        const panel =
+            getPanel();
+
 
         if (!panel) {
             return;
         }
 
-        if (initializedPanel === panel) {
+
+        if (
+            initializedPanel === panel
+        ) {
             return;
         }
 
-        initializedPanel = panel;
+
+        initializedPanel =
+            panel;
+
 
         /*
-         * Search
-         */
-        const searchForm = panel.querySelector(
-            '[data-search-form]'
-        );
+        |--------------------------------------------------------------------------
+        | SEARCH
+        |--------------------------------------------------------------------------
+        */
+
+        const searchForm =
+            panel.querySelector(
+                '[data-search-form]'
+            );
+
 
         if (searchForm) {
+
             searchForm.addEventListener(
                 'submit',
                 async function (event) {
+
                     event.preventDefault();
+
                     event.stopPropagation();
 
-                    const input = searchForm.querySelector(
-                        '[name="search_cont"]'
-                    );
 
-                    const button = searchForm.querySelector(
-                        '[data-search-button]'
-                    );
+                    const input =
+                        searchForm.querySelector(
+                            '[name="search_cont"]'
+                        );
 
-                    const noCont = (
-                        input?.value || ''
-                    ).trim().toUpperCase();
+
+                    const button =
+                        searchForm.querySelector(
+                            '[data-search-button]'
+                        );
+
+
+                    const noCont =
+                        (
+                            input?.value || ''
+                        )
+                            .trim()
+                            .toUpperCase();
+
 
                     if (!noCont) {
+
                         showMessage(
                             'NO CONTAINER wajib diisi.',
                             'warning'
@@ -452,104 +759,136 @@
                         return;
                     }
 
+
                     if (input) {
-                        input.value = noCont;
+                        input.value =
+                            noCont;
                     }
 
-                    setLoading(button, true);
+
+                    setLoading(
+                        button,
+                        true
+                    );
+
 
                     try {
-                        await searchContainer(noCont);
-                    } finally {
-                        setLoading(button, false);
-                    }
 
-                    return false;
+                        await searchContainer(
+                            noCont
+                        );
+
+                    } finally {
+
+                        setLoading(
+                            button,
+                            false
+                        );
+                    }
                 }
             );
         }
 
+
         /*
-         * Delegated click:
-         * pilih NO CONTAINER dari status 2
-         */
+        |--------------------------------------------------------------------------
+        | CLICK
+        |--------------------------------------------------------------------------
+        |
+        | Hanya Release.
+        | Tidak ada lagi data-hold-detail.
+        |
+        */
+
         panel.addEventListener(
             'click',
             function (event) {
-                const button = event.target.closest(
-                    '[data-hold-detail]'
-                );
 
-                if (!button) {
+                const releaseButton =
+                    event.target.closest(
+                        '[data-release-row]'
+                    );
+
+
+                if (!releaseButton) {
                     return;
                 }
+
 
                 event.preventDefault();
 
-                const noCont = (
-                    button.dataset.noCont || ''
-                ).trim().toUpperCase();
 
-                if (!noCont) {
-                    return;
-                }
-
-                getDetail(noCont);
+                handleRelease(
+                    releaseButton
+                );
             }
         );
 
+
         /*
-         * Delegated submit:
-         * HOLD dan RELEASE
-         */
+        |--------------------------------------------------------------------------
+        | HOLD FORM
+        |--------------------------------------------------------------------------
+        */
+
         panel.addEventListener(
             'submit',
             function (event) {
-                const holdForm = event.target.closest(
-                    '[data-hold-store-form]'
-                );
 
-                if (holdForm) {
-                    event.preventDefault();
-                    event.stopPropagation();
+                const holdForm =
+                    event.target.closest(
+                        '[data-hold-store-form]'
+                    );
 
-                    handleHoldSubmit(holdForm);
 
+                if (!holdForm) {
                     return;
                 }
 
-                const releaseForm = event.target.closest(
-                    '[data-release-form]'
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                handleHoldSubmit(
+                    holdForm
                 );
-
-                if (releaseForm) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    handleReleaseSubmit(releaseForm);
-
-                    return;
-                }
             }
         );
 
+
         /*
-         * Load existing HOLD.
-         */
+        |--------------------------------------------------------------------------
+        | LOAD TABLE HOLD
+        |--------------------------------------------------------------------------
+        */
+
         loadHeldContainers();
     }
 
+
     /*
-     * Dashboard menggunakan dynamic panel.
-     */
+    |--------------------------------------------------------------------------
+    | INIT
+    |--------------------------------------------------------------------------
+    */
+
     document.addEventListener(
         'DOMContentLoaded',
         init
     );
 
+
     document.addEventListener(
         'livewire:navigated',
-        init
+        function () {
+
+            initializedPanel =
+                null;
+
+            init();
+        }
     );
 
 })();
