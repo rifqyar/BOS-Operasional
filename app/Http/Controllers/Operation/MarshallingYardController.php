@@ -15,88 +15,240 @@ class MarshallingYardController extends Controller
     ) {
     }
 
+
     /**
-     * Initial monitoring data.
+     * Initial data Marshalling Yard.
+     *
+     * Default:
+     * - 10 data per page
+     * - maksimal 50 data per page
      */
-    public function indexData(): JsonResponse
-    {
+    public function indexData(
+        Request $request
+    ): JsonResponse {
         try {
-            $rows = $this->marshallingYardServices->getAllJobsYard();
+
+            $perPage = (int) $request->input(
+                'per_page',
+                10
+            );
+
+            $perPage = max(
+                1,
+                min($perPage, 50)
+            );
+
+
+            $rows = $this->marshallingYardServices
+                ->getAllJobsYard($perPage);
+
 
             $view = view(
                 'livewire.partials.marshallingyard.table',
                 compact('rows')
             )->render();
 
+
             return response()->json([
+                'success' => true,
+
                 'data' => $view,
+
+                'pagination' => [
+                    'current_page' =>
+                        $rows->currentPage(),
+
+                    'last_page' =>
+                        $rows->lastPage(),
+
+                    'per_page' =>
+                        $rows->perPage(),
+
+                    'total' =>
+                        $rows->total(),
+
+                    'from' =>
+                        $rows->firstItem(),
+
+                    'to' =>
+                        $rows->lastItem(),
+                ],
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
+            $status = (int) $e->getCode();
+
+            if (
+                $status < 400 ||
+                $status > 599
+            ) {
+                $status = 500;
+            }
+
+
             return response()->json([
-                'message' => $e->getMessage()
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat mengambil data Marshalling Yard.',
-            ], 500);
+            ], $status);
         }
     }
+
 
     /**
      * Search berdasarkan No Container.
      */
-    public function search(Request $request): JsonResponse
-    {
+    public function search(
+        Request $request
+    ): JsonResponse {
         try {
+
             $validated = $request->validate([
                 'no_cont' => [
                     'required',
                     'string',
                     'max:20',
                 ],
+
+                'page' => [
+                    'nullable',
+                    'integer',
+                    'min:1',
+                ],
+
+                'per_page' => [
+                    'nullable',
+                    'integer',
+                    'min:1',
+                    'max:50',
+                ],
             ]);
 
-            $rows = $this->marshallingYardServices->searchYard(
+
+            $keyword = strtoupper(
                 trim($validated['no_cont'])
             );
 
-            if (empty($rows)) {
+
+            if ($keyword === '') {
+
                 return response()->json([
-                    'data' => view(
-                        'livewire.partials.marshallingyard.table',
-                        [
-                            'rows' => [],
-                        ]
-                    )->render(),
-                    'message' => 'Data Marshalling Yard tidak ditemukan.',
-                ]);
+                    'success' => false,
+                    'message' =>
+                        'Nomor Container wajib diisi.',
+                ], 422);
             }
+
+
+            $perPage = (int) (
+                $validated['per_page']
+                ?? 10
+            );
+
+            $perPage = max(
+                1,
+                min($perPage, 50)
+            );
+
+
+            $rows = $this->marshallingYardServices
+                ->searchYard(
+                    $keyword,
+                    $perPage
+                );
+
+
+            if ($rows->isEmpty()) {
+
+                $view = view(
+                    'livewire.partials.marshallingyard.table',
+                    [
+                        'rows' => $rows,
+                    ]
+                )->render();
+
+
+                return response()->json([
+                    'success' => false,
+                    'data' => $view,
+                    'message' =>
+                        'Data Marshalling Yard tidak ditemukan.',
+                ], 404);
+            }
+
 
             $view = view(
                 'livewire.partials.marshallingyard.table',
                 compact('rows')
             )->render();
 
+
             return response()->json([
+                'success' => true,
+
                 'data' => $view,
+
+                'pagination' => [
+                    'current_page' =>
+                        $rows->currentPage(),
+
+                    'last_page' =>
+                        $rows->lastPage(),
+
+                    'per_page' =>
+                        $rows->perPage(),
+
+                    'total' =>
+                        $rows->total(),
+
+                    'from' =>
+                        $rows->firstItem(),
+
+                    'to' =>
+                        $rows->lastItem(),
+                ],
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
             $status = (int) $e->getCode();
 
-            if ($status < 400 || $status > 599) {
+            if (
+                $status < 400 ||
+                $status > 599
+            ) {
                 $status = 500;
             }
 
+
             return response()->json([
-                'message' => $e->getMessage()
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat mencari Marshalling Yard.',
             ], $status);
         }
     }
 
+
     /**
      * Detail ketika tombol PROSES diklik.
      */
-    public function detail(Request $request): JsonResponse
-    {
+    public function detail(
+        Request $request
+    ): JsonResponse {
         try {
+
             $validated = $request->validate([
                 'id_job_slip' => [
                     'required',
@@ -104,35 +256,49 @@ class MarshallingYardController extends Controller
                 ],
             ]);
 
-            $row = $this->marshallingYardServices->getDetailYard(
-                $validated['id_job_slip']
-            );
+
+            $row = $this->marshallingYardServices
+                ->getDetailYard(
+                    $validated['id_job_slip']
+                );
+
 
             if (!$row) {
+
                 return response()->json([
-                    'message' => 'Detail Job Slip Marshalling Yard tidak ditemukan.',
+                    'message' =>
+                        'Detail Job Slip Marshalling Yard tidak ditemukan.',
                 ], 404);
             }
 
+
             $references = [
                 'job_activities' =>
-                    $this->marshallingYardServices->getJobActivity(),
+                    $this->marshallingYardServices
+                        ->getJobActivity(),
 
                 'equipments' =>
-                    $this->marshallingYardServices->getEquipment(),
+                    $this->marshallingYardServices
+                        ->getEquipment(),
 
                 'operators' =>
-                    $this->marshallingYardServices->getOperator(),
+                    $this->marshallingYardServices
+                        ->getOperator(),
 
                 'trucks' =>
-                    $this->marshallingYardServices->getTruck(),
+                    $this->marshallingYardServices
+                        ->getTruck(),
             ];
+
 
             $view = view(
                 'livewire.partials.marshallingyard.form',
                 [
-                    'row' => $row,
-                    'references' => $references,
+                    'row' =>
+                        $row,
+
+                    'references' =>
+                        $references,
 
                     'job_activities' =>
                         $references['job_activities'],
@@ -148,30 +314,49 @@ class MarshallingYardController extends Controller
                 ]
             )->render();
 
+
             return response()->json([
+                'success' => true,
                 'data' => $view,
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
             $status = (int) $e->getCode();
 
-            if ($status < 400 || $status > 599) {
+            if (
+                $status < 400 ||
+                $status > 599
+            ) {
                 $status = 500;
             }
 
+
             return response()->json([
-                'message' => $e->getMessage()
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat mengambil detail Marshalling Yard.',
             ], $status);
         }
     }
 
+
     /**
      * Development phase:
-     * validasi saja, belum melakukan persistence.
+     * validasi saja.
+     *
+     * Belum melakukan persistence.
      */
-    public function store(Request $request): JsonResponse
-    {
+    public function store(
+        Request $request
+    ): JsonResponse {
         try {
+
             $validated = $request->validate([
                 'idJobSlip' => [
                     'required',
@@ -255,13 +440,27 @@ class MarshallingYardController extends Controller
                 ],
             ]);
 
+
             return response()->json([
-                'message' => 'Data Marshalling Yard berhasil divalidasi.',
-                'data' => $validated,
+                'success' => true,
+
+                'message' =>
+                    'Data Marshalling Yard berhasil divalidasi.',
+
+                'data' =>
+                    $validated,
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
             return response()->json([
-                'message' => $e->getMessage()
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat memproses Marshalling Yard.',
             ], 500);
         }

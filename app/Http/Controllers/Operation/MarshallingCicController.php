@@ -16,115 +16,284 @@ class MarshallingCicController extends Controller
     ) {
     }
 
+
     /**
      * Load monitoring table awal.
+     *
+     * Pagination:
+     * - default 10 data
+     * - minimum 1
+     * - maximum 50
      */
-    public function indexData(): JsonResponse
-    {
+    public function indexData(
+        Request $request
+    ): JsonResponse {
+
         try {
-            $jobs = $this->marshallingCicService->getAllJobs();
+
+            $perPage = (int) $request->input(
+                'per_page',
+                10
+            );
+
+
+            $perPage = max(
+                1,
+                min($perPage, 50)
+            );
+
+
+            $jobs =
+                $this->marshallingCicService
+                    ->getAllJobs($perPage);
+
 
             $view = view(
                 'livewire.partials.marshallingcic.table',
                 compact('jobs')
             )->render();
 
+
             return response()->json([
+
+                'success' => true,
+
                 'data' => $view,
+
+                /*
+                 * Pagination metadata
+                 */
+                'pagination' => [
+
+                    'current_page' =>
+                        $jobs->currentPage(),
+
+                    'last_page' =>
+                        $jobs->lastPage(),
+
+                    'per_page' =>
+                        $jobs->perPage(),
+
+                    'total' =>
+                        $jobs->total(),
+
+                    'from' =>
+                        $jobs->firstItem(),
+
+                    'to' =>
+                        $jobs->lastItem(),
+
+                ],
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
+            $statusCode =
+                (int) $e->getCode();
+
+
+            if (
+                $statusCode < 400 ||
+                $statusCode > 599
+            ) {
+                $statusCode = 500;
+            }
+
+
             return response()->json([
-                'message' => $e->getMessage()
+
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat mengambil data Marshalling CIC.',
-            ], $e->getCode() ?: 500);
+
+            ], $statusCode);
         }
     }
 
+
     /**
      * Search container.
+     *
+     * Search tetap menggunakan hasil biasa,
+     * tidak dipagination.
      */
-    public function search(Request $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'no_cont' => ['required', 'string', 'max:20'],
-            ]);
+    public function search(
+        Request $request
+    ): JsonResponse {
 
-            $keyword = strtoupper(trim($validated['no_cont']));
+        try {
+
+            $validated =
+                $request->validate([
+
+                    'no_cont' => [
+                        'required',
+                        'string',
+                        'max:20',
+                    ],
+
+                ]);
+
+
+            $keyword =
+                strtoupper(
+                    trim(
+                        $validated['no_cont']
+                    )
+                );
+
 
             if ($keyword === '') {
+
                 throw new Exception(
                     'Nomor Container wajib diisi.',
                     422
                 );
             }
 
-            $checkHoldP2 = checkHoldP2($keyword);
+
+            /*
+             * Check Hold P2
+             */
+            $checkHoldP2 =
+                checkHoldP2(
+                    $keyword
+                );
+
 
             if ($checkHoldP2) {
+
                 throw new Exception(
                     'Container on Hold P2, Harap release Container terlebih dahulu',
                     500
                 );
             }
 
-            $jobs = $this->marshallingCicService->search($keyword);
+
+            /*
+             * Search
+             */
+            $jobs =
+                $this->marshallingCicService
+                    ->search($keyword);
+
 
             if (empty($jobs)) {
+
                 throw new Exception(
                     'Data Marshalling CIC tidak ditemukan.',
                     404
                 );
             }
 
+
             $view = view(
                 'livewire.partials.marshallingcic.table',
                 compact('jobs')
             )->render();
 
+
             return response()->json([
+
+                'success' => true,
+
                 'data' => $view,
+
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
+            $statusCode =
+                (int) $e->getCode();
+
+
+            if (
+                $statusCode < 400 ||
+                $statusCode > 599
+            ) {
+                $statusCode = 500;
+            }
+
+
             return response()->json([
-                'message' => $e->getMessage()
+
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat mencari Container.',
-            ], $e->getCode() ?: 500);
+
+            ], $statusCode);
         }
     }
+
 
     /**
      * Detail job.
      */
-    public function detail(Request $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'id_job_slip' => ['required', 'integer'],
-            ]);
+    public function detail(
+        Request $request
+    ): JsonResponse {
 
-            $row = $this->marshallingCicService->getDetail(
-                (int) $validated['id_job_slip']
-            );
+        try {
+
+            $validated =
+                $request->validate([
+
+                    'id_job_slip' => [
+                        'required',
+                        'integer',
+                    ],
+
+                ]);
+
+
+            $row =
+                $this->marshallingCicService
+                    ->getDetail(
+                        (int) $validated['id_job_slip']
+                    );
+
 
             if (!$row) {
+
                 throw new Exception(
                     'Detail Job Marshalling CIC tidak ditemukan.',
                     404
                 );
             }
 
-            $jobActivities = $this->marshallingCicService
-                ->getJobActivities();
 
-            $equipments = $this->marshallingCicService
-                ->getEquipments();
+            /*
+             * Master data untuk form detail.
+             */
+            $jobActivities =
+                $this->marshallingCicService
+                    ->getJobActivities();
 
-            $trucks = $this->marshallingCicService
-                ->getTrucks();
 
-            $operators = $this->marshallingCicService
-                ->getOperators();
+            $equipments =
+                $this->marshallingCicService
+                    ->getEquipments();
+
+
+            $trucks =
+                $this->marshallingCicService
+                    ->getTrucks();
+
+
+            $operators =
+                $this->marshallingCicService
+                    ->getOperators();
+
 
             $view = view(
                 'livewire.partials.marshallingcic.form',
@@ -137,24 +306,59 @@ class MarshallingCicController extends Controller
                 )
             )->render();
 
+
             return response()->json([
+
+                'success' => true,
+
                 'data' => $view,
+
             ]);
+
         } catch (Throwable $e) {
+
+            report($e);
+
+
+            $statusCode =
+                (int) $e->getCode();
+
+
+            if (
+                $statusCode < 400 ||
+                $statusCode > 599
+            ) {
+                $statusCode = 500;
+            }
+
+
             return response()->json([
-                'message' => $e->getMessage()
+
+                'success' => false,
+
+                'message' =>
+                    $e->getMessage()
                     ?: 'Terjadi kesalahan saat mengambil detail.',
-            ], $e->getCode() ?: 500);
+
+            ], $statusCode);
         }
     }
+
 
     /**
      * Read-only phase.
      */
-    public function store(Request $request): JsonResponse
-    {
+    public function store(
+        Request $request
+    ): JsonResponse {
+
         return response()->json([
-            'message' => 'Marshalling CIC saat ini dalam mode read-only. Data tidak disimpan.',
+
+            'success' => true,
+
+            'message' =>
+                'Marshalling CIC saat ini dalam mode read-only. Data tidak disimpan.',
+
         ]);
     }
 }

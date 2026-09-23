@@ -2,87 +2,143 @@
 
 namespace App\Services;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class MarshallingYardServices
 {
+    /**
+     * Ambil seluruh job Marshalling Yard
+     * dengan pagination.
+     */
+    public function getAllJobsYard(
+        int $perPage = 10
+    ): LengthAwarePaginator {
+        $perPage = max(1, min($perPage, 50));
 
-    public function getAllJobsYard(): array
-    {
-        return DB::connection('prod')->select(
-            "SELECT DISTINCT
-                    A.ID_JOB_SLIP,
-                    A.NO_CONT,
-                    C.UKR_CONT,
-                    A.LOKASI_AWAL,
-                    A.LOKASI_AKHIR,
-                    A.TIER_AWAL,
-                    A.TIER_AKHIR,
-                    A.JENIS
-                FROM t_job_slip A
-                INNER JOIN t_spk B
-                    ON A.NO_SPK = B.NO_SPK
-                INNER JOIN t_gatepass C
-                    ON A.NO_GATEPASS = C.ID
-                WHERE A.STATUS = ?
-                    AND A.KD_STATUS = ?
-                    AND A.LOKASI_AKHIR LIKE ?
-                    AND C.FL_ACTIVE = ?
-                    AND A.JENIS IN (?, ?)
-                GROUP BY A.NO_CONT
-                ORDER BY A.ID_JOB_SLIP DESC",
-            [
-                'WAITING',
-                '20',
-                '1A%',
-                'Y',
+        $query = DB::connection('prod')
+            ->table('t_job_slip as A')
+            ->join(
+                't_spk as B',
+                'A.NO_SPK',
+                '=',
+                'B.NO_SPK'
+            )
+            ->join(
+                't_gatepass as C',
+                'A.NO_GATEPASS',
+                '=',
+                'C.ID'
+            )
+            ->select([
+                'A.ID_JOB_SLIP',
+                'A.NO_CONT',
+                'C.UKR_CONT',
+                'A.LOKASI_AWAL',
+                'A.LOKASI_AKHIR',
+                'A.TIER_AWAL',
+                'A.TIER_AKHIR',
+                'A.JENIS',
+            ])
+            ->where('A.STATUS', 'WAITING')
+            ->where('A.KD_STATUS', '20')
+            ->where('A.LOKASI_AKHIR', 'LIKE', '1A%')
+            ->where('C.FL_ACTIVE', 'Y')
+            ->whereIn('A.JENIS', [
                 'EX BEHANDLE 1',
                 'EX BEHANDLE 2',
-            ]
-        );
+            ])
+            ->groupBy(
+                'A.NO_CONT',
+                'A.ID_JOB_SLIP',
+                'C.UKR_CONT',
+                'A.LOKASI_AWAL',
+                'A.LOKASI_AKHIR',
+                'A.TIER_AWAL',
+                'A.TIER_AKHIR',
+                'A.JENIS'
+            )
+            ->orderBy(
+                'A.ID_JOB_SLIP',
+                'DESC'
+            );
+
+        return $query->paginate($perPage);
     }
 
 
-    public function searchYard(string $keyword): array
-    {
-        return DB::connection('prod')->select(
-            "SELECT DISTINCT
-                    A.ID_JOB_SLIP,
-                    A.NO_CONT,
-                    C.UKR_CONT,
-                    A.LOKASI_AWAL,
-                    A.LOKASI_AKHIR,
-                    A.TIER_AWAL,
-                    A.TIER_AKHIR,
-                    A.JENIS
-                FROM t_job_slip A
-                INNER JOIN t_spk B
-                    ON A.NO_SPK = B.NO_SPK
-                INNER JOIN t_gatepass C
-                    ON A.NO_GATEPASS = C.ID
-                WHERE A.NO_CONT LIKE ?
-                    AND A.STATUS = ?
-                    AND A.KD_STATUS = ?
-                    AND A.LOKASI_AKHIR LIKE ?
-                    AND C.FL_ACTIVE = ?
-                    AND A.JENIS IN (?, ?)
-                GROUP BY A.NO_CONT
-                ORDER BY A.ID_JOB_SLIP DESC",
-            [
-                '%' . $keyword . '%',
-                'WAITING',
-                '20',
-                '1A%',
-                'Y',
+    /**
+     * Search Marshalling Yard berdasarkan
+     * nomor container.
+     */
+    public function searchYard(
+        string $keyword,
+        int $perPage = 10
+    ): LengthAwarePaginator {
+        $perPage = max(1, min($perPage, 50));
+
+        $query = DB::connection('prod')
+            ->table('t_job_slip as A')
+            ->join(
+                't_spk as B',
+                'A.NO_SPK',
+                '=',
+                'B.NO_SPK'
+            )
+            ->join(
+                't_gatepass as C',
+                'A.NO_GATEPASS',
+                '=',
+                'C.ID'
+            )
+            ->select([
+                'A.ID_JOB_SLIP',
+                'A.NO_CONT',
+                'C.UKR_CONT',
+                'A.LOKASI_AWAL',
+                'A.LOKASI_AKHIR',
+                'A.TIER_AWAL',
+                'A.TIER_AKHIR',
+                'A.JENIS',
+            ])
+            ->where(
+                'A.NO_CONT',
+                'LIKE',
+                '%' . $keyword . '%'
+            )
+            ->where('A.STATUS', 'WAITING')
+            ->where('A.KD_STATUS', '20')
+            ->where('A.LOKASI_AKHIR', 'LIKE', '1A%')
+            ->where('C.FL_ACTIVE', 'Y')
+            ->whereIn('A.JENIS', [
                 'EX BEHANDLE 1',
                 'EX BEHANDLE 2',
-            ]
-        );
+            ])
+            ->groupBy(
+                'A.NO_CONT',
+                'A.ID_JOB_SLIP',
+                'C.UKR_CONT',
+                'A.LOKASI_AWAL',
+                'A.LOKASI_AKHIR',
+                'A.TIER_AWAL',
+                'A.TIER_AKHIR',
+                'A.JENIS'
+            )
+            ->orderBy(
+                'A.ID_JOB_SLIP',
+                'DESC'
+            );
+
+        return $query->paginate($perPage);
     }
 
 
-    public function getDetailYard(string|int $idJobSlip): ?object
-    {
+    /**
+     * Detail Job Marshalling Yard.
+     */
+    public function getDetailYard(
+        string|int $idJobSlip
+    ): ?object {
         return DB::connection('prod')->selectOne(
             "SELECT DISTINCT
                     A.ID_JOB_SLIP,
@@ -133,22 +189,33 @@ class MarshallingYardServices
     }
 
 
+    /**
+     * Master Job Activity.
+     */
     public function getJobActivity(): array
     {
         return DB::connection('prod')->select(
-            "SELECT * FROM m_job_activity"
+            "SELECT *
+             FROM m_job_activity"
         );
     }
 
 
+    /**
+     * Master Equipment.
+     */
     public function getEquipment(): array
     {
         return DB::connection('prod')->select(
-            "SELECT * FROM t_reff_alat"
+            "SELECT *
+             FROM t_reff_alat"
         );
     }
 
 
+    /**
+     * Master Operator.
+     */
     public function getOperator(): array
     {
         return DB::connection('prod')->select(
@@ -160,6 +227,9 @@ class MarshallingYardServices
     }
 
 
+    /**
+     * Master Truck.
+     */
     public function getTruck(): array
     {
         return DB::connection('prod')->select(
@@ -168,7 +238,4 @@ class MarshallingYardServices
              ORDER BY NO_TRUCK ASC"
         );
     }
-
-
-
 }

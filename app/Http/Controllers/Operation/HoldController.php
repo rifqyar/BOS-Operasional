@@ -58,37 +58,25 @@ class HoldController extends Controller
         try {
 
             /*
-             * ---------------------------------------------------------
+             * =========================================================
              * 1. CARI CONTAINER YANG BELUM HOLD
-             * ---------------------------------------------------------
-             *
-             * Legacy:
-             * search_holdd()
-             *
-             * Kondisi:
-             * FL_HOLD = N
+             * =========================================================
              */
 
             $data = $this->holdService->searchHold(
                 $keyword
             );
 
-
             if ($data->isNotEmpty()) {
 
                 /*
                  * Search langsung mendapatkan data.
                  *
-                 * Tidak perlu lagi menampilkan daftar
-                 * dan meminta user klik container.
+                 * Tidak ada list → detail.
+                 *
+                 * Langsung FORM HOLD.
                  */
-
                 $item = $data->first();
-
-
-                /*
-                 * Langsung render FORM HOLD.
-                 */
 
                 $html = View::make(
                     'livewire.partials.hold.form',
@@ -99,7 +87,6 @@ class HoldController extends Controller
                     ]
                 )->render();
 
-
                 return response()->json([
                     'success' => true,
                     'status' => 1,
@@ -108,35 +95,24 @@ class HoldController extends Controller
                 ]);
             }
 
-
             /*
-             * ---------------------------------------------------------
-             * 2. CONTAINER TIDAK DITEMUKAN DI SEARCH HOLD
-             * ---------------------------------------------------------
+             * =========================================================
+             * 2. TIDAK DITEMUKAN DI SEARCH HOLD
+             * =========================================================
              *
-             * Cek apakah container sudah dalam kondisi HOLD.
-             *
-             * Legacy:
-             * search_realease()
+             * Cek apakah container sudah HOLD.
              */
 
             $hold = $this->holdService->searchRelease(
                 $keyword
             );
 
-
             if ($hold->isNotEmpty()) {
 
                 /*
-                 * Ambil data pertama.
+                 * Langsung FORM RELEASE.
                  */
-
                 $item = $hold->first();
-
-
-                /*
-                 * Langsung render FORM RELEASE.
-                 */
 
                 $html = View::make(
                     'livewire.partials.hold.form',
@@ -147,7 +123,6 @@ class HoldController extends Controller
                     ]
                 )->render();
 
-
                 return response()->json([
                     'success' => true,
                     'status' => 3,
@@ -156,11 +131,10 @@ class HoldController extends Controller
                 ]);
             }
 
-
             /*
-             * ---------------------------------------------------------
-             * 3. CONTAINER TIDAK DITEMUKAN
-             * ---------------------------------------------------------
+             * =========================================================
+             * 3. TIDAK DITEMUKAN
+             * =========================================================
              */
 
             return response()->json([
@@ -172,11 +146,9 @@ class HoldController extends Controller
                 'html' => '',
             ], 404);
 
-
         } catch (Throwable $e) {
 
             report($e);
-
 
             return response()->json([
                 'success' => false,
@@ -187,21 +159,56 @@ class HoldController extends Controller
         }
     }
 
-
     /**
      * Daftar container yang sedang HOLD.
      *
-     * Digunakan oleh:
      * GET /hold/data
+     *
+     * Pagination server-side.
+     *
+     * Contoh:
+     *
+     * /hold/data?page=1
+     * /hold/data?page=2
+     *
+     * Default:
+     * 10 data per halaman.
      */
-    public function indexData(): JsonResponse
+    public function indexData(Request $request): JsonResponse
     {
         try {
 
+            /*
+             * Ambil jumlah data per halaman.
+             */
+            $perPage = (int) $request->input(
+                'per_page',
+                10
+            );
+
+            /*
+             * Batasi:
+             *
+             * minimum = 1
+             * maximum = 50
+             */
+            $perPage = min(
+                max($perPage, 1),
+                50
+            );
+
+            /*
+             * Ambil data dengan pagination.
+             */
             $data = $this->holdService
-                ->getHeldContainers();
+                ->getHeldContainers($perPage);
 
-
+            /*
+             * Render table.
+             *
+             * Paginator dikirim langsung
+             * ke Blade.
+             */
             $html = View::make(
                 'livewire.partials.hold.table',
                 [
@@ -209,18 +216,30 @@ class HoldController extends Controller
                 ]
             )->render();
 
-
             return response()->json([
                 'success' => true,
-                'count' => $data->count(),
+
+                /*
+                 * Total seluruh data HOLD.
+                 */
+                'count' => $data->total(),
+
+                /*
+                 * Informasi pagination.
+                 */
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'per_page' => $data->perPage(),
+
+                'from' => $data->firstItem(),
+                'to' => $data->lastItem(),
+
                 'html' => $html,
             ]);
-
 
         } catch (Throwable $e) {
 
             report($e);
-
 
             return response()->json([
                 'success' => false,
@@ -229,7 +248,6 @@ class HoldController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * HOLD container.
@@ -259,7 +277,6 @@ class HoldController extends Controller
             ],
         ]);
 
-
         try {
 
             $this->holdService->hold(
@@ -270,7 +287,6 @@ class HoldController extends Controller
                 $validated['warna']
             );
 
-
             return response()->json([
                 'success' => true,
                 'message' =>
@@ -278,11 +294,9 @@ class HoldController extends Controller
                     'Mode development belum melakukan update database.',
             ]);
 
-
         } catch (Throwable $e) {
 
             report($e);
-
 
             return response()->json([
                 'success' => false,
@@ -291,7 +305,6 @@ class HoldController extends Controller
             ], 422);
         }
     }
-
 
     /**
      * RELEASE container.
@@ -322,7 +335,6 @@ class HoldController extends Controller
             ],
         ]);
 
-
         try {
 
             $this->holdService->release(
@@ -333,7 +345,6 @@ class HoldController extends Controller
                 $validated['nospk'] ?? null
             );
 
-
             return response()->json([
                 'success' => true,
                 'message' =>
@@ -341,11 +352,9 @@ class HoldController extends Controller
                     'Mode development belum melakukan update database.',
             ]);
 
-
         } catch (Throwable $e) {
 
             report($e);
-
 
             return response()->json([
                 'success' => false,
