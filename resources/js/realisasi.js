@@ -1,5 +1,6 @@
 (($) => {
-    if (! $) {
+
+    if (!$) {
         return;
     }
 
@@ -36,9 +37,59 @@
     const getStoreUrl = () =>
         getPanel().data('storeUrl');
 
+    /*
+    |--------------------------------------------------------------------------
+    | CSRF TOKEN
+    |--------------------------------------------------------------------------
+    |
+    | Token diambil langsung dari attribute:
+    |
+    | data-csrf-token="{{ csrf_token() }}"
+    |
+    | pada panel Realisasi.
+    |
+    */
+
+    const getCsrfToken = () =>
+        getPanel().attr('data-csrf-token') || '';
+
+    /*
+    |--------------------------------------------------------------------------
+    | AJAX POST HELPER
+    |--------------------------------------------------------------------------
+    |
+    | Semua POST Realisasi menggunakan helper ini agar CSRF
+    | selalu dikirim ke Laravel.
+    |
+    */
+
+    const postAjax = (url, options = {}) => {
+
+        const csrfToken = getCsrfToken();
+
+        return $.ajax({
+            ...options,
+
+            url,
+            method: 'POST',
+
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                ...(options.headers || {}),
+            },
+
+            xhrFields: {
+                withCredentials: true,
+                ...(options.xhrFields || {}),
+            },
+        });
+    };
+
     const showAlert = (icon, title, text) => {
 
         if (typeof window.showAlert === 'function') {
+
             window.showAlert(
                 icon,
                 title,
@@ -110,6 +161,11 @@
 
     const bindRealisasiHandlers = () => {
 
+        /*
+        |--------------------------------------------------------------------------
+        | RELOAD DATA
+        |--------------------------------------------------------------------------
+        */
 
         $(document).off(
             'bos:reload-data.bosRealisasi'
@@ -128,13 +184,18 @@
                     hasPanel() &&
                     noCont
                 ) {
+
                     getSearchForm()
                         .trigger('submit');
                 }
             }
         );
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | SEARCH
+        |--------------------------------------------------------------------------
+        */
 
         $(document).off(
             'submit.bosRealisasiSearch',
@@ -146,7 +207,7 @@
             '[data-search-form]',
             function (event) {
 
-                if (! hasPanel()) {
+                if (!hasPanel()) {
                     return;
                 }
 
@@ -172,7 +233,7 @@
                     defaultLabel
                 );
 
-                if (! noCont) {
+                if (!noCont) {
 
                     showAlert(
                         'warning',
@@ -183,7 +244,7 @@
                     return;
                 }
 
-                if (! searchUrl) {
+                if (!searchUrl) {
 
                     showAlert(
                         'info',
@@ -200,17 +261,16 @@
                     defaultLabel
                 );
 
-                $.ajax({
+                postAjax(
+                    searchUrl,
+                    {
+                        data: {
+                            no_cont: noCont,
+                        },
+                    }
+                )
 
-                    url: searchUrl,
-
-                    method: 'POST',
-
-                    data: {
-                        no_cont: noCont,
-                    },
-
-                    success: (response) => {
+                    .done((response) => {
 
                         getRowsContainer()
                             .empty()
@@ -224,9 +284,9 @@
                         getDetailContainer()
                             .empty()
                             .addClass('hidden');
-                    },
+                    })
 
-                    error: (xhr) => {
+                    .fail((xhr) => {
 
                         getResultWrapper()
                             .addClass('hidden');
@@ -246,21 +306,24 @@
                             xhr.responseJSON?.message ||
                                 'Gagal mengambil data container, harap hubungi tim IT'
                         );
-                    },
+                    })
 
-                    complete: () => {
+                    .always(() => {
 
                         setButtonLoading(
                             $button,
                             false,
                             defaultLabel
                         );
-                    },
-                });
+                    });
             }
         );
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | DETAIL
+        |--------------------------------------------------------------------------
+        */
 
         $(document).off(
             'click.bosRealisasiDetail',
@@ -272,7 +335,7 @@
             '[data-detail-button]',
             function (event) {
 
-                if (! hasPanel()) {
+                if (!hasPanel()) {
                     return;
                 }
 
@@ -289,7 +352,7 @@
                 const detailUrl =
                     getDetailUrl();
 
-                if (! noCont) {
+                if (!noCont) {
 
                     showAlert(
                         'warning',
@@ -300,7 +363,7 @@
                     return;
                 }
 
-                if (! detailUrl) {
+                if (!detailUrl) {
 
                     showAlert(
                         'info',
@@ -326,17 +389,16 @@
                     defaultLabel
                 );
 
-                $.ajax({
+                postAjax(
+                    detailUrl,
+                    {
+                        data: {
+                            no_cont: noCont,
+                        },
+                    }
+                )
 
-                    url: detailUrl,
-
-                    method: 'POST',
-
-                    data: {
-                        no_cont: noCont,
-                    },
-
-                    success: (response) => {
+                    .done((response) => {
 
                         getDetailContainer()
                             .removeClass('hidden')
@@ -355,9 +417,9 @@
                                 block: 'start',
                             });
                         }
-                    },
+                    })
 
-                    error: (xhr) => {
+                    .fail((xhr) => {
 
                         showAlert(
                             'error',
@@ -365,21 +427,24 @@
                             xhr.responseJSON?.message ||
                                 'Gagal mengambil detail pemeriksaan.'
                         );
-                    },
+                    })
 
-                    complete: () => {
+                    .always(() => {
 
                         setButtonLoading(
                             $button,
                             false,
                             defaultLabel
                         );
-                    },
-                });
+                    });
             }
         );
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | STORE / SEND
+        |--------------------------------------------------------------------------
+        */
 
         $(document).off(
             'submit.bosRealisasiSend',
@@ -391,7 +456,7 @@
             '[data-send-form]',
             function (event) {
 
-                if (! hasPanel()) {
+                if (!hasPanel()) {
                     return;
                 }
 
@@ -417,7 +482,7 @@
                     defaultLabel
                 );
 
-                if (! storeUrl) {
+                if (!storeUrl) {
 
                     showAlert(
                         'info',
@@ -434,15 +499,14 @@
                     defaultLabel
                 );
 
-                $.ajax({
+                postAjax(
+                    storeUrl,
+                    {
+                        data: $form.serialize(),
+                    }
+                )
 
-                    url: storeUrl,
-
-                    method: 'POST',
-
-                    data: $form.serialize(),
-
-                    success: (response) => {
+                    .done((response) => {
 
                         showAlert(
                             'success',
@@ -450,9 +514,9 @@
                             response.message ||
                                 'Data berhasil diproses.'
                         );
-                    },
+                    })
 
-                    error: (xhr) => {
+                    .fail((xhr) => {
 
                         showAlert(
                             'error',
@@ -460,21 +524,24 @@
                             xhr.responseJSON?.message ||
                                 'Data gagal diproses.'
                         );
-                    },
+                    })
 
-                    complete: () => {
+                    .always(() => {
 
                         setButtonLoading(
                             $button,
                             false,
                             defaultLabel
                         );
-                    },
-                });
+                    });
             }
         );
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | CLOSE DETAIL
+        |--------------------------------------------------------------------------
+        */
 
         $(document).off(
             'click.bosRealisasiClose',
@@ -493,13 +560,26 @@
         );
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | INITIALIZE
+    |--------------------------------------------------------------------------
+    */
+
     bindRealisasiHandlers();
 
     initRealisasiPanel();
 
     $(() => {
+
         initRealisasiPanel();
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | LIVEWIRE NAVIGATION
+    |--------------------------------------------------------------------------
+    */
 
     $(document).on(
         'livewire:navigated',
