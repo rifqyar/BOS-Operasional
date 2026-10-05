@@ -585,7 +585,7 @@
         'livewire:navigated',
         () => {
 
-            bindRealisasiHandlers();
+            bindRealisasiHandlers();no
 
             initRealisasiPanel();
         }

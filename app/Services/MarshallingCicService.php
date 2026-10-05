@@ -157,7 +157,7 @@ class MarshallingCicService
                 A.NO_CONT,
                 C.UKR_CONT,
                 A.LOKASI_AWAL,
-                A.LOKASI_AKHIt,
+                A.LOKASI_AKHIR,
                 A.TIER_AWAL,
                 A.TIER_AKHIR,
                 A.JENIS,
