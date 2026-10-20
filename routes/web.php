@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /** Pickup */
     Route::get('pickup', Dashboard::class)->name('pickup');
     Route::post('pickup/search', [PickupController::class, 'search'])->name('pickup.search');
+    Route::post('pickup/send', [PickupController::class, 'sendPickup'])->name('pickup.send');
     Route::post('pickup/store', [PickupController::class, 'store'])->name('pickup.store');
 
     /** Behandle In */
@@ -50,32 +51,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('behandle/store', [BehandleController::class, 'store'])->name('behandlein.store');
 
     /** Hold */
+    Route::get('/hold', Dashboard::class)->name('hold');
 
- /** Hold */
-Route::get('/hold', Dashboard::class)->name('hold');
+    Route::post('/hold/search', [HoldController::class, 'search'])
+        ->name('hold.search');
 
-Route::post('/hold/search', [HoldController::class, 'search'])
-    ->name('hold.search');
+    Route::post('/hold/detail', [HoldController::class, 'detail'])
+        ->name('hold.detail');
 
-Route::post('/hold/detail', [HoldController::class, 'detail'])
-    ->name('hold.detail');
+    Route::get('/hold/data', [HoldController::class, 'indexData'])
+        ->name('hold.data');
 
-Route::get('/hold/data', [HoldController::class, 'indexData'])
-    ->name('hold.data');
+    Route::post('/hold/store', [HoldController::class, 'store'])
+        ->name('hold.store');
 
-Route::post('/hold/store', [HoldController::class, 'store'])
-    ->name('hold.store');
-
-Route::post('/hold/release', [HoldController::class, 'release'])
-    ->name('hold.release');
+    Route::post('/hold/release', [HoldController::class, 'release'])
+        ->name('hold.release');
 
 
-/** Marshalling CIC */
+    /** Marshalling CIC */
     Route::get('/marshalling-cic', Dashboard::class)->name('marshallingcic');
     Route::post('/marshalling-cic/search', [MarshallingCicController::class, 'search'])->name('marshallingcic.search');
     Route::post('/marshalling-cic/store', [MarshallingCicController::class, 'store'])->name('marshallingcic.store');
     Route::post('/marshalling-cic/detail', [MarshallingCicController::class, 'detail'])->name('marshallingcic.detail');
-    Route::get('/marshalling-cic/data',[MarshallingCicController::class, 'indexData'])->name('marshallingcic.data');
+    Route::get('/marshalling-cic/data', [MarshallingCicController::class, 'indexData'])->name('marshallingcic.data');
 
     /** Marshalling Yard */
     Route::get('/marshalling-yard', Dashboard::class)->name('marshallingyard');
@@ -84,12 +83,12 @@ Route::post('/hold/release', [HoldController::class, 'release'])
     Route::post('/marshalling-yard/detail', [MarshallingYardController::class, 'detail'])->name('marshallingyard.detail');
     Route::post('/marshalling-yard/store', [MarshallingYardController::class, 'store'])->name('marshallingyard.store');
 
-            /** Realisasi / Pemeriksaan Behandle */
+    /** Realisasi / Pemeriksaan Behandle */
     Route::get('/realisasi', Dashboard::class)->name('realisasi');
     Route::post('/realisasi/search', [RealisasiController::class, 'search'])->name('realisasi.search');
     Route::post('/realisasi/detail', [RealisasiController::class, 'detail'])->name('realisasi.detail');
     Route::post('/realisasi/store', [RealisasiController::class, 'store'])->name('realisasi.store');
-    
+
     Route::get('/plug-reefer', Dashboard::class)->name('plugreefer');
     Route::post('/plug-reefer/search', [PlugReeferController::class, 'search'])->name('plugreefer.search');
 
@@ -116,7 +115,7 @@ Route::post('/hold/release', [HoldController::class, 'release'])
     Route::get('/inspection-out', Dashboard::class)->name('inspectionout');
     Route::post('/inspection-out/search', [InspectionOutController::class, 'search'])->name('inspectionout.search');
     Route::post('/inspection-out/store', [InspectionOutController::class, 'store'])->name('inspectionout.store');
-    
+
     /** On Chassis */
     Route::get('/on-chassis', Dashboard::class)->name('onchassis');
     Route::post('/on-chassis/search', [OnChassisController::class, 'search'])->name('onchassis.search');

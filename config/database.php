@@ -112,6 +112,20 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        'prod_new' => [
+            'driver' => 'oracle',
+            'tns' => env('DB_TNS', ''),
+            'host' => env('DB_HOST_NEW', ''),
+            'port' => env('DB_PORT_NEW', '1521'),
+            'database' => env('DB_DATABASE_NEW', ''),
+            'service_name' => env('DB_SERVICE_NAME_NEW', ''),
+            'username' => env('DB_USERNAME_NEW', ''),
+            'password' => env('DB_PASSWORD_NEW', ''),
+            'charset' => env('DB_CHARSET', 'AL32UTF8'),
+            'prefix' => '',
+            'prefix_indexes' => true, // Tambahkan konfigurasi options ini:
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

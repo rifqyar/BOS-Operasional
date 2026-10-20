@@ -3,6 +3,7 @@
     data-panel
     data-panel-name="pickup"
     data-search-url="{{ route('pickup.search') }}"
+    data-send-url="{{ route('pickup.send') }}"
     data-store-url="{{ route('pickup.store') }}"
     data-csrf-token="{{ csrf_token() }}">
     <div class="mb-4 flex items-center justify-between gap-3">
@@ -39,9 +40,9 @@
         </div>
 
         <div class="hidden grid-cols-[minmax(0,1.15fr)_minmax(5rem,0.45fr)_minmax(0,1.55fr)_auto] gap-3 border-b border-slate-200 px-4 py-3 text-xs font-semibold uppercase text-slate-500 dark:border-white/10 dark:text-slate-400 lg:grid">
-            <span>No Kontainer</span>
+            <span>No. Container</span>
             <span>Ukuran</span>
-            <span>Nomer Truck</span>
+            <span>No. Truck</span>
             <span>Action</span>
         </div>
 

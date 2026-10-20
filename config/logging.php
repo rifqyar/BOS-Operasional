@@ -127,6 +127,19 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'CheckTarNPCT' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/CheckTarNpct.log'),
+            'level' => 'info',
+            'days' => 7
+        ],
+
+        'pickup' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/pickup.log'),
+            'level' => 'info',
+            'days' => 7
+        ],
     ],
 
 ];
