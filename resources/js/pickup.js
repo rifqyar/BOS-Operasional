@@ -39,9 +39,12 @@
         );
     };
 
-    const showAlert = (icon, title, text) => {
+    const showAlert = (icon, title, text, onConfirm) => {
         if (typeof window.showAlert === "function") {
             window.showAlert(icon, title, text);
+            if (typeof onConfirm === "function") {
+                onConfirm();
+            }
             return;
         }
 
@@ -52,11 +55,18 @@
                 text,
                 confirmButtonText: "Mengerti",
                 confirmButtonColor: "#0369a1",
+            }).then(() => {
+                if (typeof onConfirm === "function") {
+                    onConfirm();
+                }
             });
             return;
         }
 
         alert(text);
+        if (typeof onConfirm === "function") {
+            onConfirm();
+        }
     };
 
     const showToast = (icon, title, text = "") => {
@@ -133,6 +143,53 @@
         });
     };
 
+    const reloadPickupPanelAfterInsert = (forcePageReload = false) => {
+        if (forcePageReload) {
+            window.location.reload();
+            return;
+        }
+
+        const noSpk = getSpkInput().val()?.trim();
+        const searchUrl = getSearchUrl();
+        const token = getCsrfToken();
+
+        if (!hasPanel() || !noSpk || !searchUrl) {
+            return;
+        }
+
+        $.ajax({
+            url: searchUrl,
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": token,
+            },
+            data: {
+                no_spk: noSpk,
+                _token: token,
+            },
+            success: (response) => {
+                getResultSpk().text(noSpk);
+                getRowsContainer()
+                    .empty()
+                    .html(response.data || "");
+                getResultWrapper().removeClass("hidden");
+            },
+            error: (xhr) => {
+                // If 404 (all containers on this SPK have finished pickup)
+                if (xhr.status === 404) {
+                    getResultWrapper().addClass("hidden");
+                    getRowsContainer().empty();
+                    getSpkInput().val("").trigger("focus");
+                    showToast(
+                        "success",
+                        "Selesai",
+                        "Semua kontainer pada SPK ini telah selesai dipickup.",
+                    );
+                }
+            },
+        });
+    };
+
     const initPickupPanel = () => {
         if (hasPanel()) {
             $("[data-handheld-menu]").addClass("hidden");
@@ -145,7 +202,18 @@
         $(document).on("bos:reload-data.bosPickup", () => {
             const noSpk = getSpkInput().val()?.trim();
             if (hasPanel() && noSpk) {
-                reloadPickupList();
+                reloadPickupPanelAfterInsert();
+            }
+        });
+
+        $(document).off("click.bosPickupReload", "[data-reload-pickup]");
+        $(document).on("click.bosPickupReload", "[data-reload-pickup]", function () {
+            if (!hasPanel()) return;
+            const noSpk = getSpkInput().val()?.trim();
+            if (noSpk) {
+                reloadPickupPanelAfterInsert();
+            } else {
+                window.location.reload();
             }
         });
 
@@ -410,17 +478,25 @@
                     },
                     data: $form.serialize(),
                     success: (response) => {
-                        showAlert(
-                            "success",
-                            "Berhasil",
-                            response.message || "Data pickup berhasil dikirim.",
-                        );
                         $button
                             .text("Terkirim")
                             .removeClass(
                                 "bg-emerald-600 hover:bg-emerald-700 bg-sky-600 hover:bg-sky-700",
                             )
-                            .addClass("bg-slate-500");
+                            .addClass("bg-slate-500")
+                            .prop("disabled", true);
+
+                        showAlert(
+                            "success",
+                            "Berhasil",
+                            response.message || "Data pickup berhasil diproses.",
+                            () => {
+                                reloadPickupPanelAfterInsert();
+                            },
+                        );
+
+                        // Reload panel data so rows update immediately
+                        reloadPickupPanelAfterInsert();
                     },
                     error: (xhr) => {
                         showAlert(

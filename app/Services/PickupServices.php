@@ -12,11 +12,20 @@ class PickupServices
         return $data;
     }
 
-    public function getDetailCont(string $noContainer, string $noTruck)
+    public function getDetailCont(string $noContainer, ?string $noTruck = null, ?string $noSpk = null)
     {
+        $spkCondition = $noSpk ? "AND A.NO_SPK = ?" : "";
+        $bindings = [$noTruck, $noTruck, $noContainer];
+
+        if ($noSpk) {
+            $bindings[] = $noSpk;
+        }
+
         $data = DB::connection('prod')->selectOne(
             "SELECT
+                A.ID,
                 A.NO_DOK,
+                A.JNS_DOK,
                 A.NO_SPK,
                 A.TGL_DOK,
                 A.NO_CONT,
@@ -33,7 +42,7 @@ class PickupServices
                 B.FL_DG,
                 B.FL_OOG,
                 A.STATUS_CONT
-            from ( select a.NO_DOK, a.TGL_DOK, a.NO_SPK, b.NO_CONT, b.ID_FLAT, b.ISO_CODE, b.STATUS_CONT from t_spk a join t_spk_cont b on a.ID = b.ID ) A
+            from ( select a.ID, a.NO_DOK, a.JNS_DOK, a.TGL_DOK, a.NO_SPK, b.NO_CONT, b.ID_FLAT, b.ISO_CODE, b.STATUS_CONT from t_spk a join t_spk_cont b on a.ID = b.ID ) A
             join (
                 select
                     c.NO_DOK,
@@ -58,9 +67,10 @@ class PickupServices
                 ? = C.NO_TRUCK
             where
                 A.NO_CONT = ?
+                $spkCondition
             order by
                 A.TGL_DOK desc",
-            [$noTruck, $noTruck, $noContainer]
+            $bindings
         );
 
         return $data;
