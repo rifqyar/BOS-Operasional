@@ -2,112 +2,23 @@
 
 namespace App\Services;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class HoldService
 {
     /**
-     * Legacy:
-     * search_holdd($keyword)
-     *
-     * Mencari container yang belum HOLD.
-     *
-     * Digunakan untuk:
-     * SEARCH → FORM HOLD
+     * Query dasar menggunakan pola HoldService lama.
+     * Sumber data: MySQL prod.
      */
-    public function searchHold(string $keyword)
+    private function baseQuery()
     {
-        return collect(
-            DB::connection('prod')->select(
-                "SELECT
-                    d.ID,
-                    d.NO_SPK,
-                    c.NO_CONT,
-                    d.TGL_DOK,
-                    d.NO_DOK,
-                    a.NAMA AS JNS_DOK,
-                    CASE
-                        WHEN c.FL_HOLD = 'Y' THEN 'HOLD'
-                    END AS KETERANGAN
-                FROM t_spk d
-                JOIN t_spk_cont c
-                    ON c.ID = d.ID
-                LEFT JOIN reff_kode_dok_bc a
-                    ON a.ID = d.JNS_DOK
-                WHERE c.NO_CONT LIKE ?
-                  AND c.FL_HOLD = 'N'
-                  AND c.STATUS_CONT != 900",
-                ['%' . $keyword . '%']
-            )
-        );
-    }
-
-    /**
-     * Legacy:
-     * search_realease($keyword)
-     *
-     * Mencari container yang sudah HOLD.
-     *
-     * Digunakan untuk:
-     * SEARCH → FORM RELEASE
-     */
-    public function searchRelease(string $keyword)
-    {
-        return collect(
-            DB::connection('prod')->select(
-                "SELECT
-                    d.ID,
-                    d.NO_SPK,
-                    c.NO_CONT,
-                    d.TGL_DOK,
-                    d.NO_DOK,
-                    a.NAMA AS JNS_DOK,
-                    CASE
-                        WHEN c.FL_HOLD = 'Y' THEN 'HOLD'
-                    END AS KETERANGAN,
-                    CASE
-                        WHEN c.FL_WARNA_HOLD = 'N' THEN 'PUTIH'
-                        WHEN c.FL_WARNA_HOLD = 'M' THEN 'MERAH'
-                        WHEN c.FL_WARNA_HOLD = 'T' THEN 'TIMAH'
-                    END AS WARNA
-                FROM t_spk d
-                JOIN t_spk_cont c
-                    ON c.ID = d.ID
-                LEFT JOIN reff_kode_dok_bc a
-                    ON a.ID = d.JNS_DOK
-                WHERE c.NO_CONT LIKE ?
-                  AND c.FL_HOLD = 'Y'
-                  AND c.STATUS_CONT != 900",
-                ['%' . $keyword . '%']
-            )
-        );
-    }
-
-    /**
-     * Legacy:
-     * realese()
-     *
-     * Mengambil container yang sedang HOLD.
-     *
-     * Pagination:
-     * - Default 10 data / halaman.
-     * - Maksimal 50 data / halaman.
-     */
-    public function getHeldContainers(int $perPage = 10)
-    {
-        $perPage = min(
-            max($perPage, 1),
-            50
-        );
-
         return DB::connection('prod')
             ->table('t_spk as d')
-            ->join(
-                't_spk_cont as c',
-                'c.ID',
-                '=',
-                'd.ID'
-            )
+            ->join('t_spk_cont as c', 'c.ID', '=', 'd.ID')
             ->leftJoin(
                 'reff_kode_dok_bc as a',
                 'a.ID',
@@ -121,79 +32,180 @@ class HoldService
                 'd.TGL_DOK',
                 'd.NO_DOK',
                 'a.NAMA as JNS_DOK',
+                'c.STATUS_CONT',
+                'c.FL_HOLD',
+                'c.FL_WARNA_HOLD',
             ])
             ->selectRaw("
                 CASE
-                    WHEN c.FL_HOLD = 'Y'
-                    THEN 'HOLD'
+                    WHEN c.FL_HOLD = 'Y' THEN 'HOLD'
+                    ELSE ''
                 END AS KETERANGAN
             ")
             ->selectRaw("
-                CASE
-                    WHEN c.FL_WARNA_HOLD = 'N'
-                    THEN 'PUTIH'
-
-                    WHEN c.FL_WARNA_HOLD = 'M'
-                    THEN 'MERAH'
-
-                    WHEN c.FL_WARNA_HOLD = 'T'
-                    THEN 'TIMAH'
+                CASE c.FL_WARNA_HOLD
+                    WHEN 'N' THEN 'PUTIH'
+                    WHEN 'M' THEN 'MERAH'
+                    WHEN 'T' THEN 'TIMAH'
+                    ELSE '-'
                 END AS WARNA
-            ")
-            ->where(
-                'c.FL_HOLD',
-                'Y'
-            )
-            ->where(
-                'c.STATUS_CONT',
-                '!=',
-                900
-            )
-            ->orderByDesc('d.ID')
-            ->paginate($perPage);
+            ");
     }
 
     /**
-     * Development phase.
-     *
-     * Belum melakukan UPDATE database.
-     *
-     * Legacy sebenarnya:
-     *
-     * UPDATE t_spk_cont
-     * SET
-     *     FL_HOLD = 'Y',
-     *     FL_WARNA_HOLD = '$WARNA'
-     * WHERE ID = '$ID'
-     * AND NO_CONT = '$NO_CONT'
+     * Mencari container yang tersedia untuk Hold.
      */
-    public function hold(
-        string|int $id,
-        string $noCont,
-        string $warna
-    ): void {
-        // Read-only development phase.
+    public function searchAvailable(string $noContainer): Collection
+    {
+        return $this->baseQuery()
+            ->where('c.NO_CONT', 'like', '%' . trim($noContainer) . '%')
+            ->where('c.STATUS_CONT', '<>', 900)
+            ->where(function ($query) {
+                $query->whereNull('c.FL_HOLD')
+                    ->orWhere('c.FL_HOLD', '<>', 'Y');
+            })
+            ->orderBy('d.NO_SPK')
+            ->limit(50)
+            ->get();
     }
 
     /**
-     * Development phase.
-     *
-     * Belum melakukan UPDATE database.
-     *
-     * Legacy sebenarnya:
-     *
-     * UPDATE t_spk_cont
-     * SET
-     *     FL_HOLD = 'N',
-     *     FL_WARNA_HOLD = 'N'
-     * WHERE ID = '$ID'
-     * AND NO_CONT = '$NO_CONT'
+     * Mengambil detail container.
      */
-    public function release(
-        string|int $id,
-        string $noCont,
-        ?string $noSpk = null
-    ): void {
-        // Read-only development phase.
+    public function getDetail(int $id): ?object
+    {
+        return $this->baseQuery()
+            ->where('c.ID', $id)
+            ->where('c.STATUS_CONT', '<>', 900)
+            ->first();
+    }
+
+    /**
+     * Mengambil daftar container Hold.
+     * Pagination mengikuti versi lama: 10 data per halaman.
+     */
+    public function getHeldContainers(): LengthAwarePaginator
+    {
+        return $this->baseQuery()
+            ->where('c.FL_HOLD', 'Y')
+            ->where('c.STATUS_CONT', '<>', 900)
+            ->orderBy('d.ID', 'desc')
+            ->paginate(10);
+    }
+
+    /**
+     * Memvalidasi container sebelum Hold.
+     */
+    public function validateAvailable(int $id): object
+    {
+        $item = $this->getDetail($id);
+
+        if (!$item) {
+            throw new RuntimeException(
+                'Data container tidak ditemukan.'
+            );
+        }
+
+        if (($item->FL_HOLD ?? 'N') === 'Y') {
+            throw new RuntimeException(
+                'Container sudah dalam status Hold.'
+            );
+        }
+
+        return $item;
+    }
+
+    /**
+     * Menyimpan Hold ke MySQL dan Oracle.
+     */
+    public function hold(int $id, string $warna, string $user): object
+    {
+        $warna = strtoupper(trim($warna));
+
+        if (!in_array($warna, ['N', 'M', 'T'], true)) {
+            throw ValidationException::withMessages([
+                'warna' => 'Warna Hold harus Putih, Merah, atau Timah.',
+            ]);
+        }
+
+        $item = $this->validateAvailable($id);
+        $now = now();
+
+        // Update status Hold pada MySQL.
+        $updated = DB::connection('prod')
+            ->table('t_spk_cont')
+            ->where('ID', $item->ID)
+            ->where('NO_CONT', $item->NO_CONT)
+            ->where(function ($query) {
+                $query->whereNull('FL_HOLD')
+                    ->orWhere('FL_HOLD', '<>', 'Y');
+            })
+            ->update([
+                'FL_HOLD' => 'Y',
+                'FL_WARNA_HOLD' => $warna,
+            ]);
+
+        if ($updated < 1) {
+            throw new RuntimeException(
+                'Container gagal di-Hold atau sudah berstatus Hold.'
+            );
+        }
+
+        // Insert catatan Hold ke Oracle.
+        DB::connection('prod_new')
+            ->table('T_OP_HOLD')
+            ->insert([
+                'NO_SPK' => $item->NO_SPK,
+                'W_HOLD' => $now,
+                'USER_LOGIN' => $user,
+                'OPERATOR' => $user,
+            ]);
+
+        // Update data operasional pada Oracle.
+        DB::connection('prod_new')
+            ->table('T_OPERATION')
+            ->where('NO_SPK', $item->NO_SPK)
+            ->where('NO_CONT', $item->NO_CONT)
+            ->update([
+                'WK_HOLD' => $now,
+            ]);
+
+        return $item;
+    }
+
+    /**
+     * Release container pada MySQL.
+     */
+    public function release(int $id): object
+    {
+        $item = $this->baseQuery()
+            ->where('c.ID', $id)
+            ->where('c.FL_HOLD', 'Y')
+            ->where('c.STATUS_CONT', '<>', 900)
+            ->first();
+
+        if (!$item) {
+            throw new RuntimeException(
+                'Container tidak ditemukan atau sudah Release.'
+            );
+        }
+
+        $updated = DB::connection('prod')
+            ->table('t_spk_cont')
+            ->where('ID', $item->ID)
+            ->where('NO_CONT', $item->NO_CONT)
+            ->where('FL_HOLD', 'Y')
+            ->update([
+                'FL_HOLD' => 'N',
+                'FL_WARNA_HOLD' => 'N',
+            ]);
+
+        if ($updated < 1) {
+            throw new RuntimeException(
+                'Container gagal di-Release atau sudah tidak berstatus Hold.'
+            );
+        }
+
+        return $item;
     }
 }

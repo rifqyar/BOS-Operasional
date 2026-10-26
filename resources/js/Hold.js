@@ -1,1061 +1,348 @@
 document.addEventListener('DOMContentLoaded', () => {
-    initHold();
-});
-
-
-function initHold() {
-
-    const panel = document.querySelector(
-        '[data-panel-name="hold"]'
-    );
+    const panel = document.querySelector('[data-panel-name="hold"]');
 
     if (!panel) {
         return;
     }
 
+    const searchForm = panel.querySelector('[data-search-form]');
+    const messageBox = panel.querySelector('[data-message]');
+    const resultBox = panel.querySelector('[data-result]');
+    const rowsBox = panel.querySelector('[data-rows]');
+    const holdRowsBox = panel.querySelector('[data-hold-rows]');
 
-    /*
-     * Hindari init dua kali.
-     */
-    if (panel.dataset.holdInitialized === 'true') {
-        return;
+    const urls = {
+        search: panel.dataset.searchUrl,
+        store: panel.dataset.storeUrl,
+        release: panel.dataset.releaseUrl,
+        data: panel.dataset.dataUrl,
+    };
+
+    const csrfToken = panel.dataset.csrfToken;
+
+    function showMessage(message, type = 'success') {
+        if (!messageBox) {
+            window.alert(message);
+            return;
+        }
+
+        messageBox.textContent = message;
+        messageBox.classList.remove('hidden');
+
+        messageBox.classList.toggle('text-red-600', type === 'error');
+        messageBox.classList.toggle('text-green-600', type === 'success');
     }
 
-    panel.dataset.holdInitialized = 'true';
+    function clearMessage() {
+        if (!messageBox) {
+            return;
+        }
 
-
-    /*
-     * =========================================================
-     * ELEMENT
-     * =========================================================
-     */
-
-    const searchForm = panel.querySelector(
-        '[data-search-form]'
-    );
-
-    const searchButton = panel.querySelector(
-        '[data-search-button]'
-    );
-
-    const searchInput = panel.querySelector(
-        'input[name="search_cont"]'
-    );
-
-    const message = panel.querySelector(
-        '[data-message]'
-    );
-
-    const result = panel.querySelector(
-        '[data-result]'
-    );
-
-    const rows = panel.querySelector(
-        '[data-rows]'
-    );
-
-    const holdRows = panel.querySelector(
-        '[data-hold-rows]'
-    );
-
-
-    /*
-     * =========================================================
-     * URL
-     * =========================================================
-     */
-
-    function getUrl(name) {
-        return panel.dataset[name] || '';
+        messageBox.textContent = '';
+        messageBox.classList.add('hidden');
     }
 
-
-    /*
-     * =========================================================
-     * CSRF
-     * =========================================================
-     */
-
-    function getCsrfToken() {
-
-        return (
-            panel.dataset.csrfToken ||
-            document
-                .querySelector(
-                    'meta[name="csrf-token"]'
-                )
-                ?.getAttribute('content') ||
-            ''
-        );
-    }
-
-
-    /*
-     * =========================================================
-     * HEADERS
-     * =========================================================
-     */
-
-    function getHeaders() {
-
+    function headers() {
         return {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
+            'X-CSRF-TOKEN': csrfToken,
             'X-Requested-With': 'XMLHttpRequest',
         };
     }
 
+    async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...headers(),
+                ...(options.headers || {}),
+            },
+        });
 
-    /*
-     * =========================================================
-     * MESSAGE
-     * =========================================================
-     */
+        let data;
 
-    function showMessage(
-        text,
-        type = 'error'
-    ) {
-
-        if (!message) {
-            return;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error('Respons server tidak valid.');
         }
 
-
-        message.className =
-            'mt-4 rounded-lg border px-4 py-3 text-sm';
-
-
-        if (type === 'success') {
-
-            message.classList.add(
-                'border-emerald-200',
-                'bg-emerald-50',
-                'text-emerald-700',
-                'dark:border-emerald-400/20',
-                'dark:bg-emerald-400/10',
-                'dark:text-emerald-300'
-            );
-
-        } else if (type === 'warning') {
-
-            message.classList.add(
-                'border-amber-200',
-                'bg-amber-50',
-                'text-amber-700',
-                'dark:border-amber-400/20',
-                'dark:bg-amber-400/10',
-                'dark:text-amber-300'
-            );
-
-        } else {
-
-            message.classList.add(
-                'border-red-200',
-                'bg-red-50',
-                'text-red-700',
-                'dark:border-red-400/20',
-                'dark:bg-red-400/10',
-                'dark:text-red-300'
+        if (!response.ok || data.success === false) {
+            throw new Error(
+                data.message || 'Permintaan gagal diproses.'
             );
         }
 
-
-        message.textContent = text;
-
-        message.classList.remove(
-            'hidden'
-        );
+        return data;
     }
 
-
-    function hideMessage() {
-
-        if (!message) {
-            return;
-        }
-
-
-        message.classList.add(
-            'hidden'
-        );
-
-        message.textContent = '';
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;',
+        })[character]);
     }
 
-
-    /*
-     * =========================================================
-     * SEARCH LOADING
-     * =========================================================
-     */
-
-    function setSearchLoading(
-        loading
-    ) {
-
-        if (!searchButton) {
+    function renderSearchResults(items) {
+        if (!rowsBox) {
             return;
         }
 
-
-        searchButton.disabled =
-            loading;
-
-
-        if (loading) {
-
-            searchButton.dataset.originalHtml =
-                searchButton.innerHTML;
-
-
-            searchButton.innerHTML = `
-                <svg
-                    class="size-4 animate-spin"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                >
-                    <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                    ></circle>
-
-                    <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    ></path>
-                </svg>
-
-                Searching...
+        if (!items.length) {
+            rowsBox.innerHTML = `
+                <p class="p-4 text-sm text-slate-500">
+                    Container tidak ditemukan.
+                </p>
             `;
-
-        } else {
-
-            if (
-                searchButton.dataset.originalHtml
-            ) {
-
-                searchButton.innerHTML =
-                    searchButton.dataset.originalHtml;
-            }
-        }
-    }
-
-
-    /*
-     * =========================================================
-     * TABLE LOADING
-     * =========================================================
-     */
-
-    function showTableLoading() {
-
-        if (!holdRows) {
             return;
         }
 
-
-        holdRows.innerHTML = `
-            <div class="px-4 py-8 text-center">
-
-                <div class="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-
-                    <svg
-                        class="size-4 animate-spin"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                    >
-
-                        <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                        ></circle>
-
-                        <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        ></path>
-
-                    </svg>
-
-                    Memuat data HOLD...
-
-                </div>
-
-            </div>
-        `;
+        rowsBox.innerHTML = items.map(item => `
+            <button
+                type="button"
+                class="block w-full border-b p-3 text-left hover:bg-slate-100"
+                data-hold-detail
+                data-id="${escapeHtml(item.ID)}"
+            >
+                <span class="font-semibold">
+                    ${escapeHtml(item.NO_CONT)}
+                </span>
+                <span class="ml-2 text-sm text-slate-500">
+                    SPK ${escapeHtml(item.NO_SPK)}
+                </span>
+            </button>
+        `).join('');
     }
 
-
-    /*
-     * =========================================================
-     * SEARCH CONTAINER
-     * =========================================================
-     */
-
-    async function searchContainer(
-        keyword
-    ) {
-
-        const url =
-            getUrl('searchUrl');
-
-
-        if (!url) {
-
-            showMessage(
-                'URL pencarian HOLD tidak ditemukan.'
-            );
-
-            return;
-        }
-
-
-        hideMessage();
-
-        setSearchLoading(true);
-
+    async function searchContainer(searchValue) {
+        clearMessage();
 
         try {
+            const data = await requestJson(urls.search, {
+                method: 'POST',
+                body: JSON.stringify({
+                    search_cont: searchValue,
+                }),
+            });
 
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: 'POST',
+            renderSearchResults(data.data || []);
 
-                        headers:
-                            getHeaders(),
-
-                        body:
-                            JSON.stringify({
-                                search_cont:
-                                    keyword,
-                            }),
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
-            /*
-             * Validation.
-             */
-            if (
-                response.status === 422
-            ) {
-
-                const errors =
-                    data.errors || {};
-
-
-                const firstError =
-                    Object.values(
-                        errors
-                    )[0]?.[0];
-
-
-                showMessage(
-                    firstError ||
-                    'Data pencarian tidak valid.'
-                );
-
-                return;
+            if (resultBox) {
+                resultBox.classList.remove('hidden');
             }
-
-
-            /*
-             * Not found.
-             */
-            if (
-                response.status === 404 ||
-                data.status === 0
-            ) {
-
-                if (result) {
-                    result.classList.add(
-                        'hidden'
-                    );
-                }
-
-
-                showMessage(
-                    data.message ||
-                    'Container tidak ditemukan.',
-                    'warning'
-                );
-
-                return;
-            }
-
-
-            /*
-             * Server error.
-             */
-            if (!response.ok) {
-
-                showMessage(
-                    data.message ||
-                    'Terjadi kesalahan pada server.'
-                );
-
-                return;
-            }
-
-
-            /*
-             * Success.
-             */
-            if (
-                data.success &&
-                data.html
-            ) {
-
-                if (result) {
-
-                    result.classList.remove(
-                        'hidden'
-                    );
-                }
-
-
-                if (rows) {
-
-                    rows.innerHTML =
-                        data.html;
-                }
-
-
-                hideMessage();
-
-
-                result?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                });
-            }
-
-
         } catch (error) {
+            if (rowsBox) {
+                rowsBox.innerHTML = '';
+            }
 
-            console.error(
-                'HOLD SEARCH ERROR:',
-                error
-            );
-
-
-            showMessage(
-                'Tidak dapat terhubung ke server.'
-            );
-
-
-        } finally {
-
-            setSearchLoading(false);
+            showMessage(error.message, 'error');
         }
     }
 
-
-    /*
-     * =========================================================
-     * LOAD DATA HOLD
-     * =========================================================
-     */
-
-    async function loadHeldContainers(
-        page = 1
-    ) {
-
-        const url =
-            getUrl('dataUrl');
-
-
-        if (
-            !url ||
-            !holdRows
-        ) {
+    async function loadHeldContainers() {
+        if (!holdRowsBox) {
             return;
         }
 
-
-        showTableLoading();
-
-
         try {
+            const data = await requestJson(urls.data, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
 
-            const separator =
-                url.includes('?')
-                    ? '&'
-                    : '?';
-
-
-            const requestUrl =
-                `${url}${separator}page=${page}&per_page=10`;
-
-
-            const response =
-                await fetch(
-                    requestUrl,
-                    {
-                        method: 'GET',
-
-                        headers: {
-                            'Accept':
-                                'application/json',
-
-                            'X-Requested-With':
-                                'XMLHttpRequest',
-                        },
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.message ||
-                    'Gagal mengambil data HOLD.'
-                );
-            }
-
-
-            if (!data.success) {
-
-                throw new Error(
-                    data.message ||
-                    'Gagal mengambil data HOLD.'
-                );
-            }
-
-
-            holdRows.innerHTML =
-                data.html;
-
-
+            holdRowsBox.innerHTML = data.html || '';
         } catch (error) {
-
-            console.error(
-                'HOLD DATA ERROR:',
-                error
-            );
-
-
-            holdRows.innerHTML = `
-                <div class="px-4 py-8 text-center">
-
-                    <p class="text-sm font-semibold text-red-600 dark:text-red-400">
-                        Gagal mengambil data HOLD.
-                    </p>
-
-                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        ${escapeHtml(error.message)}
-                    </p>
-
+            holdRowsBox.innerHTML = `
+                <div class="p-4 text-sm text-red-600">
+                    ${escapeHtml(error.message)}
                     <button
                         type="button"
                         data-retry-hold
-                        class="mt-4 inline-flex items-center rounded-md bg-sky-700 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-800"
+                        class="ml-2 underline"
                     >
-                        Coba Lagi
+                        Coba lagi
                     </button>
-
                 </div>
             `;
         }
     }
 
+    async function loadHoldDetail(id) {
+        clearMessage();
 
-    /*
-     * =========================================================
-     * RELEASE
-     * =========================================================
-     */
-
-    async function releaseContainer(
-        button
-    ) {
-
-        const url =
-            getUrl('releaseUrl');
-
-
-        if (!url) {
-
-            showMessage(
-                'URL release tidak ditemukan.'
+        try {
+            const data = await requestJson(
+                panel.dataset.detailUrl || '/hold/detail',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ id }),
+                }
             );
 
+            const item = data.data;
+
+            /*
+             * Controller detail mengembalikan JSON.
+             * Form Blade yang sudah ada membutuhkan status dan item.
+             * Endpoint ini tidak merender HTML, sehingga gunakan
+             * endpoint detail khusus untuk mengambil form jika diperlukan.
+             */
+            showMessage(
+                `Container ${item.NO_CONT} ditemukan. Lanjutkan melalui form Hold.`,
+                'success'
+            );
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    }
+
+    async function submitHold(form) {
+        clearMessage();
+
+        const formData = new FormData(form);
+
+        const id = formData.get('id');
+        const warna = formData.get('warna');
+
+        if (!id || !warna) {
+            showMessage(
+                'ID container dan warna Hold wajib diisi.',
+                'error'
+            );
             return;
         }
 
+        const button = form.querySelector('[data-hold-submit]');
 
-        const id =
-            button.dataset.id || '';
-
-
-        const noCont =
-            button.dataset.noCont || '';
-
-
-        const noSpk =
-            button.dataset.noSpk || '';
-
-
-        if (
-            !id ||
-            !noCont
-        ) {
-
-            showMessage(
-                'Data container untuk release tidak lengkap.'
-            );
-
-            return;
+        if (button) {
+            button.disabled = true;
         }
 
+        try {
+            const data = await requestJson(urls.store, {
+                method: 'POST',
+                body: JSON.stringify({
+                    id,
+                    warna,
+                }),
+            });
 
-        const confirmed =
-            window.confirm(
-                `Release container ${noCont}?`
-            );
+            showMessage(data.message || 'Hold berhasil.', 'success');
 
+            form.reset();
+
+            await loadHeldContainers();
+        } catch (error) {
+            showMessage(error.message, 'error');
+        } finally {
+            if (button) {
+                button.disabled = false;
+            }
+        }
+    }
+
+    async function releaseContainer(id, noCont = '') {
+        clearMessage();
+
+        const confirmed = window.confirm(
+            `Apakah kamu yakin ingin Release container ${noCont || id}?`
+        );
 
         if (!confirmed) {
             return;
         }
 
-
-        button.disabled =
-            true;
-
-
-        const originalHtml =
-            button.innerHTML;
-
-
-        button.innerHTML = `
-            <svg
-                class="size-3.5 animate-spin"
-                viewBox="0 0 24 24"
-                fill="none"
-            >
-
-                <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                ></circle>
-
-                <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                ></path>
-
-            </svg>
-
-            Processing...
-        `;
-
-
         try {
+            const data = await requestJson(urls.release, {
+                method: 'POST',
+                body: JSON.stringify({ id }),
+            });
 
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: 'POST',
+            showMessage(data.message || 'Release berhasil.', 'success');
 
-                        headers:
-                            getHeaders(),
-
-                        body:
-                            JSON.stringify({
-                                id:
-                                    id,
-
-                                nomercont:
-                                    noCont,
-
-                                nospk:
-                                    noSpk,
-                            }),
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.message ||
-                    'Container gagal diproses.'
-                );
-            }
-
-
-            if (!data.success) {
-
-                throw new Error(
-                    data.message ||
-                    'Container gagal diproses.'
-                );
-            }
-
-
-            showMessage(
-                data.message ||
-                'Validasi RELEASE berhasil.',
-                'success'
-            );
-
-
-            /*
-             * Backend masih read-only.
-             *
-             * Table tetap di-refresh
-             * supaya siap ketika UPDATE
-             * nanti diaktifkan.
-             */
-            await loadHeldContainers(1);
-
-
+            await loadHeldContainers();
         } catch (error) {
-
-            console.error(
-                'HOLD RELEASE ERROR:',
-                error
-            );
-
-
-            showMessage(
-                error.message ||
-                'Container gagal diproses.'
-            );
-
-
-            button.disabled =
-                false;
-
-
-            button.innerHTML =
-                originalHtml;
+            showMessage(error.message, 'error');
         }
     }
-
-
-    /*
-     * =========================================================
-     * MOBILE DETAIL
-     * =========================================================
-     */
-
-    function toggleMobileDetail(
-        button
-    ) {
-
-        const number =
-            button.dataset.mobileDetail;
-
-
-        if (!number) {
-            return;
-        }
-
-
-        const detail =
-            panel.querySelector(
-                `[data-mobile-detail-row="${number}"]`
-            );
-
-
-        if (!detail) {
-            return;
-        }
-
-
-        const isHidden =
-            detail.classList.contains(
-                'hidden'
-            );
-
-
-        if (isHidden) {
-
-            /*
-             * Buka detail.
-             */
-            detail.classList.remove(
-                'hidden'
-            );
-
-
-            button.setAttribute(
-                'aria-expanded',
-                'true'
-            );
-
-
-            button.classList.add(
-                'bg-amber-100',
-                'dark:bg-amber-400/10'
-            );
-
-
-        } else {
-
-            /*
-             * Tutup detail.
-             */
-            detail.classList.add(
-                'hidden'
-            );
-
-
-            button.setAttribute(
-                'aria-expanded',
-                'false'
-            );
-
-
-            button.classList.remove(
-                'bg-amber-100',
-                'dark:bg-amber-400/10'
-            );
-        }
-    }
-
-
-    /*
-     * =========================================================
-     * ESCAPE HTML
-     * =========================================================
-     */
-
-    function escapeHtml(
-        value
-    ) {
-
-        return String(value)
-            .replaceAll(
-                '&',
-                '&amp;'
-            )
-            .replaceAll(
-                '<',
-                '&lt;'
-            )
-            .replaceAll(
-                '>',
-                '&gt;'
-            )
-            .replaceAll(
-                '"',
-                '&quot;'
-            )
-            .replaceAll(
-                "'",
-                '&#039;'
-            );
-    }
-
-
-    /*
-     * =========================================================
-     * SEARCH EVENT
-     * =========================================================
-     */
 
     if (searchForm) {
+        searchForm.addEventListener('submit', event => {
+            event.preventDefault();
 
-        searchForm.addEventListener(
-            'submit',
-            async (event) => {
+            const input = searchForm.querySelector(
+                '[name="search_cont"]'
+            );
 
-                event.preventDefault();
+            const searchValue = input?.value.trim() || '';
 
-
-                const keyword =
-                    searchInput
-                        ?.value
-                        ?.trim()
-                        ?.toUpperCase() ||
-                    '';
-
-
-                if (!keyword) {
-
-                    showMessage(
-                        'Nomor container wajib diisi.',
-                        'warning'
-                    );
-
-
-                    searchInput?.focus();
-
-                    return;
-                }
-
-
-                await searchContainer(
-                    keyword
+            if (!searchValue) {
+                showMessage(
+                    'Masukkan nomor container terlebih dahulu.',
+                    'error'
                 );
+                return;
             }
-        );
+
+            searchContainer(searchValue);
+        });
     }
 
+    panel.addEventListener('submit', event => {
+        const form = event.target.closest('[data-hold-store-form]');
 
-    /*
-     * =========================================================
-     * DELEGATED CLICK
-     * =========================================================
-     */
-
-    panel.addEventListener(
-        'click',
-        async (event) => {
-
-            /*
-             * -----------------------------------------------------
-             * MOBILE DETAIL (!)
-             * -----------------------------------------------------
-             */
-
-            const detailButton =
-                event.target.closest(
-                    '[data-mobile-detail]'
-                );
-
-
-            if (detailButton) {
-
-                toggleMobileDetail(
-                    detailButton
-                );
-
-                return;
-            }
-
-
-            /*
-             * -----------------------------------------------------
-             * PAGINATION
-             * -----------------------------------------------------
-             */
-
-            const pageButton =
-                event.target.closest(
-                    '[data-hold-page]'
-                );
-
-
-            if (pageButton) {
-
-                if (
-                    pageButton.disabled ||
-                    pageButton.hasAttribute(
-                        'disabled'
-                    )
-                ) {
-                    return;
-                }
-
-
-                const page =
-                    parseInt(
-                        pageButton.dataset.holdPage,
-                        10
-                    );
-
-
-                if (
-                    Number.isNaN(page) ||
-                    page < 1
-                ) {
-                    return;
-                }
-
-
-                await loadHeldContainers(
-                    page
-                );
-
-                return;
-            }
-
-
-            /*
-             * -----------------------------------------------------
-             * RELEASE
-             * -----------------------------------------------------
-             */
-
-            const releaseButton =
-                event.target.closest(
-                    '[data-release-row]'
-                );
-
-
-            if (releaseButton) {
-
-                await releaseContainer(
-                    releaseButton
-                );
-
-                return;
-            }
-
-
-            /*
-             * -----------------------------------------------------
-             * RETRY
-             * -----------------------------------------------------
-             */
-
-            const retryButton =
-                event.target.closest(
-                    '[data-retry-hold]'
-                );
-
-
-            if (retryButton) {
-
-                await loadHeldContainers(
-                    1
-                );
-            }
+        if (!form) {
+            return;
         }
-    );
 
+        event.preventDefault();
+        submitHold(form);
+    });
 
-    /*
-     * =========================================================
-     * INITIAL LOAD
-     * =========================================================
-     */
+    panel.addEventListener('click', event => {
+        const detailButton = event.target.closest('[data-hold-detail]');
 
-    loadHeldContainers(1);
-}
+        if (detailButton) {
+            loadHoldDetail(detailButton.dataset.id);
+            return;
+        }
+
+        const releaseButton = event.target.closest(
+            '[data-release-row], [data-release-form-button]'
+        );
+
+        if (releaseButton) {
+            event.preventDefault();
+
+            const form = releaseButton.closest('[data-release-form]');
+
+            const id =
+                releaseButton.dataset.id ||
+                form?.querySelector('[name="id"]')?.value;
+
+            const noCont =
+                releaseButton.dataset.noCont ||
+                form?.querySelector('[name="nomercont"]')?.value ||
+                '';
+
+            if (id) {
+                releaseContainer(id, noCont);
+            }
+
+            return;
+        }
+
+        if (event.target.closest('[data-retry-hold]')) {
+            loadHeldContainers();
+        }
+    });
+
+    loadHeldContainers();
+});

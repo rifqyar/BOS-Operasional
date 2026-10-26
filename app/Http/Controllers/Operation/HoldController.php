@@ -3,364 +3,277 @@
 namespace App\Http\Controllers\Operation;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\LogTraits;
 use App\Services\HoldService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Throwable;
 
 class HoldController extends Controller
 {
+    use LogTraits;
+
     public function __construct(
-        protected HoldService $holdService
+        protected HoldService $services
     ) {
     }
 
     /**
-     * Search NO CONTAINER.
-     *
-     * Alur:
-     *
-     * SEARCH
-     *   ↓
-     * searchHold()
-     *   ↓
-     * ditemukan
-     *   ↓
-     * langsung FORM HOLD
-     *
-     * Jika tidak ditemukan:
-     *
-     * searchRelease()
-     *   ↓
-     * ditemukan
-     *   ↓
-     * langsung FORM RELEASE
-     *
-     * Jika tidak ditemukan:
-     *
-     * NOT FOUND
+     * Mencari container untuk Hold atau menampilkan detail Release.
      */
     public function search(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'search_cont' => [
-                'required',
-                'string',
-                'max:50',
-            ],
+            'search_cont' => ['required', 'string', 'max:50'],
         ]);
 
-        $keyword = strtoupper(
-            trim($validated['search_cont'])
-        );
-
         try {
+            $search = trim($validated['search_cont']);
 
-            /*
-             * =========================================================
-             * 1. CARI CONTAINER YANG BELUM HOLD
-             * =========================================================
-             */
+            $items = $this->services->searchAvailable($search);
 
-            $data = $this->holdService->searchHold(
-                $keyword
-            );
-
-            if ($data->isNotEmpty()) {
-
-                /*
-                 * Search langsung mendapatkan data.
-                 *
-                 * Tidak ada list → detail.
-                 *
-                 * Langsung FORM HOLD.
-                 */
-                $item = $data->first();
-
-                $html = View::make(
-                    'livewire.partials.hold.form',
-                    [
-                        'status' => 1,
-                        'item' => $item,
-                        'keyword' => $keyword,
-                    ]
-                )->render();
-
+            if ($items->isEmpty()) {
                 return response()->json([
-                    'success' => true,
-                    'status' => 1,
-                    'keyword' => $keyword,
-                    'html' => $html,
-                ]);
+                    'success' => false,
+                    'message' => 'Container tidak ditemukan atau tidak tersedia untuk Hold.',
+                ], 404);
             }
-
-            /*
-             * =========================================================
-             * 2. TIDAK DITEMUKAN DI SEARCH HOLD
-             * =========================================================
-             *
-             * Cek apakah container sudah HOLD.
-             */
-
-            $hold = $this->holdService->searchRelease(
-                $keyword
-            );
-
-            if ($hold->isNotEmpty()) {
-
-                /*
-                 * Langsung FORM RELEASE.
-                 */
-                $item = $hold->first();
-
-                $html = View::make(
-                    'livewire.partials.hold.form',
-                    [
-                        'status' => 3,
-                        'item' => $item,
-                        'keyword' => $keyword,
-                    ]
-                )->render();
-
-                return response()->json([
-                    'success' => true,
-                    'status' => 3,
-                    'keyword' => $keyword,
-                    'html' => $html,
-                ]);
-            }
-
-            /*
-             * =========================================================
-             * 3. TIDAK DITEMUKAN
-             * =========================================================
-             */
 
             return response()->json([
-                'success' => false,
-                'status' => 0,
-                'keyword' => $keyword,
-                'message' =>
-                    "WARNING ! NO CONT : {$keyword} NOT FOUND",
-                'html' => '',
-            ], 404);
-
+                'success' => true,
+                'message' => 'Data container ditemukan.',
+                'data' => $items,
+            ]);
         } catch (Throwable $e) {
-
-            report($e);
+            Log::error('Hold search gagal', [
+                'message' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'success' => false,
-                'status' => 500,
-                'message' =>
-                    'Terjadi kesalahan saat mencari NO CONTAINER.',
+                'message' => 'Terjadi kesalahan saat mencari container.',
             ], 500);
         }
     }
 
     /**
-     * Daftar container yang sedang HOLD.
-     *
-     * GET /hold/data
-     *
-     * Pagination server-side.
-     *
-     * Contoh:
-     *
-     * /hold/data?page=1
-     * /hold/data?page=2
-     *
-     * Default:
-     * 10 data per halaman.
+     * Mengambil detail container berdasarkan ID.
      */
-    public function indexData(Request $request): JsonResponse
+    public function detail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => ['required', 'integer', 'min:1'],
+        ]);
+
+        try {
+            $item = $this->services->getDetail(
+                (int) $validated['id']
+            );
+
+            if (!$item) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Detail container tidak ditemukan.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $item,
+            ]);
+        } catch (Throwable $e) {
+            Log::error('Hold detail gagal', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail container.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Mengambil daftar container yang sedang Hold.
+     */
+    public function indexData(): JsonResponse
     {
         try {
+            $data = $this->services->getHeldContainers();
 
-            /*
-             * Ambil jumlah data per halaman.
-             */
-            $perPage = (int) $request->input(
-                'per_page',
-                10
-            );
-
-            /*
-             * Batasi:
-             *
-             * minimum = 1
-             * maximum = 50
-             */
-            $perPage = min(
-                max($perPage, 1),
-                50
-            );
-
-            /*
-             * Ambil data dengan pagination.
-             */
-            $data = $this->holdService
-                ->getHeldContainers($perPage);
-
-            /*
-             * Render table.
-             *
-             * Paginator dikirim langsung
-             * ke Blade.
-             */
-            $html = View::make(
+            $html = view(
                 'livewire.partials.hold.table',
-                [
-                    'data' => $data,
-                ]
+                ['data' => $data]
             )->render();
 
             return response()->json([
                 'success' => true,
-
-                /*
-                 * Total seluruh data HOLD.
-                 */
-                'count' => $data->total(),
-
-                /*
-                 * Informasi pagination.
-                 */
-                'current_page' => $data->currentPage(),
-                'last_page' => $data->lastPage(),
-                'per_page' => $data->perPage(),
-
-                'from' => $data->firstItem(),
-                'to' => $data->lastItem(),
-
+                'message' => 'Data Hold berhasil diambil.',
                 'html' => $html,
+                'data' => $data,
             ]);
-
         } catch (Throwable $e) {
-
-            report($e);
+            Log::error('Hold indexData gagal', [
+                'message' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Gagal mengambil data container HOLD.',
+                'message' => 'Gagal mengambil daftar container Hold.',
             ], 500);
         }
     }
 
     /**
-     * HOLD container.
-     *
-     * Development phase.
-     *
-     * Tidak melakukan UPDATE database.
+     * Menyimpan Hold.
      */
-    public function store(
-        Request $request
-    ): JsonResponse {
-
+    public function store(Request $request): JsonResponse
+    {
         $validated = $request->validate([
-            'id' => [
-                'required',
-            ],
-
-            'nomercont' => [
-                'required',
-                'string',
-                'max:50',
-            ],
-
-            'warna' => [
-                'required',
-                'in:N,M,T',
-            ],
+            'id' => ['required', 'integer', 'min:1'],
+            'warna' => ['required', 'in:N,M,T'],
         ]);
 
-        try {
+        $prod = DB::connection('prod');
+        $prodNew = DB::connection('prod_new');
 
-            $this->holdService->hold(
-                $validated['id'],
-                strtoupper(
-                    $validated['nomercont']
-                ),
-                $validated['warna']
+        $prod->beginTransaction();
+        $prodNew->beginTransaction();
+
+        try {
+            $authUser = Auth::user();
+
+            $user = $authUser?->username
+                ?? $authUser?->user_name
+                ?? $authUser?->name
+                ?? 'SYSTEM';
+
+            $item = $this->services->hold(
+                (int) $validated['id'],
+                $validated['warna'],
+                $user
+            );
+
+            $prod->commit();
+            $prodNew->commit();
+
+            $this->logInfo(
+                'hold',
+                'Berhasil melakukan Hold container',
+                [
+                    'id' => $item->ID,
+                    'no_spk' => $item->NO_SPK,
+                    'no_cont' => $item->NO_CONT,
+                    'warna' => $validated['warna'],
+                    'user' => $user,
+                ]
             );
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Validasi HOLD berhasil. ' .
-                    'Mode development belum melakukan update database.',
+                'message' => "Container {$item->NO_CONT} berhasil di-Hold.",
             ]);
-
         } catch (Throwable $e) {
+            $this->rollbackConnections();
 
-            report($e);
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
+
+            Log::error('Hold store gagal', [
+                'message' => $e->getMessage(),
+                'id' => $validated['id'],
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Container gagal diproses HOLD.',
-            ], 422);
+                'message' => $e instanceof RuntimeException
+                    ? $e->getMessage()
+                    : 'Terjadi kesalahan saat melakukan Hold.',
+            ], 500);
         }
     }
 
     /**
-     * RELEASE container.
-     *
-     * Development phase.
-     *
-     * Tidak melakukan UPDATE database.
+     * Melepas status Hold.
      */
-    public function release(
-        Request $request
-    ): JsonResponse {
-
+    public function release(Request $request): JsonResponse
+    {
         $validated = $request->validate([
-            'id' => [
-                'required',
-            ],
-
-            'nomercont' => [
-                'required',
-                'string',
-                'max:50',
-            ],
-
-            'nospk' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
+            'id' => ['required', 'integer', 'min:1'],
         ]);
 
-        try {
+        $prod = DB::connection('prod');
+        $prodNew = DB::connection('prod_new');
 
-            $this->holdService->release(
-                $validated['id'],
-                strtoupper(
-                    $validated['nomercont']
-                ),
-                $validated['nospk'] ?? null
+        $prod->beginTransaction();
+        $prodNew->beginTransaction();
+
+        try {
+            $item = $this->services->release(
+                (int) $validated['id']
+            );
+
+            $prod->commit();
+            $prodNew->commit();
+
+            $this->logInfo(
+                'hold',
+                'Berhasil melakukan Release container',
+                [
+                    'id' => $item->ID,
+                    'no_spk' => $item->NO_SPK,
+                    'no_cont' => $item->NO_CONT,
+                    'user' => Auth::user()?->username
+                        ?? Auth::user()?->name
+                        ?? 'SYSTEM',
+                ]
             );
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Validasi RELEASE berhasil. ' .
-                    'Mode development belum melakukan update database.',
+                'message' => "Container {$item->NO_CONT} berhasil di-Release.",
             ]);
-
         } catch (Throwable $e) {
+            $this->rollbackConnections();
 
-            report($e);
+            Log::error('Hold release gagal', [
+                'message' => $e->getMessage(),
+                'id' => $validated['id'],
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Container gagal diproses RELEASE.',
-            ], 422);
+                'message' => $e instanceof RuntimeException
+                    ? $e->getMessage()
+                    : 'Terjadi kesalahan saat melakukan Release.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Rollback koneksi yang masih memiliki transaksi aktif.
+     */
+    private function rollbackConnections(): void
+    {
+        foreach (['prod', 'prod_new'] as $connectionName) {
+            try {
+                $connection = DB::connection($connectionName);
+
+                if ($connection->transactionLevel() > 0) {
+                    $connection->rollBack();
+                }
+            } catch (Throwable $e) {
+                Log::error(
+                    "Rollback koneksi {$connectionName} gagal",
+                    ['message' => $e->getMessage()]
+                );
+            }
         }
     }
 }
