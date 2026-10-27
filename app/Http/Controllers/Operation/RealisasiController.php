@@ -3,45 +3,47 @@
 namespace App\Http\Controllers\Operation;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\LogTraits;
 use App\Services\RealisasiServices;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Throwable;
 
 class RealisasiController extends Controller
 {
-    public function __construct(
-        protected RealisasiServices $realisasiServices
-    ) {
+    use LogTraits;
+
+    protected RealisasiServices $realisasiServices;
+
+    public function __construct(RealisasiServices $realisasiServices)
+    {
+        $this->realisasiServices = $realisasiServices;
     }
 
     /**
-     * Search Container
-     *
-     * Legacy:
-     * search_realis()
+     * Pencarian container.
+     * Migrasi dari search_realis() pada legacy.
      */
     public function search(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'no_cont' => [
-                    'required',
-                    'string',
-                    'max:20',
-                ],
+                'no_cont' => ['required', 'string', 'max:20'],
             ]);
 
             $noCont = trim($validated['no_cont']);
 
-            $rows = $this->realisasiServices
-                ->searchReal($noCont);
+            $rows = $this->realisasiServices->searchReal($noCont);
 
-            /*
-             * Legacy:
-             * if (COUNT($re) == 0)
-             */
-            if (count($rows) === 0) {
+            if (empty($rows)) {
+                $this->logWarning(
+                    'operation',
+                    'Container tidak ditemukan pada pencarian realisasi.',
+                    ['no_cont' => $noCont]
+                );
+
                 return response()->json([
                     'status' => 0,
                     'kode' => 1,
@@ -52,85 +54,89 @@ class RealisasiController extends Controller
 
             $html = view(
                 'livewire.partials.realisasi.table',
-                [
-                    'rows' => $rows,
-                ]
+                ['rows' => $rows]
             )->render();
+
+            $this->logInfo(
+                'operation',
+                'Pencarian container realisasi berhasil.',
+                [
+                    'no_cont' => $noCont,
+                    'jumlah_data' => count($rows),
+                ]
+            );
 
             return response()->json([
                 'status' => 2,
+                'message' => 'Data container berhasil ditemukan.',
                 'data' => $html,
             ]);
-        } catch (Throwable $e) {
+        } catch (ValidationException $e) {
+            $this->logWarning(
+                'operation',
+                'Validasi pencarian realisasi gagal.',
+                ['errors' => $e->errors()]
+            );
+
             return response()->json([
                 'status' => 0,
-                'message' => $e->getMessage()
-                    ?: 'Gagal mengambil data container.',
+                'message' => 'Nomor container tidak valid.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            report($e);
+
+            $this->logError(
+                'operation',
+                'Terjadi kesalahan saat mencari container realisasi.',
+                ['error' => $e->getMessage()]
+            );
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Gagal mengambil data container.',
             ], 500);
         }
     }
 
     /**
-     * Detail Pemeriksaan
-     *
-     * Legacy:
-     * search_realisasi()
+     * Detail pemeriksaan.
+     * Migrasi dari search_realisasi() pada legacy.
      */
     public function detail(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'no_cont' => [
-                    'required',
-                    'string',
-                    'max:20',
-                ],
+                'no_cont' => ['required', 'string', 'max:20'],
             ]);
 
             $noCont = trim($validated['no_cont']);
 
-            /*
-             * Legacy:
-             * $re = $this->M_operation->searchreal($keyword);
-             */
-            $rows = $this->realisasiServices
-                ->searchReal($noCont);
+            $rows = $this->realisasiServices->searchReal($noCont);
 
-            if (count($rows) === 0) {
+            if (empty($rows)) {
+                $this->logWarning(
+                    'operation',
+                    'Container tidak ditemukan saat mengambil detail realisasi.',
+                    ['no_cont' => $noCont]
+                );
+
                 return response()->json([
                     'status' => 0,
                     'message' => "Container {$noCont} tidak ditemukan.",
                 ], 404);
             }
 
-            /*
-             * searchreal() menggunakan LIMIT 1,
-             * sehingga row pertama adalah data yang dipakai.
-             */
             $row = $rows[0];
 
-            /*
-             * Legacy:
-             * $start = $this->M_operation->statusnya($keyword);
-             */
-            $realisasi = $this->realisasiServices
-                ->getStatus($noCont);
+            $realisasi = $this->realisasiServices->getStatus($noCont);
 
             /*
-             * Legacy:
-             *
-             * START_INSP == NULL
-             *      kond = 0
-             *
-             * FINISH_INSP == NULL
-             *      kond = 1
-             *
-             * ELSE
-             *      kond = 2
+             * 0 = Belum mulai pemeriksaan.
+             * 1 = Pemeriksaan sedang berlangsung.
+             * 2 = Pemeriksaan selesai.
              */
-            if (!$realisasi) {
-                $kond = 0;
-            } elseif ($realisasi->START_INSP === null) {
+            if (!$realisasi || $realisasi->START_INSP === null) {
                 $kond = 0;
             } elseif ($realisasi->FINISH_INSP === null) {
                 $kond = 1;
@@ -138,17 +144,13 @@ class RealisasiController extends Controller
                 $kond = 2;
             }
 
-            /*
-             * Legacy:
-             * JOIN hanya ketika FINISH_INSP belum ada.
-             */
             $join = null;
 
             if ($kond === 1 && $realisasi) {
                 $noDok = $realisasi->NO_DOK ?? null;
                 $tglDok = $realisasi->TGL_DOK ?? null;
 
-                if ($noDok && $tglDok) {
+                if ($noDok !== null && $tglDok !== null) {
                     $join = $this->realisasiServices->getJoin(
                         $noCont,
                         $noDok,
@@ -157,21 +159,10 @@ class RealisasiController extends Controller
                 }
             }
 
-            /*
-             * Dropdown legacy.
-             */
-            $equipments = $this->realisasiServices
-                ->getAlat();
+            $equipments = $this->realisasiServices->getAlat();
+            $operators = $this->realisasiServices->getOperator();
+            $conditions = $this->realisasiServices->getCondition();
 
-            $operators = $this->realisasiServices
-                ->getOperator();
-
-            $conditions = $this->realisasiServices
-                ->getCondition();
-
-            /*
-             * Render Blade.
-             */
             $html = view(
                 'livewire.partials.realisasi.form',
                 [
@@ -185,87 +176,158 @@ class RealisasiController extends Controller
                 ]
             )->render();
 
+            $this->logInfo(
+                'operation',
+                'Detail pemeriksaan berhasil diambil.',
+                [
+                    'no_cont' => $noCont,
+                    'kondisi' => $kond,
+                ]
+            );
+
             return response()->json([
                 'status' => 1,
+                'message' => 'Detail pemeriksaan berhasil diambil.',
                 'kond' => $kond,
                 'data' => $html,
             ]);
-        } catch (Throwable $e) {
+        } catch (ValidationException $e) {
+            $this->logWarning(
+                'operation',
+                'Validasi detail pemeriksaan gagal.',
+                ['errors' => $e->errors()]
+            );
+
             return response()->json([
                 'status' => 0,
-                'message' => $e->getMessage()
-                    ?: 'Gagal mengambil detail pemeriksaan.',
+                'message' => 'Nomor container tidak valid.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            report($e);
+
+            $this->logError(
+                'operation',
+                'Terjadi kesalahan saat mengambil detail pemeriksaan.',
+                ['error' => $e->getMessage()]
+            );
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Gagal mengambil detail pemeriksaan.',
             ], 500);
         }
     }
 
     /**
-     * Store
+     * Menyimpan proses pemeriksaan.
      *
-     * Untuk fase development:
-     * READ ONLY.
-     *
-     * Tidak menjalankan set_pemeriksaan()
-     * dari legacy.
+     * kode 1 = Pemeriksaan dimulai.
+     * kode 2 = Pemeriksaan selesai.
      */
     public function store(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'nomerkon' => [
-                    'required',
-                    'string',
-                    'max:20',
-                ],
-
-                'noseal' => [
-                    'nullable',
-                    'string',
-                    'max:100',
-                ],
-
-                'idJobSlip' => [
-                    'nullable',
-                ],
-
-                'nospk' => [
-                    'nullable',
-                    'string',
-                    'max:100',
-                ],
-
-                'tipecont' => [
-                    'nullable',
-                    'string',
-                    'max:50',
-                ],
-
-                'alat' => [
-                    'nullable',
-                ],
-
-                'operator' => [
-                    'nullable',
-                    'string',
-                    'max:100',
-                ],
-
-                'join' => [
-                    'nullable',
-                ],
+                'nomerkon' => ['required', 'string', 'max:20'],
+                'noseal' => ['nullable', 'string', 'max:100'],
+                'idJobSlip' => ['nullable'],
+                'nospk' => ['nullable', 'string', 'max:100'],
+                'tipecont' => ['nullable', 'string', 'max:50'],
+                'alat' => ['nullable'],
+                'operator' => ['nullable', 'string', 'max:100'],
+                'join' => ['nullable'],
             ]);
+
+            $user = $request->user();
+
+            $operatorLogin =
+                data_get($user, 'USERLOGIN')
+                ?? data_get($user, 'userlogin')
+                ?? data_get($user, 'username')
+                ?? data_get($user, 'name')
+                ?? $request->session()->get('USERLOGIN')
+                ?? $request->session()->get('userlogin');
+
+            if (
+                !is_string($operatorLogin)
+                || trim($operatorLogin) === ''
+            ) {
+                $this->logWarning(
+                    'operation',
+                    'Proses realisasi ditolak karena identitas operator tidak ditemukan.',
+                    ['no_cont' => $validated['nomerkon']]
+                );
+
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Identitas operator tidak ditemukan. Silakan login kembali.',
+                ], 401);
+            }
+
+            $operatorLogin = trim($operatorLogin);
+
+            $result = $this->realisasiServices->storePemeriksaan(
+                $validated,
+                $operatorLogin
+            );
+
+            $this->logInfo(
+                'operation',
+                'Permintaan realisasi pemeriksaan berhasil diproses.',
+                [
+                    'no_cont' => $validated['nomerkon'],
+                    'operator' => $operatorLogin,
+                    'kode' => $result['kode'] ?? null,
+                ]
+            );
 
             return response()->json([
-                'status' => 1,
-                'message' => 'Data berhasil divalidasi.',
-                'data' => $validated,
+                'status' => $result['status'] ?? 1,
+                'kode' => $result['kode'] ?? 0,
+                'message' => $result['message']
+                    ?? 'Pemeriksaan berhasil diproses.',
+                'data' => $result['data'] ?? null,
             ]);
-        } catch (Throwable $e) {
+        } catch (ValidationException $e) {
+            $this->logWarning(
+                'operation',
+                'Validasi data pemeriksaan gagal.',
+                ['errors' => $e->errors()]
+            );
+
             return response()->json([
                 'status' => 0,
-                'message' => $e->getMessage()
-                    ?: 'Data gagal diproses.',
+                'message' => 'Data pemeriksaan tidak valid.',
+                'errors' => $e->errors(),
             ], 422);
+        } catch (RuntimeException $e) {
+            $this->logWarning(
+                'operation',
+                'Proses pemeriksaan ditolak oleh validasi bisnis.',
+                ['error' => $e->getMessage()]
+            );
+
+            return response()->json([
+                'status' => 0,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (Throwable $e) {
+            report($e);
+
+            $this->logError(
+                'operation',
+                'Terjadi kesalahan saat menyimpan pemeriksaan.',
+                [
+                    'no_cont' => $request->input('nomerkon'),
+                    'error' => $e->getMessage(),
+                ]
+            );
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Terjadi kesalahan saat memproses pemeriksaan.',
+            ], 500);
         }
     }
 }

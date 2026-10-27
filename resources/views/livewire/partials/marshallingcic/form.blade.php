@@ -162,9 +162,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Job
                             </option>
@@ -183,9 +182,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Alat
                             </option>
@@ -204,9 +202,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Operator
                             </option>
@@ -236,9 +233,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Job
                             </option>
@@ -257,9 +253,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Truck
                             </option>
@@ -277,10 +272,9 @@
                             Operator
                         </label>
 
-                        <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+                       <select
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Operator
                             </option>
@@ -310,9 +304,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Job
                             </option>
@@ -331,9 +324,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Alat
                             </option>
@@ -352,9 +344,8 @@
                         </label>
 
                         <select
-                            disabled
-                            class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-                        >
+    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+>
                             <option value="">
                                 Pilih Operator
                             </option>
