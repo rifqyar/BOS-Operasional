@@ -12,37 +12,30 @@ class MarshallingCicService
 {
     use LogTraits;
 
-    /**
-     * Koneksi untuk monitoring dan pembacaan master data.
-     */
     protected function readDb()
     {
         return DB::connection('prod');
     }
 
-    /**
-     * Koneksi untuk operasi tulis.
-     */
     protected function writeDb()
     {
         return DB::connection('prod_new');
     }
 
     /**
-     * Get all Marshalling CIC jobs with pagination.
+     * Data monitoring Marshalling CIC.
      */
     public function getAllJobs(int $perPage = 10): LengthAwarePaginator
     {
         $perPage = max(1, min($perPage, 50));
+        $db = $this->readDb();
 
-        $query = $this->readDb()
-            ->table('t_job_slip as A')
+        $query = $db->table('t_job_slip as A')
             ->join('t_spk as B', 'A.NO_SPK', '=', 'B.NO_SPK')
             ->join('t_spk_cont as C', 'B.ID', '=', 'C.ID')
             ->join('t_gatepass as D', 'A.NO_GATEPASS', '=', 'D.ID')
             ->leftJoinSub(
-                $this->readDb()
-                    ->table('t_ppk_hdr')
+                $db->table('t_ppk_hdr')
                     ->where('LNSW_KD_RESPON', '005'),
                 'E',
                 function ($join) {
@@ -62,8 +55,8 @@ class MarshallingCicService
                 'D.RESPON',
                 'E.LNSW_NOAJU',
             ])
-            ->whereNotExists(function ($query) {
-                $query->select(DB::raw('1'))
+            ->whereNotExists(function ($subQuery) {
+                $subQuery->select(DB::raw('1'))
                     ->from('t_atensi_p2')
                     ->whereColumn('t_atensi_p2.NO_CONT', 'C.NO_CONT')
                     ->whereColumn('t_atensi_p2.NO_SPK', 'B.NO_SPK');
@@ -86,11 +79,17 @@ class MarshallingCicService
     }
 
     /**
-     * Search Marshalling CIC by container.
+     * Pencarian berdasarkan nomor container.
      */
     public function search(string $keyword)
     {
-        return $this->readDb()->select(
+        $keyword = strtoupper(trim($keyword));
+
+        if ($keyword === '') {
+            return collect();
+        }
+
+        return collect($this->readDb()->select(
             "SELECT DISTINCT
                 A.ID_JOB_SLIP,
                 A.NO_CONT,
@@ -102,23 +101,31 @@ class MarshallingCicService
                 A.JENIS,
                 D.RESPON
             FROM t_job_slip A
-            INNER JOIN t_spk B ON A.NO_SPK = B.NO_SPK
-            INNER JOIN t_spk_cont C ON B.ID = C.ID
-            INNER JOIN t_gatepass D ON A.NO_GATEPASS = D.ID
-            WHERE A.NO_CONT LIKE ?
-              AND A.STATUS = 'WAITING'
-              AND A.KD_STATUS = '20'
-              AND A.LOKASI_AKHIR LIKE 'CIC%'
-              AND C.STATUS_CONT != 900
-              AND D.FL_ACTIVE = 'Y'
-              AND A.JENIS IN ('BEHANDLE 1', 'BEHANDLE 2')
+            INNER JOIN t_spk B
+                ON A.NO_SPK = B.NO_SPK
+            INNER JOIN t_spk_cont C
+                ON B.ID = C.ID
+            INNER JOIN t_gatepass D
+                ON A.NO_GATEPASS = D.ID
+            WHERE UPPER(A.NO_CONT) LIKE ?
+                AND A.STATUS = 'WAITING'
+                AND A.KD_STATUS = '20'
+                AND A.LOKASI_AKHIR LIKE 'CIC%'
+                AND C.STATUS_CONT != 900
+                AND D.FL_ACTIVE = 'Y'
+                AND A.JENIS IN (
+                    'BEHANDLE 1',
+                    'BEHANDLE 2',
+                    'EX BEHANDLE 1',
+                    'EX BEHANDLE 2'
+                )
             ORDER BY A.ID_JOB_SLIP DESC",
             ['%' . $keyword . '%']
-        );
+        ));
     }
 
     /**
-     * Get detail Marshalling CIC job.
+     * Detail job berdasarkan ID_JOB_SLIP.
      */
     public function getDetail(int $idJobSlip)
     {
@@ -135,33 +142,38 @@ class MarshallingCicService
                 D.RESPON,
                 E.LNSW_NOAJU
             FROM t_job_slip A
-            INNER JOIN t_spk B ON A.NO_SPK = B.NO_SPK
-            INNER JOIN t_spk_cont C ON B.ID = C.ID
-            INNER JOIN t_gatepass D ON A.NO_GATEPASS = D.ID
+            INNER JOIN t_spk B
+                ON A.NO_SPK = B.NO_SPK
+            INNER JOIN t_spk_cont C
+                ON B.ID = C.ID
+            INNER JOIN t_gatepass D
+                ON A.NO_GATEPASS = D.ID
             LEFT JOIN (
                 SELECT *
                 FROM t_ppk_hdr
                 WHERE LNSW_KD_RESPON = '005'
-            ) E ON D.NO_DOK = E.NO_RESPON
+            ) E
+                ON D.NO_DOK = E.NO_RESPON
                 AND D.TGL_DOK = E.TG_RESPON
             WHERE A.STATUS = 'WAITING'
-              AND A.KD_STATUS = '20'
-              AND C.STATUS_CONT != 900
-              AND D.FL_ACTIVE = 'Y'
-              AND A.JENIS IN (
-                  'BEHANDLE 1',
-                  'BEHANDLE 2',
-                  'EX BEHANDLE 1',
-                  'EX BEHANDLE 2'
-              )
-              AND A.ID_JOB_SLIP = ?
+                AND A.KD_STATUS = '20'
+                AND A.LOKASI_AKHIR LIKE 'CIC%'
+                AND C.STATUS_CONT != 900
+                AND D.FL_ACTIVE = 'Y'
+                AND A.JENIS IN (
+                    'BEHANDLE 1',
+                    'BEHANDLE 2',
+                    'EX BEHANDLE 1',
+                    'EX BEHANDLE 2'
+                )
+                AND A.ID_JOB_SLIP = ?
             ORDER BY A.ID_JOB_SLIP DESC",
             [$idJobSlip]
         );
     }
 
     /**
-     * Get job activities.
+     * Master jenis kegiatan.
      */
     public function getJobActivities()
     {
@@ -171,7 +183,7 @@ class MarshallingCicService
     }
 
     /**
-     * Get equipments.
+     * Master alat.
      */
     public function getEquipments()
     {
@@ -181,7 +193,7 @@ class MarshallingCicService
     }
 
     /**
-     * Get trucks.
+     * Master truck.
      */
     public function getTrucks()
     {
@@ -191,7 +203,7 @@ class MarshallingCicService
     }
 
     /**
-     * Get operators.
+     * Master operator.
      */
     public function getOperators()
     {
@@ -203,53 +215,41 @@ class MarshallingCicService
     }
 
     /**
-     * Simpan proses Marshalling CIC berdasarkan kode legacy.
+     * Simpan proses Marshalling CIC.
      *
      * Catatan:
-     * Mekanisme ID_JOB_SLIP belum terkonfirmasi. Method ini berhenti
-     * sebelum transaksi database dimulai sampai mekanisme ID tersedia.
+     * - Seluruh penulisan dilakukan pada prod_new.
+     * - Mekanisme ID_JOB_SLIP otomatis harus diverifikasi di Oracle.
+     * - Nama kolom harus sesuai skema database aktual.
      */
     public function storeMarshallingCic(
         array $data,
         string $username
     ): array {
-        $newJobSlipId = $this->generateJobSlipId();
-
         $db = $this->writeDb();
+
+        $idJobSlip = (int) ($data['idJobSlip'] ?? 0);
+        $noCont = strtoupper(trim((string) ($data['nocont'] ?? '')));
+        $lokasiAkhir = strtoupper(trim((string) ($data['lokak'] ?? '')));
+        $job = strtoupper(trim((string) ($data['job'] ?? '')));
+        $note = $data['note'] ?? null;
+
+        if ($idJobSlip <= 0 || $noCont === '' || $lokasiAkhir === '') {
+            throw new RuntimeException(
+                'ID job slip, nomor container, dan lokasi akhir wajib diisi.'
+            );
+        }
 
         $db->beginTransaction();
 
         try {
-            $idJobSlip = $data['idJobSlip'];
-            $noCont = strtoupper(trim($data['nocont']));
-            $lokasiAkhir = strtoupper(trim($data['lokak']));
-            $nmBlock = strtoupper(substr($lokasiAkhir, 0, 5));
-            $nmTier = strtoupper(substr($lokasiAkhir, -1));
-
-            $note = $data['note'] ?? null;
-            $fumigasi = $data['fumigasi'] ?? null;
-            $job = strtoupper(trim($data['job']));
-
             /*
-             * 1. Ambil tipe container.
-             */
-            $container = $db->table('t_cocostscont')
-                ->where('NO_CONT', $noCont)
-                ->orderByDesc('ID')
-                ->first();
-
-            if (!$container) {
-                throw new RuntimeException(
-                    "Container {$noCont} tidak ditemukan di t_cocostscont."
-                );
-            }
-
-            /*
-             * 2. Ambil job slip lama.
+             * Ambil job slip lama.
              */
             $jobSlip = $db->table('t_job_slip')
                 ->where('ID_JOB_SLIP', $idJobSlip)
                 ->where('NO_CONT', $noCont)
+                ->lockForUpdate()
                 ->first();
 
             if (!$jobSlip) {
@@ -258,8 +258,51 @@ class MarshallingCicService
                 );
             }
 
+            if (
+                $jobSlip->STATUS !== 'WAITING'
+                || (string) $jobSlip->KD_STATUS !== '20'
+            ) {
+                throw new RuntimeException(
+                    'Job slip sudah diproses atau statusnya tidak sesuai.'
+                );
+            }
+
             /*
-             * 3. Insert t_job_detail.
+             * Ambil tipe container.
+             */
+            $container = $db->table('t_cocostscont')
+                ->where('NO_CONT', $noCont)
+                ->orderByDesc('ID')
+                ->first();
+
+            if (!$container) {
+                throw new RuntimeException(
+                    "Data tipe container {$noCont} tidak ditemukan."
+                );
+            }
+
+            /*
+             * Parsing lokasi mengikuti pola legacy.
+             */
+            $nmBlock = strtoupper(substr($lokasiAkhir, 0, 5));
+            $nmTier = strtoupper(substr($lokasiAkhir, -1));
+
+            /*
+             * Ambil SPK.
+             */
+            $spk = $db->table('t_spk')
+                ->where('NO_SPK', $jobSlip->NO_SPK)
+                ->orderByDesc('ID')
+                ->first();
+
+            if (!$spk) {
+                throw new RuntimeException(
+                    "SPK {$jobSlip->NO_SPK} tidak ditemukan."
+                );
+            }
+
+            /*
+             * Insert detail pekerjaan.
              */
             $db->table('t_job_detail')->insert([
                 'ID_JOB_SLIP' => $idJobSlip,
@@ -276,19 +319,22 @@ class MarshallingCicService
                 'ID_PEKERJAAN_3' => $data['jenispekerjaan3'] ?? null,
                 'ID_ALAT_3' => $data['alat3'] ?? null,
                 'OPERATOR_3' => $data['operator3'] ?? null,
-                'ID_USER' => 'admin2',
+                'ID_USER' => $username,
                 'WK_STATUS' => now(),
             ]);
 
             /*
-             * 4. Update job slip lama.
+             * Update job slip lama.
+             *
+             * Periksa nilai STATUS_FUMIGASI sesuai aturan legacy.
              */
             $db->table('t_job_slip')
                 ->where('ID_JOB_SLIP', $idJobSlip)
+                ->where('NO_CONT', $noCont)
                 ->update([
                     'STATUS' => 'DONE',
                     'STATUS_JOB' => 'Y',
-                    'STATUS_FUMIGASI' => $fumigasi,
+                    'STATUS_FUMIGASI' => $data['fumigasi'] ?: null,
                     'NOTE' => $note,
                     'KD_STATUS' => '50',
                     'OPERATOR' => $username,
@@ -296,40 +342,9 @@ class MarshallingCicService
                 ]);
 
             /*
-             * 5. Query denah; hasilnya tidak dipakai oleh legacy.
-             * Sintaks concatenation Oracle menggunakan ||.
-             */
-            $db->table('t_denah_lapangan')
-                ->selectRaw("NM_BLOK || '0' || LEVEL_4 AS DENAH")
-                ->where('NM_BLOK', $nmBlock)
-                ->where('LEVEL_4', $nmTier)
-                ->first();
-
-            /*
-             * 6. Query status lokasi; hasilnya tidak dipakai oleh legacy.
-             */
-            $db->table('t_spk_cont')
-                ->where('LOKASI', $nmBlock)
-                ->where('TIER', $nmTier)
-                ->whereIn('STATUS_CONT', ['450', '460', '510', '530'])
-                ->get();
-
-            /*
-             * 7. Ambil SPK berdasarkan NO_SPK.
-             */
-            $spk = $db->table('t_spk')
-                ->where('NO_SPK', $jobSlip->NO_SPK)
-                ->orderByDesc('ID')
-                ->first();
-
-            if (!$spk) {
-                throw new RuntimeException(
-                    "SPK {$jobSlip->NO_SPK} tidak ditemukan."
-                );
-            }
-
-            /*
-             * 8. Update t_spk_cont.
+             * Update lokasi/status container.
+             *
+             * Pastikan nama kolom TIER sesuai skema Oracle.
              */
             $db->table('t_spk_cont')
                 ->where('NO_CONT', $noCont)
@@ -341,15 +356,17 @@ class MarshallingCicService
                 ]);
 
             /*
-             * 9. Insert job slip baru.
+             * Insert job slip baru.
+             *
+             * ID_JOB_SLIP sengaja tidak diisi sesuai alur legacy.
+             * Database harus memiliki mekanisme ID otomatis.
              */
             $db->table('t_job_slip')->insert([
-                'ID_JOB_SLIP' => $newJobSlipId,
                 'NO_SPK' => $jobSlip->NO_SPK,
                 'TGL_SPK' => $jobSlip->TGL_SPK,
                 'JNS_DOK' => $jobSlip->JNS_DOK,
                 'NO_DOK' => $jobSlip->NO_DOK,
-                'NO_CONT' => $jobSlip->NO_CONT,
+                'NO_CONT' => $noCont,
                 'NO_GATEPASS' => $jobSlip->NO_GATEPASS,
                 'TGL_GATEPASS' => $jobSlip->TGL_GATEPASS,
                 'LOKASI_AWAL' => $nmBlock,
@@ -362,8 +379,32 @@ class MarshallingCicService
             ]);
 
             /*
-             * 10. Insert log pergerakan container.
-             * Ini tabel bisnis legacy, bukan NPCT.
+             * Verifikasi job slip baru.
+             *
+             * Ini masih mengandalkan kombinasi kolom untuk menemukan
+             * record baru. Untuk lingkungan konkuren, gunakan ID hasil
+             * sequence/trigger Oracle jika mekanismenya sudah diketahui.
+             */
+            $newJobSlip = $db->table('t_job_slip')
+                ->where('NO_SPK', $jobSlip->NO_SPK)
+                ->where('NO_CONT', $noCont)
+                ->where('NO_GATEPASS', $jobSlip->NO_GATEPASS)
+                ->where('STATUS', 'WAITING')
+                ->where('KD_STATUS', '20')
+                ->where('LOKASI_AWAL', $nmBlock)
+                ->where('TIER_AWAL', $nmTier)
+                ->where('OPERATOR', $username)
+                ->orderByDesc('ID_JOB_SLIP')
+                ->first();
+
+            if (!$newJobSlip) {
+                throw new RuntimeException(
+                    'Job slip baru tidak ditemukan. Periksa sequence, trigger, atau default ID_JOB_SLIP pada Oracle.'
+                );
+            }
+
+            /*
+             * Log pergerakan container.
              */
             $db->table('log_pergerakan_kontainer')->insert([
                 'NO_CONT' => $noCont,
@@ -372,7 +413,7 @@ class MarshallingCicService
             ]);
 
             /*
-             * 11. Insert t_operation_new.
+             * Catat operasi.
              */
             $db->table('t_operation_new')->insert([
                 'ID_SPK' => $spk->ID,
@@ -383,14 +424,12 @@ class MarshallingCicService
             ]);
 
             /*
-             * 12. Update report_behandle.
+             * Update report behandle bila record ditemukan.
              */
-            $reportQuery = $db->table('report_behandle')
+            $report = $db->table('report_behandle')
                 ->where('NO_CONT', $noCont)
                 ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
-                ->where('RB1_NO_SPK', $jobSlip->NO_SPK);
-
-            $report = (clone $reportQuery)
+                ->where('RB1_NO_SPK', $jobSlip->NO_SPK)
                 ->orderByDesc('ID')
                 ->first();
 
@@ -398,6 +437,8 @@ class MarshallingCicService
                 if ($job === 'BEHANDLE 1') {
                     $db->table('report_behandle')
                         ->where('ID', $report->ID)
+                        ->where('NO_CONT', $noCont)
+                        ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
                         ->update([
                             'PB1_MARSHALLING_B1' => now(),
                             'PB1_LOKASI_CIC' => $nmBlock . '0' . $nmTier,
@@ -405,6 +446,8 @@ class MarshallingCicService
                 } else {
                     $db->table('report_behandle')
                         ->where('ID', $report->ID)
+                        ->where('NO_CONT', $noCont)
+                        ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
                         ->update([
                             'PB2_MARSHALLING_B2' => now(),
                             'PB2_LOKASI_CIC' => $nmBlock . '0' . $nmTier,
@@ -414,14 +457,22 @@ class MarshallingCicService
 
             $db->commit();
 
-            return [
+            $result = [
                 'id_job_slip' => $idJobSlip,
-                'new_job_slip_id' => $newJobSlipId,
+                'new_job_slip_id' => $newJobSlip->ID_JOB_SLIP,
                 'no_cont' => $noCont,
                 'no_spk' => $jobSlip->NO_SPK,
                 'lokasi' => $nmBlock,
                 'tier' => $nmTier,
             ];
+
+            $this->logInfo(
+                'marshalling_cic',
+                'Transaksi Marshalling CIC berhasil.',
+                $result + ['username' => $username]
+            );
+
+            return $result;
         } catch (Throwable $e) {
             if ($db->transactionLevel() > 0) {
                 $db->rollBack();
@@ -431,24 +482,16 @@ class MarshallingCicService
                 'marshalling_cic',
                 'Transaksi Marshalling CIC gagal dan di-rollback.',
                 [
-                    'id_job_slip' => $data['idJobSlip'] ?? null,
-                    'no_cont' => $data['nocont'] ?? null,
+                    'id_job_slip' => $idJobSlip,
+                    'no_cont' => $noCont,
                     'username' => $username,
                     'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
                 ]
             );
 
             throw $e;
         }
-    }
-
-    /**
-     * Pengaman sementara sampai mekanisme ID_JOB_SLIP dikonfirmasi.
-     */
-    protected function generateJobSlipId()
-    {
-        throw new RuntimeException(
-            'Penyimpanan belum dijalankan karena mekanisme pembentukan ID_JOB_SLIP belum dikonfirmasi.'
-        );
     }
 }

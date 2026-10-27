@@ -16,23 +16,20 @@ class MarshallingCicController extends Controller
 
     protected MarshallingCicService $marshallingCicService;
 
-    public function __construct(
-        MarshallingCicService $marshallingCicService
-    ) {
+    public function __construct(MarshallingCicService $marshallingCicService)
+    {
         $this->marshallingCicService = $marshallingCicService;
     }
 
-    /**
-     * Load monitoring table awal dengan pagination.
-     */
     public function indexData(Request $request): JsonResponse
     {
         try {
-            $perPage = (int) $request->input('per_page', 10);
-            $perPage = max(1, min($perPage, 50));
+            $perPage = max(
+                1,
+                min((int) $request->input('per_page', 10), 50)
+            );
 
-            $jobs = $this->marshallingCicService
-                ->getAllJobs($perPage);
+            $jobs = $this->marshallingCicService->getAllJobs($perPage);
 
             $view = view(
                 'livewire.partials.marshallingcic.table',
@@ -69,9 +66,6 @@ class MarshallingCicController extends Controller
         }
     }
 
-    /**
-     * Search container.
-     */
     public function search(Request $request): JsonResponse
     {
         try {
@@ -82,22 +76,19 @@ class MarshallingCicController extends Controller
             $keyword = strtoupper(trim($validated['no_cont']));
 
             if ($keyword === '') {
-                throw new Exception(
-                    'Nomor Container wajib diisi.',
-                    422
-                );
+                throw new Exception('Nomor container wajib diisi.', 422);
             }
 
             if (checkHoldP2($keyword)) {
                 throw new Exception(
-                    'Container on Hold P2, Harap release Container terlebih dahulu.',
+                    'Container on Hold P2. Harap release container terlebih dahulu.',
                     422
                 );
             }
 
             $jobs = $this->marshallingCicService->search($keyword);
 
-            if (empty($jobs)) {
+            if ($jobs->isEmpty()) {
                 throw new Exception(
                     'Data Marshalling CIC tidak ditemukan.',
                     404
@@ -137,9 +128,6 @@ class MarshallingCicController extends Controller
         }
     }
 
-    /**
-     * Detail job.
-     */
     public function detail(Request $request): JsonResponse
     {
         try {
@@ -158,17 +146,10 @@ class MarshallingCicController extends Controller
                 );
             }
 
-            $jobActivities = $this->marshallingCicService
-                ->getJobActivities();
-
-            $equipments = $this->marshallingCicService
-                ->getEquipments();
-
-            $trucks = $this->marshallingCicService
-                ->getTrucks();
-
-            $operators = $this->marshallingCicService
-                ->getOperators();
+            $jobActivities = $this->marshallingCicService->getJobActivities();
+            $equipments = $this->marshallingCicService->getEquipments();
+            $trucks = $this->marshallingCicService->getTrucks();
+            $operators = $this->marshallingCicService->getOperators();
 
             $view = view(
                 'livewire.partials.marshallingcic.form',
@@ -209,9 +190,6 @@ class MarshallingCicController extends Controller
         }
     }
 
-    /**
-     * Simpan proses Marshalling CIC.
-     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -259,11 +237,10 @@ class MarshallingCicController extends Controller
                 ], 401);
             }
 
-            $result = $this->marshallingCicService
-                ->storeMarshallingCic(
-                    $validated,
-                    (string) $username
-                );
+            $result = $this->marshallingCicService->storeMarshallingCic(
+                $validated,
+                (string) $username
+            );
 
             $this->logInfo(
                 'marshalling_cic',
