@@ -26,7 +26,7 @@
             'question'
         ];
 
-        // Mendukung pemanggilan lama:
+        // Kompatibel dengan pemanggilan lama:
         // showAlert('Pesan')
         // showAlert('Pesan', 'error')
         if (
@@ -70,45 +70,38 @@
 
         message = message || '';
 
-        /*
-         * Gunakan helper alert global apabila tersedia.
-         *
-         * Catatan:
-         * Helper global harus menerima parameter:
-         * showAlert(type, title, message, callback)
-         */
+        // Gunakan SweetAlert2 secara langsung agar callback
+        // dapat dijalankan setelah pengguna mengonfirmasi.
         if (
-            typeof window.showAlert === 'function' &&
-            window.showAlert !== showAlert
-        ) {
-            window.showAlert(type, title, message, callback);
-            return;
-        }
-
-        // Fallback menggunakan SweetAlert2.
-        if (
-            typeof window.Swal !== 'undefined' &&
+            window.Swal &&
             typeof window.Swal.fire === 'function'
         ) {
             window.Swal.fire({
                 icon: type,
                 title: title,
                 text: message,
-                confirmButtonText: 'OK'
-            }).then(function () {
-                if (typeof callback === 'function') {
-                    callback();
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0369a1'
+            }).then(function (result) {
+                if (
+                    typeof callback === 'function' &&
+                    result &&
+                    result.isConfirmed
+                ) {
+                    callback(result);
                 }
             });
 
             return;
         }
 
-        // Fallback terakhir apabila SweetAlert2 tidak tersedia.
-        window.alert(title + '\n\n' + message);
+        // Fallback jika SweetAlert2 tidak tersedia.
+        window.alert(
+            title + (message ? '\n\n' + message : '')
+        );
 
         if (typeof callback === 'function') {
-            callback();
+            callback({ isConfirmed: true });
         }
     }
 
@@ -201,7 +194,6 @@
         const perPage =
             parseInt($panel.data('per-page'), 10) || 10;
 
-        // Tampilkan loading pada area tabel.
         $container.html(`
             <div class="rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
                 <div class="flex items-center justify-center gap-3">
@@ -309,7 +301,6 @@
 
         loadInitialTable(pageNumber);
 
-        // Scroll kembali ke area tabel.
         const $panel = getPanel();
 
         if (!$panel.length) {
@@ -329,7 +320,7 @@
             );
         }
     }
-    /*
+        /*
      * =========================================================
      * SEARCH CONTAINER
      * =========================================================
@@ -368,7 +359,6 @@
             $input.val() || ''
         ).toUpperCase();
 
-        // Validasi nomor container.
         if (!noCont) {
             showAlert(
                 'warning',
@@ -381,7 +371,6 @@
             return;
         }
 
-        // Cegah request berulang saat masih loading.
         if ($button.prop('disabled')) {
             return;
         }
@@ -414,11 +403,9 @@
                     $panel.find(
                         '[data-detail-container]'
                     )
-                    .addClass('hidden')
-                    .empty();
+                        .addClass('hidden')
+                        .empty();
 
-                    // Jika backend mengirim success: false,
-                    // jangan tampilkan hasil sebagai sukses.
                     if (response.success === false) {
                         showAlert(
                             'warning',
@@ -457,8 +444,6 @@
             },
 
             complete: function () {
-                // Tombol Search harus kembali normal
-                // baik request berhasil maupun gagal.
                 setLoading(
                     $button,
                     false
@@ -469,9 +454,7 @@
 
     /*
      * =========================================================
-     * LOAD DETAIL / PROSES MARSHALLING
-     *
-     * FLOW LAMA TETAP DIPERTAHANKAN.
+     * LOAD DETAIL
      * =========================================================
      */
 
@@ -494,7 +477,6 @@
             return;
         }
 
-        // Cegah klik berulang saat detail sedang dimuat.
         if ($button.prop('disabled')) {
             return;
         }
@@ -557,7 +539,6 @@
             },
 
             complete: function () {
-                // Pulihkan tombol setelah request selesai.
                 $button.prop('disabled', false);
                 $button.text(originalText);
             }
@@ -566,11 +547,7 @@
 
     /*
      * =========================================================
-     * MOBILE DETAIL (!)
-     *
-     * Hanya membuka atau menutup detail baris.
-     * Tidak memanggil loadDetail().
-     * Tidak menjalankan proses Marshalling.
+     * MOBILE DETAIL
      * =========================================================
      */
 
@@ -605,7 +582,6 @@
         const isHidden = $detail.hasClass('hidden');
 
         if (isHidden) {
-            // Buka detail.
             $detail.removeClass('hidden');
 
             $button.attr(
@@ -618,7 +594,6 @@
                 'dark:bg-amber-400/10'
             );
         } else {
-            // Tutup detail.
             $detail.addClass('hidden');
 
             $button.attr(
@@ -632,6 +607,7 @@
             );
         }
     }
+
     /*
      * =========================================================
      * RESET SEARCH
@@ -647,33 +623,197 @@
 
         const $resetButton = $(button);
 
-        // Jangan jalankan Reset berulang kali.
         if ($resetButton.prop('disabled')) {
             return;
         }
 
-        // Kosongkan input pencarian.
         $panel.find('[name="no_cont"]').val('');
 
-        // Sembunyikan dan kosongkan detail.
         $panel.find('[data-detail-container]')
             .addClass('hidden')
             .empty();
 
-        // Tampilkan loading pada tombol Reset.
         setLoading(
             $resetButton,
             true,
             'Memuat data...'
         );
 
-        // Muat kembali tabel dari halaman pertama.
         loadInitialTable(1, function () {
-            // Pulihkan tombol setelah request selesai.
             setLoading(
                 $resetButton,
                 false
             );
+        });
+    }
+        /*
+     * =========================================================
+     * SUBMIT / SIMPAN MARSHALLING CIC
+     * =========================================================
+     */
+
+    function submitMarshallingCic(form) {
+        const $form = $(form);
+        const $panel = getPanel();
+        const $button = $form.find(
+            '[data-save-button]'
+        ).first();
+
+        if (!$panel.length) {
+            showAlert(
+                'error',
+                'Panel Tidak Ditemukan',
+                'Panel Marshalling CIC tidak ditemukan.'
+            );
+
+            return;
+        }
+
+        if ($form.data('marshallingcic-submitting')) {
+            return;
+        }
+
+        // Prioritaskan URL panel, lalu action form,
+        // terakhir gunakan URL route standar.
+        const url =
+            $panel.data('store-url') ||
+            $form.attr('action') ||
+            '/marshalling-cic/store';
+
+        if (!url || url === '#') {
+            showAlert(
+                'error',
+                'Konfigurasi Belum Lengkap',
+                'URL penyimpanan Marshalling CIC tidak ditemukan.'
+            );
+
+            return;
+        }
+
+        $form.data('marshallingcic-submitting', true);
+
+        const originalText =
+            $button.data('marshallingcic-original-text') ||
+            $button.text().trim() ||
+            'PROSES';
+
+        $button.data(
+            'marshallingcic-original-text',
+            originalText
+        );
+
+        $button.prop('disabled', true)
+            .text('Memproses...');
+
+        const formData = $form.serializeArray();
+
+        const token =
+            $panel.data('csrf-token') ||
+            $form.find('input[name="_token"]').val();
+
+        if (
+            token &&
+            !formData.some(function (item) {
+                return item.name === '_token';
+            })
+        ) {
+            formData.push({
+                name: '_token',
+                value: token
+            });
+        }
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            data: $.param(formData),
+
+            success: function (response) {
+                if (response && response.success) {
+                    showAlert(
+                        'success',
+                        'Berhasil',
+                        response.message ||
+                            'Marshalling CIC berhasil disimpan.',
+                        function () {
+                            $panel.find(
+                                '[data-detail-container]'
+                            )
+                                .addClass('hidden')
+                                .empty();
+
+                            loadInitialTable(1);
+                        }
+                    );
+
+                    return;
+                }
+
+                showAlert(
+                    'error',
+                    'Proses Gagal',
+                    (response && response.message) ||
+                        'Data Marshalling CIC tidak berhasil disimpan.'
+                );
+            },
+
+            error: function (xhr) {
+                const response = xhr.responseJSON || {};
+
+                let message =
+                    response.message ||
+                    response.error ||
+                    'Terjadi kesalahan saat menyimpan Marshalling CIC.';
+
+                // Ambil pesan validasi Laravel jika tersedia.
+                if (
+                    response.errors &&
+                    typeof response.errors === 'object'
+                ) {
+                    const validationMessages = [];
+
+                    $.each(response.errors, function (field, messages) {
+                        if (Array.isArray(messages)) {
+                            validationMessages.push.apply(
+                                validationMessages,
+                                messages
+                            );
+                        } else if (messages) {
+                            validationMessages.push(messages);
+                        }
+                    });
+
+                    if (validationMessages.length) {
+                        message = validationMessages.join('\n');
+                    }
+                }
+
+                if (xhr.status === 419) {
+                    message =
+                        'Sesi telah berakhir. Silakan muat ulang halaman lalu login kembali.';
+                } else if (xhr.status === 401) {
+                    message =
+                        response.message ||
+                        'Sesi login tidak ditemukan. Silakan login kembali.';
+                }
+
+                showAlert(
+                    'error',
+                    'Proses Gagal',
+                    message
+                );
+            },
+
+            complete: function () {
+                $form.data(
+                    'marshallingcic-submitting',
+                    false
+                );
+
+                $button.prop('disabled', false)
+                    .text(originalText);
+            }
         });
     }
 
@@ -684,6 +824,27 @@
      */
 
     function bindEvents() {
+        /*
+         * -----------------------------------------------------
+         * SUBMIT FORM
+         * -----------------------------------------------------
+         */
+
+        $(document)
+            .off(
+                'submit.marshallingcic.save',
+                '[data-panel-name="marshallingcic"] [data-cic-form]'
+            )
+            .on(
+                'submit.marshallingcic.save',
+                '[data-panel-name="marshallingcic"] [data-cic-form]',
+                function (event) {
+                    event.preventDefault();
+
+                    submitMarshallingCic(this);
+                }
+            );
+
         /*
          * -----------------------------------------------------
          * SEARCH
@@ -743,9 +904,7 @@
                 function (event) {
                     event.preventDefault();
 
-                    const page = $(this).data(
-                        'cic-page'
-                    );
+                    const page = $(this).data('cic-page');
 
                     if (!page) {
                         return;
@@ -757,10 +916,10 @@
 
         /*
          * -----------------------------------------------------
-         * MOBILE DETAIL (!)
+         * MOBILE DETAIL
          *
-         * Handler ini harus terpisah dari tombol PROSES.
-         * Tombol ! hanya membuka atau menutup detail baris.
+         * Tombol ini hanya membuka/menutup detail baris.
+         * Tidak menjalankan proses Marshalling.
          * -----------------------------------------------------
          */
 
@@ -782,9 +941,7 @@
 
         /*
          * -----------------------------------------------------
-         * PROSES MARSHALLING CIC
-         *
-         * Flow tombol PROSES tetap dipertahankan.
+         * BUKA DETAIL CONTAINER
          * -----------------------------------------------------
          */
 
@@ -826,9 +983,6 @@
     /*
      * =========================================================
      * LIVEWIRE NAVIGATION
-     * =========================================================
-     *
-     * Bind ulang event dan muat tabel setelah navigasi Livewire.
      * =========================================================
      */
 
