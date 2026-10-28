@@ -5,6 +5,7 @@
     data-data-url="{{ route('marshallingcic.data') }}"
     data-search-url="{{ route('marshallingcic.search') }}"
     data-detail-url="{{ route('marshallingcic.detail') }}"
+    data-store-url="{{ route('marshallingcic.store') }}"
     data-csrf-token="{{ csrf_token() }}"
 >
     <div class="mb-4 flex items-center justify-between gap-3">
