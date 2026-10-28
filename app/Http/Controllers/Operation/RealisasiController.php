@@ -28,6 +28,8 @@ class RealisasiController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
+        $noCont = null;
+
         try {
             $validated = $request->validate([
                 'no_cont' => ['required', 'string', 'max:20'],
@@ -39,7 +41,7 @@ class RealisasiController extends Controller
 
             if (empty($rows)) {
                 $this->logWarning(
-                    'operation',
+                    'pemeriksaan-behandle',
                     'Container tidak ditemukan pada pencarian realisasi.',
                     ['no_cont' => $noCont]
                 );
@@ -58,7 +60,7 @@ class RealisasiController extends Controller
             )->render();
 
             $this->logInfo(
-                'operation',
+                'pemeriksaan-behandle',
                 'Pencarian container realisasi berhasil.',
                 [
                     'no_cont' => $noCont,
@@ -73,9 +75,12 @@ class RealisasiController extends Controller
             ]);
         } catch (ValidationException $e) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Validasi pencarian realisasi gagal.',
-                ['errors' => $e->errors()]
+                [
+                    'no_cont' => $request->input('no_cont'),
+                    'errors' => $e->errors(),
+                ]
             );
 
             return response()->json([
@@ -87,9 +92,13 @@ class RealisasiController extends Controller
             report($e);
 
             $this->logError(
-                'operation',
+                'pemeriksaan-behandle',
                 'Terjadi kesalahan saat mencari container realisasi.',
-                ['error' => $e->getMessage()]
+                [
+                    'no_cont' => $noCont ?? $request->input('no_cont'),
+                    'error' => $e->getMessage(),
+                    'exception' => get_class($e),
+                ]
             );
 
             return response()->json([
@@ -105,6 +114,8 @@ class RealisasiController extends Controller
      */
     public function detail(Request $request): JsonResponse
     {
+        $noCont = null;
+
         try {
             $validated = $request->validate([
                 'no_cont' => ['required', 'string', 'max:20'],
@@ -116,7 +127,7 @@ class RealisasiController extends Controller
 
             if (empty($rows)) {
                 $this->logWarning(
-                    'operation',
+                    'pemeriksaan-behandle',
                     'Container tidak ditemukan saat mengambil detail realisasi.',
                     ['no_cont' => $noCont]
                 );
@@ -177,7 +188,7 @@ class RealisasiController extends Controller
             )->render();
 
             $this->logInfo(
-                'operation',
+                'pemeriksaan-behandle',
                 'Detail pemeriksaan berhasil diambil.',
                 [
                     'no_cont' => $noCont,
@@ -193,9 +204,12 @@ class RealisasiController extends Controller
             ]);
         } catch (ValidationException $e) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Validasi detail pemeriksaan gagal.',
-                ['errors' => $e->errors()]
+                [
+                    'no_cont' => $request->input('no_cont'),
+                    'errors' => $e->errors(),
+                ]
             );
 
             return response()->json([
@@ -207,9 +221,13 @@ class RealisasiController extends Controller
             report($e);
 
             $this->logError(
-                'operation',
+                'pemeriksaan-behandle',
                 'Terjadi kesalahan saat mengambil detail pemeriksaan.',
-                ['error' => $e->getMessage()]
+                [
+                    'no_cont' => $noCont ?? $request->input('no_cont'),
+                    'error' => $e->getMessage(),
+                    'exception' => get_class($e),
+                ]
             );
 
             return response()->json([
@@ -227,6 +245,8 @@ class RealisasiController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $noCont = $request->input('nomerkon');
+
         try {
             $validated = $request->validate([
                 'nomerkon' => ['required', 'string', 'max:20'],
@@ -238,6 +258,8 @@ class RealisasiController extends Controller
                 'operator' => ['nullable', 'string', 'max:100'],
                 'join' => ['nullable'],
             ]);
+
+            $noCont = trim($validated['nomerkon']);
 
             $user = $request->user();
 
@@ -254,9 +276,9 @@ class RealisasiController extends Controller
                 || trim($operatorLogin) === ''
             ) {
                 $this->logWarning(
-                    'operation',
-                    'Proses realisasi ditolak karena identitas operator tidak ditemukan.',
-                    ['no_cont' => $validated['nomerkon']]
+                    'pemeriksaan-behandle',
+                    'Proses pemeriksaan ditolak karena identitas operator tidak ditemukan.',
+                    ['no_cont' => $noCont]
                 );
 
                 return response()->json([
@@ -273,10 +295,10 @@ class RealisasiController extends Controller
             );
 
             $this->logInfo(
-                'operation',
-                'Permintaan realisasi pemeriksaan berhasil diproses.',
+                'pemeriksaan-behandle',
+                'Permintaan pemeriksaan berhasil diproses.',
                 [
-                    'no_cont' => $validated['nomerkon'],
+                    'no_cont' => $noCont,
                     'operator' => $operatorLogin,
                     'kode' => $result['kode'] ?? null,
                 ]
@@ -291,9 +313,12 @@ class RealisasiController extends Controller
             ]);
         } catch (ValidationException $e) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Validasi data pemeriksaan gagal.',
-                ['errors' => $e->errors()]
+                [
+                    'no_cont' => $noCont,
+                    'errors' => $e->errors(),
+                ]
             );
 
             return response()->json([
@@ -303,9 +328,12 @@ class RealisasiController extends Controller
             ], 422);
         } catch (RuntimeException $e) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Proses pemeriksaan ditolak oleh validasi bisnis.',
-                ['error' => $e->getMessage()]
+                [
+                    'no_cont' => $noCont,
+                    'error' => $e->getMessage(),
+                ]
             );
 
             return response()->json([
@@ -316,11 +344,12 @@ class RealisasiController extends Controller
             report($e);
 
             $this->logError(
-                'operation',
+                'pemeriksaan-behandle',
                 'Terjadi kesalahan saat menyimpan pemeriksaan.',
                 [
-                    'no_cont' => $request->input('nomerkon'),
+                    'no_cont' => $noCont,
                     'error' => $e->getMessage(),
+                    'exception' => get_class($e),
                 ]
             );
 

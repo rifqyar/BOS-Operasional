@@ -86,6 +86,12 @@
         });
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | ALERT
+    |--------------------------------------------------------------------------
+    */
+
     const showAlert = (icon, title, text) => {
 
         if (typeof window.showAlert === 'function') {
@@ -114,6 +120,12 @@
 
         alert(text);
     };
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUTTON LOADING
+    |--------------------------------------------------------------------------
+    */
 
     const setButtonLoading = (
         $button,
@@ -147,6 +159,12 @@
         );
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | INITIALIZE PANEL
+    |--------------------------------------------------------------------------
+    */
+
     const initRealisasiPanel = () => {
 
         if (hasPanel()) {
@@ -158,6 +176,12 @@
                 .trigger('focus');
         }
     };
+
+    /*
+    |--------------------------------------------------------------------------
+    | BIND HANDLERS
+    |--------------------------------------------------------------------------
+    */
 
     const bindRealisasiHandlers = () => {
 
@@ -316,6 +340,118 @@
                             defaultLabel
                         );
                     });
+            }
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESET
+        |--------------------------------------------------------------------------
+        |
+        | Mengembalikan panel Realisasi ke kondisi awal.
+        |
+        | 1. Mengosongkan input No Container.
+        | 2. Menyembunyikan hasil pencarian.
+        | 3. Membersihkan tabel hasil.
+        | 4. Membersihkan dan menyembunyikan detail.
+        | 5. Membersihkan pesan pencarian.
+        | 6. Mengembalikan tombol SEARCH.
+        | 7. Mengembalikan fokus ke input No Container.
+        |
+        */
+
+        $(document).off(
+            'click.bosRealisasiReset',
+            '[data-panel-name="realisasi"] [data-reset-button]'
+        );
+
+        $(document).on(
+            'click.bosRealisasiReset',
+            '[data-panel-name="realisasi"] [data-reset-button]',
+            function (event) {
+
+                event.preventDefault();
+
+                const $panel = $(this).closest(
+                    '[data-panel][data-panel-name="realisasi"]'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | RESET FORM
+                |--------------------------------------------------------------------------
+                */
+
+                const searchForm =
+                    $panel.find('[data-search-form]')[0];
+
+                if (searchForm) {
+                    searchForm.reset();
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | RESET RESULT
+                |--------------------------------------------------------------------------
+                */
+
+                $panel.find('[data-result]')
+                    .addClass('hidden');
+
+                $panel.find('[data-table]')
+                    .empty();
+
+                /*
+                |--------------------------------------------------------------------------
+                | RESET DETAIL
+                |--------------------------------------------------------------------------
+                */
+
+                $panel.find('[data-detail]')
+                    .empty()
+                    .addClass('hidden');
+
+                /*
+                |--------------------------------------------------------------------------
+                | RESET SEARCH MESSAGE
+                |--------------------------------------------------------------------------
+                */
+
+                $panel.find('[data-search-message]')
+                    .addClass('hidden')
+                    .removeClass(
+                        'bg-red-50 text-red-700 bg-green-50 text-green-700 ' +
+                        'bg-yellow-50 text-yellow-700'
+                    )
+                    .empty();
+
+                /*
+                |--------------------------------------------------------------------------
+                | RESET SEARCH BUTTON
+                |--------------------------------------------------------------------------
+                */
+
+                const $searchButton =
+                    $panel.find('[data-search-button]');
+
+                const defaultLabel =
+                    $searchButton.data('default-label');
+
+                if (defaultLabel) {
+
+                    $searchButton
+                        .prop('disabled', false)
+                        .html(defaultLabel);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | FOCUS INPUT
+                |--------------------------------------------------------------------------
+                */
+
+                $panel.find('#panel-no-container')
+                    .trigger('focus');
             }
         );
 
@@ -585,7 +721,7 @@
         'livewire:navigated',
         () => {
 
-            bindRealisasiHandlers();no
+            bindRealisasiHandlers();
 
             initRealisasiPanel();
         }

@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Operation;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\LogTraits;
 use App\Services\MarshallingCicService;
-use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class MarshallingCicController extends Controller
@@ -16,11 +16,15 @@ class MarshallingCicController extends Controller
 
     protected MarshallingCicService $marshallingCicService;
 
-    public function __construct(MarshallingCicService $marshallingCicService)
-    {
+    public function __construct(
+        MarshallingCicService $marshallingCicService
+    ) {
         $this->marshallingCicService = $marshallingCicService;
     }
 
+    /**
+     * Mengambil data monitoring Marshalling CIC.
+     */
     public function indexData(Request $request): JsonResponse
     {
         try {
@@ -36,6 +40,16 @@ class MarshallingCicController extends Controller
                 compact('jobs')
             )->render();
 
+            $this->logInfo(
+                'marshalling-cic',
+                'Berhasil mengambil data monitoring Marshalling CIC.',
+                [
+                    'per_page' => $perPage,
+                    'current_page' => $jobs->currentPage(),
+                    'total' => $jobs->total(),
+                ]
+            );
+
             return response()->json([
                 'success' => true,
                 'data' => $view,
@@ -50,7 +64,7 @@ class MarshallingCicController extends Controller
             ]);
         } catch (Throwable $e) {
             $this->logError(
-                'marshalling_cic',
+                'marshalling-cic',
                 'Gagal mengambil data monitoring Marshalling CIC.',
                 [
                     'error' => $e->getMessage(),
@@ -66,6 +80,9 @@ class MarshallingCicController extends Controller
         }
     }
 
+    /**
+     * Mencari pekerjaan berdasarkan nomor kontainer.
+     */
     public function search(Request $request): JsonResponse
     {
         try {
@@ -76,23 +93,26 @@ class MarshallingCicController extends Controller
             $keyword = strtoupper(trim($validated['no_cont']));
 
             if ($keyword === '') {
-                throw new Exception('Nomor container wajib diisi.', 422);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nomor kontainer wajib diisi.',
+                ], 422);
             }
 
             if (checkHoldP2($keyword)) {
-                throw new Exception(
-                    'Container on Hold P2. Harap release container terlebih dahulu.',
-                    422
-                );
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Container on Hold P2. Harap release container terlebih dahulu.',
+                ], 422);
             }
 
             $jobs = $this->marshallingCicService->search($keyword);
 
             if ($jobs->isEmpty()) {
-                throw new Exception(
-                    'Data Marshalling CIC tidak ditemukan.',
-                    404
-                );
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data Marshalling CIC tidak ditemukan.',
+                ], 404);
             }
 
             $view = view(
@@ -100,34 +120,56 @@ class MarshallingCicController extends Controller
                 compact('jobs')
             )->render();
 
+            $this->logInfo(
+                'marshalling-cic',
+                'Pencarian Marshalling CIC berhasil.',
+                [
+                    'no_cont' => $keyword,
+                    'jumlah_data' => $jobs->count(),
+                ]
+            );
+
             return response()->json([
                 'success' => true,
                 'data' => $view,
             ]);
-        } catch (Throwable $e) {
-            $statusCode = (int) $e->getCode();
-
-            if ($statusCode < 400 || $statusCode > 599) {
-                $statusCode = 500;
-            }
-
-            $this->logError(
-                'marshalling_cic',
-                'Pencarian Marshalling CIC gagal.',
+        } catch (ValidationException $e) {
+            $this->logWarning(
+                'marshalling-cic',
+                'Validasi pencarian Marshalling CIC gagal.',
                 [
                     'no_cont' => $request->input('no_cont'),
-                    'error' => $e->getMessage(),
+                    'errors' => $e->errors(),
                 ]
             );
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-                    ?: 'Terjadi kesalahan saat mencari container.',
-            ], $statusCode);
+                'message' => 'Data pencarian tidak valid.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            $this->logError(
+                'marshalling-cic',
+                'Pencarian Marshalling CIC gagal.',
+                [
+                    'no_cont' => $request->input('no_cont'),
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mencari kontainer.',
+            ], 500);
         }
     }
 
+    /**
+     * Mengambil detail pekerjaan dan data master untuk form.
+     */
     public function detail(Request $request): JsonResponse
     {
         try {
@@ -140,10 +182,10 @@ class MarshallingCicController extends Controller
             );
 
             if (!$row) {
-                throw new Exception(
-                    'Detail Job Marshalling CIC tidak ditemukan.',
-                    404
-                );
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Detail Job Marshalling CIC tidak ditemukan.',
+                ], 404);
             }
 
             $jobActivities = $this->marshallingCicService->getJobActivities();
@@ -162,34 +204,56 @@ class MarshallingCicController extends Controller
                 )
             )->render();
 
+            $this->logInfo(
+                'marshalling-cic',
+                'Berhasil mengambil detail Marshalling CIC.',
+                [
+                    'id_job_slip' => $validated['id_job_slip'],
+                    'no_cont' => $row->NO_CONT ?? null,
+                ]
+            );
+
             return response()->json([
                 'success' => true,
                 'data' => $view,
             ]);
-        } catch (Throwable $e) {
-            $statusCode = (int) $e->getCode();
-
-            if ($statusCode < 400 || $statusCode > 599) {
-                $statusCode = 500;
-            }
-
-            $this->logError(
-                'marshalling_cic',
-                'Gagal mengambil detail Marshalling CIC.',
+        } catch (ValidationException $e) {
+            $this->logWarning(
+                'marshalling-cic',
+                'Validasi detail Marshalling CIC gagal.',
                 [
                     'id_job_slip' => $request->input('id_job_slip'),
-                    'error' => $e->getMessage(),
+                    'errors' => $e->errors(),
                 ]
             );
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-                    ?: 'Terjadi kesalahan saat mengambil detail.',
-            ], $statusCode);
+                'message' => 'ID job slip tidak valid.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            $this->logError(
+                'marshalling-cic',
+                'Gagal mengambil detail Marshalling CIC.',
+                [
+                    'id_job_slip' => $request->input('id_job_slip'),
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil detail Marshalling CIC.',
+            ], 500);
         }
     }
 
+    /**
+     * Menyimpan proses Marshalling CIC.
+     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -225,8 +289,10 @@ class MarshallingCicController extends Controller
             $username = session('USERLOGIN');
 
             if (!$username && auth()->check()) {
-                $username = auth()->user()->username
-                    ?? auth()->user()->name
+                $user = auth()->user();
+
+                $username = $user->username
+                    ?? $user->name
                     ?? null;
             }
 
@@ -243,12 +309,13 @@ class MarshallingCicController extends Controller
             );
 
             $this->logInfo(
-                'marshalling_cic',
+                'marshalling-cic',
                 'Marshalling CIC berhasil disimpan.',
                 [
                     'id_job_slip' => $validated['idJobSlip'],
                     'no_cont' => $validated['nocont'],
                     'username' => $username,
+                    'result' => $result,
                 ]
             );
 
@@ -257,15 +324,31 @@ class MarshallingCicController extends Controller
                 'message' => 'Marshalling CIC berhasil disimpan.',
                 'data' => $result,
             ]);
-        } catch (Throwable $e) {
-            $statusCode = (int) $e->getCode();
+        } catch (ValidationException $e) {
+            $this->logWarning(
+                'marshalling-cic',
+                'Validasi penyimpanan Marshalling CIC gagal.',
+                [
+                    'id_job_slip' => $request->input('idJobSlip'),
+                    'no_cont' => $request->input('nocont'),
+                    'errors' => $e->errors(),
+                ]
+            );
 
-            if ($statusCode < 400 || $statusCode > 599) {
-                $statusCode = 500;
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Marshalling CIC tidak valid.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (Throwable $e) {
+            $exceptionCode = (int) $e->getCode();
+
+            $statusCode = in_array($exceptionCode, [400, 401, 403, 404, 409, 422], true)
+                ? $exceptionCode
+                : 500;
 
             $this->logError(
-                'marshalling_cic',
+                'marshalling-cic',
                 'Marshalling CIC gagal disimpan.',
                 [
                     'id_job_slip' => $request->input('idJobSlip'),
@@ -278,8 +361,9 @@ class MarshallingCicController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-                    ?: 'Terjadi kesalahan saat menyimpan Marshalling CIC.',
+                'message' => $statusCode === 500
+                    ? 'Terjadi kesalahan saat menyimpan Marshalling CIC.'
+                    : $e->getMessage(),
             ], $statusCode);
         }
     }

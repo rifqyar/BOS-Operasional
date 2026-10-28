@@ -6,8 +6,13 @@ use Illuminate\Support\Facades\DB;
 
 class PlugReeferServices
 {
-
-    public function searchReefer(string $keyword)
+    /**
+     * Mencari container yang memenuhi syarat Plug Reefer.
+     *
+     * Mengacu pada legacy:
+     * M_operation->searchreefer($keyword)
+     */
+    public function searchReefer(string $keyword): array
     {
         return DB::connection('prod')->select(
             "SELECT
@@ -26,70 +31,81 @@ class PlugReeferServices
                 ON B.NO_CONT = E.NO_CONT
                 AND A.NO_SPK = E.NO_SPK
             WHERE D.TEMP_CUST IS NOT NULL
-              AND B.NO_CONT LIKE ?
-              AND B.STATUS_CONT != '900'
+                AND B.NO_CONT LIKE ?
+                AND B.STATUS_CONT != '900'
             ORDER BY A.ID DESC
             LIMIT 1",
-            [
-                '%' . $keyword . '%'
-            ]
+            ['%' . $keyword . '%']
         );
     }
 
-
-    public function checked(string $noCont)
+    /**
+     * Memeriksa aktivitas Plug yang belum Unplug.
+     *
+     * Mengacu pada legacy:
+     * M_operation->checked($check)
+     */
+    public function checked(string $noCont): array
     {
         return DB::connection('prod')->select(
             "SELECT *
-             FROM t_op_reefer
-             WHERE NO_CONT = ?
-               AND WAKTU IS NOT NULL
-               AND FL_UNPLUG = 'N'
-             ORDER BY ID ASC
-             LIMIT 1",
-            [
-                $noCont
-            ]
+            FROM t_op_reefer
+            WHERE NO_CONT = ?
+                AND WAKTU IS NOT NULL
+                AND FL_UNPLUG = 'N'
+            ORDER BY ID ASC
+            LIMIT 1",
+            [$noCont]
         );
     }
 
-
-    public function tempAkhir(string $noCont)
+    /**
+     * Mengambil temperatur monitor terakhir.
+     *
+     * Mengacu pada legacy:
+     * M_operation->temp_akhir($check)
+     */
+    public function tempAkhir(string $noCont): array
     {
         return DB::connection('prod')->select(
             "SELECT *
-             FROM t_op_reefer
-             WHERE NO_CONT = ?
-               AND TEMPERATURE_MONITOR IS NOT NULL
-               AND FL_MONITOR = 'Y'
-             ORDER BY ID DESC
-             LIMIT 1",
-            [
-                $noCont
-            ]
+            FROM t_op_reefer
+            WHERE NO_CONT = ?
+                AND TEMPERATURE_MONITOR IS NOT NULL
+                AND FL_MONITOR = 'Y'
+            ORDER BY ID DESC
+            LIMIT 1",
+            [$noCont]
         );
     }
 
-
-    public function getSpkContainer(string $noCont)
+    /**
+     * Mengambil data SPK dan container terbaru.
+     *
+     * Mengacu pada query $SQL_SPK_CONT
+     * di legacy set_plug().
+     */
+    public function getSpkContainer(string $noCont): ?object
     {
         return DB::connection('prod')->selectOne(
-            "SELECT
-                A.*,
-                B.*
-             FROM t_spk_cont A
-             INNER JOIN t_spk B
+            "SELECT A.*, B.*
+            FROM t_spk_cont A
+            INNER JOIN t_spk B
                 ON A.ID = B.ID
-             WHERE A.NO_CONT = ?
-             ORDER BY A.ID DESC
-             LIMIT 1",
-            [
-                $noCont
-            ]
+            WHERE A.NO_CONT = ?
+            ORDER BY A.ID DESC
+            LIMIT 1",
+            [$noCont]
         );
     }
 
-
+    /**
+     * Menentukan kondisi container.
+     *
+     * 1 = Belum Plug
+     * 2 = Sedang Plug
+     * 0 = Kondisi lainnya
+     */
     public function determineCondition(string $noCont): int
     {
         $checked = $this->checked($noCont);
@@ -98,12 +114,12 @@ class PlugReeferServices
             return 1;
         }
 
-        $start = $checked[0];
+        $activePlug = $checked[0];
 
         if (
-            !empty($start->WAKTU)
-            && ($start->FL_PLUG ?? null) === 'Y'
-            && ($start->FL_UNPLUG ?? null) === 'N'
+            !empty($activePlug->WAKTU)
+            && ($activePlug->FL_PLUG ?? null) === 'Y'
+            && ($activePlug->FL_UNPLUG ?? null) === 'N'
         ) {
             return 2;
         }

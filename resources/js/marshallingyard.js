@@ -1,7 +1,6 @@
 (function ($) {
     'use strict';
 
-
     /*
      * =========================================================
      * PANEL
@@ -11,21 +10,17 @@
     const PANEL_SELECTOR =
         '[data-panel][data-panel-name="marshallingyard"]';
 
-
     function getPanel() {
         return document.querySelector(PANEL_SELECTOR);
     }
-
 
     function getUrl(panel, attribute) {
         return panel?.dataset?.[attribute] || '';
     }
 
-
     function getCsrf(panel) {
         return panel?.dataset?.csrfToken || '';
     }
-
 
     /*
      * =========================================================
@@ -34,30 +29,29 @@
      */
 
     function showAlert(message, type = 'error') {
-
-        if (typeof window.showAlert === 'function') {
+        // Hindari pemanggilan berulang jika window.showAlert
+        // ternyata menunjuk ke fungsi yang sama.
+        if (
+            typeof window.showAlert === 'function' &&
+            window.showAlert !== showAlert
+        ) {
             window.showAlert(message, type);
             return;
         }
 
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            const allowedTypes = ['success', 'error', 'warning', 'info'];
 
-        if (window.Swal) {
-
-            Swal.fire({
-                icon: type === 'success'
-                    ? 'success'
-                    : 'error',
-
+            window.Swal.fire({
+                icon: allowedTypes.includes(type) ? type : 'error',
                 text: message,
             });
 
             return;
         }
 
-
         window.alert(message);
     }
-
 
     /*
      * =========================================================
@@ -70,32 +64,27 @@
         loading,
         textLoading = 'Memproses...'
     ) {
-
         if (!button) {
             return;
         }
 
-
         if (loading) {
+            // Simpan teks asli hanya saat tombol belum loading.
+            if (button.dataset.loading !== '1') {
+                button.dataset.originalText = button.innerHTML;
+            }
 
-            button.dataset.originalText =
-                button.innerHTML;
-
-            button.innerHTML =
-                textLoading;
-
+            button.dataset.loading = '1';
+            button.innerHTML = textLoading;
             button.disabled = true;
-
         } else {
-
             button.innerHTML =
-                button.dataset.originalText ||
-                'Search';
+                button.dataset.originalText || 'Search';
 
+            button.dataset.loading = '0';
             button.disabled = false;
         }
     }
-
 
     /*
      * =========================================================
@@ -103,26 +92,15 @@
      * =========================================================
      */
 
-    function setDataCount(
-        panel,
-        count
-    ) {
-
-        const element =
-            panel.querySelector(
-                '[data-data-count]'
-            );
-
+    function setDataCount(panel, count) {
+        const element = panel.querySelector('[data-data-count]');
 
         if (!element) {
             return;
         }
 
-
-        element.textContent =
-            `${count} data`;
+        element.textContent = `${count} data`;
     }
-
 
     /*
      * =========================================================
@@ -134,33 +112,21 @@
      * =========================================================
      */
 
-    function loadInitialData(
-        panel,
-        page = 1
-    ) {
-
-        const url =
-            getUrl(
-                panel,
-                'dataUrl'
-            );
-
+    function loadInitialData(panel, page = 1) {
+        const url = getUrl(panel, 'dataUrl');
 
         if (!url) {
+            console.error(
+                'URL data Marshalling Yard tidak ditemukan.'
+            );
             return;
         }
 
-
-        const table =
-            panel.querySelector(
-                '[data-table]'
-            );
-
+        const table = panel.querySelector('[data-table]');
 
         if (!table) {
             return;
         }
-
 
         table.innerHTML = `
             <div
@@ -171,85 +137,73 @@
             </div>
         `;
 
-
         $.ajax({
-
             url: url,
-
             method: 'GET',
-
             data: {
                 page: page,
                 per_page: 10,
             },
-
             headers: {
-
-                'X-CSRF-TOKEN':
-                    getCsrf(panel),
-
-                'Accept':
-                    'application/json',
+                'X-CSRF-TOKEN': getCsrf(panel),
+                'Accept': 'application/json',
             },
-
         })
-
             .done(function (response) {
+                table.innerHTML = response.data || '';
 
-                table.innerHTML =
-                    response.data || '';
-
-
-                /*
-                 * Untuk paginator,
-                 * count berasal dari metadata.
-                 */
                 if (
                     response.pagination &&
-                    typeof response.pagination.total !==
-                        'undefined'
+                    typeof response.pagination.total !== 'undefined'
                 ) {
-
                     setDataCount(
                         panel,
                         response.pagination.total
                     );
-
                 } else {
-
                     setDataCount(
                         panel,
-                        countRows(
-                            response.data || ''
-                        )
+                        countRows(response.data || '')
                     );
                 }
             })
-
             .fail(function (xhr) {
-
                 const message =
                     xhr.responseJSON?.message ||
                     'Gagal mengambil data Marshalling Yard.';
-
 
                 table.innerHTML = `
                     <div
                         class="px-4 py-10 text-center
                                text-sm text-rose-600"
                     >
-                        ${message}
+                        ${escapeHtml(message)}
                     </div>
                 `;
 
-
-                setDataCount(
-                    panel,
-                    0
-                );
+                setDataCount(panel, 0);
             });
     }
 
+    /*
+     * =========================================================
+     * ESCAPE HTML
+     * =========================================================
+     */
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function (char) {
+            const entities = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            };
+
+            return entities[char];
+        });
+    }
 
     /*
      * =========================================================
@@ -258,24 +212,15 @@
      */
 
     function countRows(html) {
+        const temp = document.createElement('div');
 
-        const temp =
-            document.createElement('div');
+        temp.innerHTML = html;
 
-
-        temp.innerHTML =
-            html;
-
-
-        /*
-         * Jangan menghitung detail row mobile
-         * sebagai data utama.
-         */
+        // Jangan menghitung detail row mobile sebagai data utama.
         return temp.querySelectorAll(
             'tbody > tr:not([data-yard-mobile-detail-row])'
         ).length;
     }
-
 
     /*
      * =========================================================
@@ -283,58 +228,26 @@
      * =========================================================
      */
 
-    function loadPage(
-        panel,
-        page
-    ) {
+    function loadPage(panel, page) {
+        const pageNumber = parseInt(page, 10);
 
-        const pageNumber =
-            parseInt(
-                page,
-                10
-            );
-
-
-        if (
-            !pageNumber ||
-            pageNumber < 1
-        ) {
+        if (!pageNumber || pageNumber < 1) {
             return;
         }
 
+        loadInitialData(panel, pageNumber);
 
-        loadInitialData(
-            panel,
-            pageNumber
-        );
-
-
-        /*
-         * Scroll ke table setelah
-         * user berpindah halaman.
-         */
-        const table =
-            panel.querySelector(
-                '[data-table]'
-            );
-
+        const table = panel.querySelector('[data-table]');
 
         if (table) {
-
-            setTimeout(
-                function () {
-
-                    table.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start',
-                    });
-
-                },
-                150
-            );
+            setTimeout(function () {
+                table.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                });
+            }, 150);
         }
     }
-
 
     /*
      * =========================================================
@@ -342,179 +255,102 @@
      * =========================================================
      */
 
-    function searchData(
-        panel,
-        form
-    ) {
-
-        const url =
-            getUrl(
-                panel,
-                'searchUrl'
-            );
-
+    function searchData(panel, form) {
+        const url = getUrl(panel, 'searchUrl');
 
         if (!url) {
+            showAlert(
+                'URL pencarian Marshalling Yard tidak ditemukan.',
+                'error'
+            );
             return;
         }
 
-
-        const button =
-            form.querySelector(
-                '[data-search-button]'
-            );
-
+        const button = form.querySelector('[data-search-button]');
 
         const noCont =
-            form.querySelector(
-                '[name="no_cont"]'
-            )?.value
+            form.querySelector('[name="no_cont"]')
+                ?.value
                 ?.trim() || '';
 
-
         if (!noCont) {
-
             showAlert(
                 'Nomor container wajib diisi.',
                 'error'
             );
-
-
             return;
         }
 
-
-        setLoading(
-            button,
-            true,
-            'Mencari...'
-        );
-
+        setLoading(button, true, 'Mencari...');
 
         $.ajax({
-
             url: url,
-
             method: 'POST',
-
             data: {
                 no_cont: noCont,
-
                 page: 1,
-
                 per_page: 10,
             },
-
             headers: {
-
-                'X-CSRF-TOKEN':
-                    getCsrf(panel),
-
-                'Accept':
-                    'application/json',
+                'X-CSRF-TOKEN': getCsrf(panel),
+                'Accept': 'application/json',
             },
-
         })
-
             .done(function (response) {
-
-                const table =
-                    panel.querySelector(
-                        '[data-table]'
-                    );
-
+                const table = panel.querySelector('[data-table]');
 
                 if (table) {
-
-                    table.innerHTML =
-                        response.data || '';
+                    table.innerHTML = response.data || '';
                 }
-
 
                 if (
                     response.pagination &&
-                    typeof response.pagination.total !==
-                        'undefined'
+                    typeof response.pagination.total !== 'undefined'
                 ) {
-
                     setDataCount(
                         panel,
                         response.pagination.total
                     );
-
                 } else {
-
                     setDataCount(
                         panel,
-                        countRows(
-                            response.data || ''
-                        )
+                        countRows(response.data || '')
                     );
                 }
 
-
-                /*
-                 * Response message hanya ditampilkan
-                 * jika memang ada.
-                 */
-                if (
-                    response.message &&
-                    response.success === false
-                ) {
-
+                if (response.success === false) {
                     showAlert(
-                        response.message,
+                        response.message ||
+                            'Data Marshalling Yard tidak ditemukan.',
                         'error'
                     );
                 }
             })
-
             .fail(function (xhr) {
+                const response = xhr.responseJSON;
+                const table = panel.querySelector('[data-table]');
 
-                const message =
-                    xhr.responseJSON?.message ||
-                    'Gagal mencari data Marshalling Yard.';
+                // Jika server mengirim HTML tabel kosong pada response error,
+                // tetap tampilkan HTML tersebut.
+                if (table && response?.data !== undefined) {
+                    table.innerHTML = response.data;
+                }
 
+                setDataCount(
+                    panel,
+                    response?.pagination?.total ?? 0
+                );
 
                 showAlert(
-                    message,
+                    response?.message ||
+                        'Gagal mencari data Marshalling Yard.',
                     'error'
                 );
-
-
-                /*
-                 * Jika search tidak menemukan data,
-                 * tetap render response table kosong
-                 * bila server mengirimkannya.
-                 */
-                if (
-                    xhr.responseJSON?.data
-                ) {
-
-                    const table =
-                        panel.querySelector(
-                            '[data-table]'
-                        );
-
-
-                    if (table) {
-
-                        table.innerHTML =
-                            xhr.responseJSON.data;
-                    }
-                }
             })
-
             .always(function () {
-
-                setLoading(
-                    button,
-                    false,
-                    'Search'
-                );
+                setLoading(button, false, 'Search');
             });
     }
-
 
     /*
      * =========================================================
@@ -522,65 +358,38 @@
      * =========================================================
      */
 
-    function loadDetail(
-        panel,
-        button
-    ) {
-
-        const url =
-            getUrl(
-                panel,
-                'detailUrl'
-            );
-
+    function loadDetail(panel, button) {
+        const url = getUrl(panel, 'detailUrl');
 
         if (!url) {
+            showAlert(
+                'URL detail Marshalling Yard tidak ditemukan.',
+                'error'
+            );
             return;
         }
 
-
-        const idJobSlip =
-            button.dataset.idJobSlip;
-
+        const idJobSlip = button.dataset.idJobSlip;
 
         if (!idJobSlip) {
-
             showAlert(
                 'ID Job Slip tidak ditemukan.',
                 'error'
             );
-
-
             return;
         }
 
-
-        const detail =
-            panel.querySelector(
-                '[data-detail]'
-            );
-
+        const detail = panel.querySelector('[data-detail]');
 
         if (!detail) {
             return;
         }
 
-
         button.disabled = true;
+        button.dataset.originalText = button.innerHTML;
+        button.innerHTML = 'Memuat...';
 
-
-        button.dataset.originalText =
-            button.innerHTML;
-
-
-        button.innerHTML =
-            'Memuat...';
-
-
-        detail.classList.remove(
-            'hidden'
-        );
-
+        detail.classList.remove('hidden');
 
         detail.innerHTML = `
             <div
@@ -589,63 +398,37 @@
                        dark:bg-slate-900
                        dark:ring-slate-800"
             >
-
-                <div
-                    class="text-sm text-slate-500"
-                >
+                <div class="text-sm text-slate-500">
                     Memuat detail Marshalling Yard...
                 </div>
-
             </div>
         `;
-
 
         detail.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
         });
 
-
         $.ajax({
-
             url: url,
-
             method: 'POST',
-
             data: {
-
-                id_job_slip:
-                    idJobSlip,
+                id_job_slip: idJobSlip,
             },
-
             headers: {
-
-                'X-CSRF-TOKEN':
-                    getCsrf(panel),
-
-                'Accept':
-                    'application/json',
+                'X-CSRF-TOKEN': getCsrf(panel),
+                'Accept': 'application/json',
             },
-
         })
-
             .done(function (response) {
+                detail.innerHTML = response.data || '';
 
-                detail.innerHTML =
-                    response.data || '';
-
-
-                bindDependentFields(
-                    detail
-                );
+                bindDependentFields(detail);
             })
-
             .fail(function (xhr) {
-
                 const message =
                     xhr.responseJSON?.message ||
                     'Gagal mengambil detail Marshalling Yard.';
-
 
                 detail.innerHTML = `
                     <div
@@ -654,101 +437,59 @@
                                bg-rose-50 px-4 py-5
                                text-sm text-rose-700"
                     >
-                        ${message}
+                        ${escapeHtml(message)}
                     </div>
                 `;
 
-
-                showAlert(
-                    message,
-                    'error'
-                );
+                showAlert(message, 'error');
             })
-
             .always(function () {
-
                 button.innerHTML =
-                    button.dataset.originalText ||
-                    'PROSES';
-
+                    button.dataset.originalText || 'PROSES';
 
                 button.disabled = false;
             });
     }
 
-
     /*
      * =========================================================
      * MOBILE DETAIL
      *
-     * Tombol "!" hanya membuka / menutup
-     * detail row mobile.
-     *
-     * Tidak menjalankan PROSES.
+     * Tombol "!" hanya membuka / menutup detail row mobile.
+     * Tidak menjalankan proses Marshalling Yard.
      * =========================================================
      */
 
-    function toggleMobileDetail(
-        panel,
-        button
-    ) {
-
-        const number =
-            button.dataset.yardMobileDetail;
-
+    function toggleMobileDetail(panel, button) {
+        const number = button.dataset.yardMobileDetail;
 
         if (!number) {
             return;
         }
 
-
-        const detail =
-            panel.querySelector(
-                `[data-yard-mobile-detail-row="${number}"]`
-            );
-
+        const detail = panel.querySelector(
+            `[data-yard-mobile-detail-row="${number}"]`
+        );
 
         if (!detail) {
             return;
         }
 
-
-        const isHidden =
-            detail.classList.contains(
-                'hidden'
-            );
-
+        const isHidden = detail.classList.contains('hidden');
 
         if (isHidden) {
+            detail.classList.remove('hidden');
 
-            detail.classList.remove(
-                'hidden'
-            );
-
-
-            button.setAttribute(
-                'aria-expanded',
-                'true'
-            );
-
+            button.setAttribute('aria-expanded', 'true');
 
             button.classList.add(
                 'bg-amber-100',
                 'dark:bg-amber-400/10'
             );
-
         } else {
+            detail.classList.add('hidden');
 
-            detail.classList.add(
-                'hidden'
-            );
-
-
-            button.setAttribute(
-                'aria-expanded',
-                'false'
-            );
-
+            button.setAttribute('aria-expanded', 'false');
 
             button.classList.remove(
                 'bg-amber-100',
@@ -757,72 +498,45 @@
         }
     }
 
-
     /*
      * =========================================================
      * DEPENDENT FIELDS
+     *
+     * Aktivitas 1 mengaktifkan field dependent grup 1.
+     * Aktivitas 2 mengaktifkan field dependent grup 2.
+     * Aktivitas 3 mengaktifkan field dependent grup 3.
      * =========================================================
      */
 
-    function bindDependentFields(
-        scope
-    ) {
+    function bindDependentFields(scope) {
+        $(scope)
+            .find('[data-activity]')
+            .off('change.marshallingyard')
+            .on('change.marshallingyard', function () {
+                const activity = String(this.value || '');
+                const group = this.dataset.activity;
+
+                const dependent = scope.querySelectorAll(
+                    `[data-dependent="${group}"]`
+                );
+
+                dependent.forEach(function (element) {
+                    const enabled =
+                        activity !== '' &&
+                        activity !== '0';
+
+                    element.disabled = !enabled;
+
+                    if (!enabled) {
+                        element.value = '';
+                    }
+                });
+            });
 
         $(scope)
             .find('[data-activity]')
-            .off(
-                'change.marshallingyard'
-            )
-            .on(
-                'change.marshallingyard',
-                function () {
-
-                    const activity =
-                        String(
-                            this.value || ''
-                        );
-
-
-                    const group =
-                        this.dataset.activity;
-
-
-                    const dependent =
-                        scope.querySelectorAll(
-                            `[data-dependent="${group}"]`
-                        );
-
-
-                    dependent.forEach(
-                        function (element) {
-
-                            const enabled =
-                                activity !== '' &&
-                                activity !== '0';
-
-
-                            element.disabled =
-                                !enabled;
-
-
-                            if (!enabled) {
-
-                                element.value =
-                                    '';
-                            }
-                        }
-                    );
-                }
-            );
-
-
-        $(scope)
-            .find('[data-activity]')
-            .trigger(
-                'change.marshallingyard'
-            );
+            .trigger('change.marshallingyard');
     }
-
 
     /*
      * =========================================================
@@ -830,83 +544,84 @@
      * =========================================================
      */
 
-    function storeData(
-        panel,
-        form
-    ) {
-
-        const url =
-            getUrl(
-                panel,
-                'storeUrl'
-            );
-
+    function storeData(panel, form) {
+        const url = getUrl(panel, 'storeUrl');
 
         if (!url) {
+            showAlert(
+                'URL penyimpanan Marshalling Yard tidak ditemukan.',
+                'error'
+            );
             return;
         }
 
+        const button = form.querySelector('[data-store-button]');
+        const formData = $(form).serialize();
 
-        const button =
-            form.querySelector(
-                '[data-store-button]'
-            );
-
-
-        const formData =
-            $(form).serialize();
-
-
-        setLoading(
-            button,
-            true,
-            'Menyimpan...'
-        );
-
+        setLoading(button, true, 'Menyimpan...');
 
         $.ajax({
-
             url: url,
-
             method: 'POST',
-
             data: formData,
-
             headers: {
-
-                'X-CSRF-TOKEN':
-                    getCsrf(panel),
-
-                'Accept':
-                    'application/json',
+                'X-CSRF-TOKEN': getCsrf(panel),
+                'Accept': 'application/json',
             },
-
         })
-
             .done(function (response) {
+                // Pastikan backend benar-benar mengembalikan success: true.
+                if (!response || response.success !== true) {
+                    showAlert(
+                        response?.message ||
+                            'Marshalling Yard gagal disimpan.',
+                        'error'
+                    );
+                    return;
+                }
 
                 showAlert(
                     response.message ||
-                    'Data Marshalling Yard berhasil divalidasi.',
+                        'Marshalling Yard berhasil disimpan.',
                     'success'
                 );
+
+                // Muat ulang daftar setelah proses berhasil.
+                loadInitialData(panel, 1);
+
+                // Tutup dan bersihkan detail setelah penyimpanan berhasil.
+                const detail = panel.querySelector('[data-detail]');
+
+                if (detail) {
+                    detail.classList.add('hidden');
+                    detail.innerHTML = '';
+                }
             })
-
             .fail(function (xhr) {
+                const response = xhr.responseJSON;
 
-                const message =
-                    xhr.responseJSON?.message ||
-                    'Gagal memproses Marshalling Yard.';
+                if (xhr.status === 422 && response?.errors) {
+                    const messages = Object.values(response.errors)
+                        .flat()
+                        .join('\n');
 
+                    showAlert(
+                        messages ||
+                            response.message ||
+                            'Data yang dikirim belum valid.',
+                        'error'
+                    );
+
+                    return;
+                }
 
                 showAlert(
-                    message,
+                    response?.message ||
+                        'Gagal memproses Marshalling Yard.',
                     'error'
                 );
             })
-
             .always(function () {
-
                 setLoading(
                     button,
                     false,
@@ -915,31 +630,20 @@
             });
     }
 
-
     /*
      * =========================================================
      * BIND PANEL
      * =========================================================
      */
 
-    function bindPanel(
-        panel
-    ) {
-
-        if (
-            !panel ||
-            panel.dataset.bound === '1'
-        ) {
+    function bindPanel(panel) {
+        if (!panel || panel.dataset.bound === '1') {
             return;
         }
 
-
         panel.dataset.bound = '1';
 
-
-        const namespace =
-            '.marshallingyard';
-
+        const namespace = '.marshallingyard';
 
         /*
          * -----------------------------------------------------
@@ -948,25 +652,16 @@
          */
 
         $(panel)
-            .off(
-                `submit${namespace}`,
-                '[data-search-form]'
-            )
+            .off(`submit${namespace}`, '[data-search-form]')
             .on(
                 `submit${namespace}`,
                 '[data-search-form]',
                 function (event) {
-
                     event.preventDefault();
 
-
-                    searchData(
-                        panel,
-                        this
-                    );
+                    searchData(panel, this);
                 }
             );
-
 
         /*
          * -----------------------------------------------------
@@ -975,36 +670,23 @@
          */
 
         $(panel)
-            .off(
-                `click${namespace}`,
-                '[data-reset-button]'
-            )
+            .off(`click${namespace}`, '[data-reset-button]')
             .on(
                 `click${namespace}`,
                 '[data-reset-button]',
                 function () {
-
-                    const input =
-                        panel.querySelector(
-                            '[name="no_cont"]'
-                        );
-
+                    const input = panel.querySelector(
+                        '[name="no_cont"]'
+                    );
 
                     if (input) {
-
                         input.value = '';
-
                         input.focus();
                     }
 
-
-                    loadInitialData(
-                        panel,
-                        1
-                    );
+                    loadInitialData(panel, 1);
                 }
             );
-
 
         /*
          * -----------------------------------------------------
@@ -1021,26 +703,17 @@
                 `click${namespace}.pagination`,
                 '[data-yard-page]',
                 function (event) {
-
                     event.preventDefault();
 
-
-                    const page =
-                        this.dataset.yardPage;
-
+                    const page = this.dataset.yardPage;
 
                     if (!page) {
                         return;
                     }
 
-
-                    loadPage(
-                        panel,
-                        page
-                    );
+                    loadPage(panel, page);
                 }
             );
-
 
         /*
          * -----------------------------------------------------
@@ -1059,40 +732,25 @@
                 `click${namespace}.mobileDetail`,
                 '[data-yard-mobile-detail]',
                 function () {
-
-                    toggleMobileDetail(
-                        panel,
-                        this
-                    );
+                    toggleMobileDetail(panel, this);
                 }
             );
-
 
         /*
          * -----------------------------------------------------
          * PROSES DETAIL
-         *
-         * FLOW EXISTING TETAP.
          * -----------------------------------------------------
          */
 
         $(panel)
-            .off(
-                `click${namespace}`,
-                '[data-detail-button]'
-            )
+            .off(`click${namespace}`, '[data-detail-button]')
             .on(
                 `click${namespace}`,
                 '[data-detail-button]',
                 function () {
-
-                    loadDetail(
-                        panel,
-                        this
-                    );
+                    loadDetail(panel, this);
                 }
             );
-
 
         /*
          * -----------------------------------------------------
@@ -1101,25 +759,16 @@
          */
 
         $(panel)
-            .off(
-                `submit${namespace}`,
-                '[data-store-form]'
-            )
+            .off(`submit${namespace}`, '[data-store-form]')
             .on(
                 `submit${namespace}`,
                 '[data-store-form]',
                 function (event) {
-
                     event.preventDefault();
 
-
-                    storeData(
-                        panel,
-                        this
-                    );
+                    storeData(panel, this);
                 }
             );
-
 
         /*
          * -----------------------------------------------------
@@ -1128,44 +777,26 @@
          */
 
         $(panel)
-            .off(
-                `click${namespace}`,
-                '[data-close-detail]'
-            )
+            .off(`click${namespace}`, '[data-close-detail]')
             .on(
                 `click${namespace}`,
                 '[data-close-detail]',
                 function () {
-
-                    const detail =
-                        panel.querySelector(
-                            '[data-detail]'
-                        );
-
+                    const detail = panel.querySelector('[data-detail]');
 
                     if (!detail) {
                         return;
                     }
 
-
-                    detail.classList.add(
-                        'hidden'
-                    );
-
-
-                    detail.innerHTML =
-                        '';
-
+                    detail.classList.add('hidden');
+                    detail.innerHTML = '';
 
                     window.scrollTo({
-
                         top: 0,
-
                         behavior: 'smooth',
                     });
                 }
             );
-
 
         /*
          * -----------------------------------------------------
@@ -1173,12 +804,8 @@
          * -----------------------------------------------------
          */
 
-        loadInitialData(
-            panel,
-            1
-        );
+        loadInitialData(panel, 1);
     }
-
 
     /*
      * =========================================================
@@ -1187,28 +814,20 @@
      */
 
     function initMarshallingYard() {
-
-        const panel =
-            getPanel();
-
+        const panel = getPanel();
 
         if (!panel) {
             return;
         }
 
-
         /*
          * Panel baru setelah Livewire navigation
-         * harus bisa dibind lagi.
+         * harus bisa di-bind lagi.
          */
         panel.dataset.bound = '';
 
-
-        bindPanel(
-            panel
-        );
+        bindPanel(panel);
     }
-
 
     /*
      * =========================================================
@@ -1216,13 +835,9 @@
      * =========================================================
      */
 
-    $(document).ready(
-        function () {
-
-            initMarshallingYard();
-        }
-    );
-
+    $(document).ready(function () {
+        initMarshallingYard();
+    });
 
     /*
      * =========================================================
@@ -1233,11 +848,9 @@
     document.addEventListener(
         'livewire:navigated',
         function () {
-
             initMarshallingYard();
         }
     );
-
 
     /*
      * =========================================================
@@ -1248,17 +861,10 @@
     document.addEventListener(
         'bos:reload-data',
         function () {
-
-            const panel =
-                getPanel();
-
+            const panel = getPanel();
 
             if (panel) {
-
-                loadInitialData(
-                    panel,
-                    1
-                );
+                loadInitialData(panel, 1);
             }
         }
     );

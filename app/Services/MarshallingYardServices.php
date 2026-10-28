@@ -13,30 +13,32 @@ class MarshallingYardServices
 
     /**
      * Mengambil daftar Job Slip Marshalling Yard.
-     * Menggunakan koneksi prod.
      */
-    public function getAllJobsYard(int $perPage = 10): LengthAwarePaginator
-    {
+    public function getAllJobsYard(
+        int $perPage = 10
+    ): LengthAwarePaginator {
         return $this->baseQueryYard()
             ->orderByDesc('A.ID_JOB_SLIP')
             ->paginate($perPage);
     }
 
     /**
-     * Mencari kontainer berdasarkan nomor kontainer.
+     * Mencari data berdasarkan nomor kontainer.
      */
     public function searchYard(
         string $keyword,
         int $perPage = 10
     ): LengthAwarePaginator {
         return $this->baseQueryYard()
-            ->where('A.NO_CONT', 'like', '%' . $keyword . '%')
+            ->where('A.NO_CONT', 'like', '%' . strtoupper(trim($keyword)) . '%')
             ->orderByDesc('A.ID_JOB_SLIP')
             ->paginate($perPage);
     }
 
     /**
-     * Query dasar daftar Marshalling Yard.
+     * Query daftar Marshalling Yard.
+     *
+     * Pembacaan menggunakan koneksi prod.
      */
     private function baseQueryYard()
     {
@@ -75,10 +77,11 @@ class MarshallingYardServices
     }
 
     /**
-     * Mengambil detail Job Slip.
+     * Mengambil detail Job Slip untuk form.
      */
-    public function getDetailYard(string|int $idJobSlip): ?object
-    {
+    public function getDetailYard(
+        string|int $idJobSlip
+    ): ?object {
         $sql = "
             SELECT DISTINCT
                 A.ID_JOB_SLIP,
@@ -127,7 +130,7 @@ class MarshallingYardServices
     }
 
     /**
-     * Referensi jenis pekerjaan.
+     * Referensi aktivitas pekerjaan.
      */
     public function getJobActivity()
     {
@@ -171,8 +174,10 @@ class MarshallingYardServices
     /**
      * Menyimpan proses Marshalling Yard.
      *
-     * Pembacaan: prod
-     * Penulisan: prod_new
+     * Catatan:
+     * - Data sumber dibaca dari prod.
+     * - Penulisan mengikuti implementasi Laravel saat ini, yaitu prod_new.
+     * - Pastikan seluruh tabel tujuan memang tersedia di prod_new.
      */
     public function storeMarshallingYard(array $data): array
     {
@@ -185,8 +190,8 @@ class MarshallingYardServices
 
         try {
             $this->logInfo(
-                'stack',
-                'Memulai proses penyimpanan Marshalling Yard.',
+                'marshalling-yard',
+                'Memulai penyimpanan Marshalling Yard.',
                 [
                     'id_job_slip' => $idJobSlip,
                     'no_cont' => $noCont,
@@ -195,11 +200,13 @@ class MarshallingYardServices
             );
 
             /*
-             * 1. Ambil Job Slip lama dari prod.
+             * 1. Ambil Job Slip lama.
              */
             $jobSlip = $readDb->table('t_job_slip')
                 ->where('ID_JOB_SLIP', $idJobSlip)
                 ->where('NO_CONT', $noCont)
+                ->where('STATUS', 'WAITING')
+                ->where('KD_STATUS', '20')
                 ->orderByDesc('ID_JOB_SLIP')
                 ->first();
 
@@ -207,18 +214,40 @@ class MarshallingYardServices
                 return [
                     'success' => false,
                     'status' => 'not_found',
-                    'message' => 'Data Job Slip tidak ditemukan.',
+                    'message' => 'Data Job Slip tidak ditemukan atau sudah diproses.',
                 ];
             }
 
             /*
-             * 2. Tentukan blok dan tier.
+             * 2. Validasi jenis pekerjaan.
              *
-             * Catatan:
-             * Legacy memakai $cekJumlah yang tidak didefinisikan.
-             * strlen() digunakan sebagai pengganti sementara.
-             * Pastikan aturan ini sesuai format lokasi sebenarnya.
+             * Marshalling Yard adalah jalur SPK 450.
+             * Nilai spk dari form divalidasi juga oleh Controller.
              */
+            if ((string) ($data['spk'] ?? '') !== '450') {
+                return [
+                    'success' => false,
+                    'status' => 'invalid_spk',
+                    'message' => 'Proses ini hanya berlaku untuk SPK 450.',
+                ];
+            }
+
+            /*
+             * 3. Pisahkan lokasi menjadi block dan tier.
+             *
+             * Legacy memakai variabel $cekJumlah yang tidak didefinisikan.
+             * strlen() digunakan di sini sebagai pengganti sementara.
+             * Aturan posisi karakter perlu dicocokkan dengan format lokasi
+             * aktual yang digunakan di sistem operasional.
+             */
+            if ($lokasiAkhir === '') {
+                return [
+                    'success' => false,
+                    'status' => 'invalid_location',
+                    'message' => 'Lokasi akhir wajib diisi.',
+                ];
+            }
+
             $cekJumlah = strlen($lokasiAkhir);
 
             if ($cekJumlah > 8) {
@@ -229,7 +258,7 @@ class MarshallingYardServices
 
             $nmTier = strtoupper(substr($lokasiAkhir, -1));
 
-            if ($lokasiAkhir === '' || $nmBlock === '' || $nmTier === '') {
+            if ($nmBlock === '' || $nmTier === '') {
                 return [
                     'success' => false,
                     'status' => 'invalid_location',
@@ -238,7 +267,7 @@ class MarshallingYardServices
             }
 
             /*
-             * 3. Periksa status pemeriksaan.
+             * 4. Pastikan pemeriksaan kontainer sudah DONE.
              */
             $pemeriksaan = $readDb->table('t_op_inspection')
                 ->where('NO_CONT', $noCont)
@@ -247,9 +276,9 @@ class MarshallingYardServices
                 ->first();
 
             if (!$pemeriksaan || $pemeriksaan->STATUS !== 'DONE') {
-                $this->logInfo(
-                    'stack',
-                    'Penyimpanan Marshalling Yard ditolak: pemeriksaan belum DONE.',
+                $this->logWarning(
+                    'marshalling-yard',
+                    'Penyimpanan ditolak karena pemeriksaan belum DONE.',
                     [
                         'id_job_slip' => $idJobSlip,
                         'no_cont' => $noCont,
@@ -265,7 +294,7 @@ class MarshallingYardServices
             }
 
             /*
-             * 4. Ambil tipe kontainer.
+             * 5. Ambil tipe kontainer.
              */
             $tipeKontainer = $readDb->table('t_cocostscont')
                 ->select('KD_CONT_TIPE')
@@ -282,7 +311,7 @@ class MarshallingYardServices
             }
 
             /*
-             * 5. Ambil data SPK.
+             * 6. Ambil SPK terbaru.
              */
             $spk = $readDb->table('t_spk')
                 ->where('NO_SPK', $jobSlip->NO_SPK)
@@ -300,16 +329,17 @@ class MarshallingYardServices
             $now = now()->format('Y-m-d H:i:s');
 
             /*
-             * Pertahankan nilai default dari kode legacy.
-             * Sesuaikan jika autentikasi Laravel menggunakan identitas lain.
+             * Pertahankan fallback sesuai implementasi sebelumnya.
+             * Idealnya identitas operator berasal dari autentikasi aplikasi.
              */
             $operatorLogin = session('USERLOGIN', 'admin2');
 
             /*
-             * 6. Perubahan data pada koneksi prod_new.
+             * 7. Simpan seluruh perubahan dalam satu transaksi prod_new.
              */
             $writeDb->transaction(function () use (
                 $writeDb,
+                $readDb,
                 $data,
                 $jobSlip,
                 $spk,
@@ -320,9 +350,9 @@ class MarshallingYardServices
                 $nmTier,
                 $now,
                 $operatorLogin
-            ) {
+            ): void {
                 /*
-                 * 6a. Update Job Slip lama.
+                 * Update Job Slip lama.
                  */
                 $writeDb->table('t_job_slip')
                     ->where('ID_JOB_SLIP', $idJobSlip)
@@ -336,7 +366,8 @@ class MarshallingYardServices
                     ]);
 
                 /*
-                 * 6b. Insert detail pekerjaan.
+                 * Insert detail pekerjaan.
+                 * Kolom mengikuti mapping legacy.
                  */
                 $writeDb->table('t_job_detail')->insert([
                     'ID_JOB_SLIP' => $idJobSlip,
@@ -362,9 +393,7 @@ class MarshallingYardServices
                 ]);
 
                 /*
-                 * 6c. Update lokasi dan status kontainer.
-                 *
-                 * Pastikan nama kolom TIER sesuai skema database.
+                 * Update lokasi dan status kontainer.
                  */
                 $writeDb->table('t_spk_cont')
                     ->where('NO_CONT', $noCont)
@@ -376,7 +405,7 @@ class MarshallingYardServices
                     ]);
 
                 /*
-                 * 6d. Update gate pass.
+                 * Update Gatepass.
                  */
                 $writeDb->table('t_gatepass')
                     ->where('NO_CONT', $noCont)
@@ -386,7 +415,7 @@ class MarshallingYardServices
                     ]);
 
                 /*
-                 * 6e. Insert Job Slip baru.
+                 * Buat Job Slip baru untuk proses berikutnya.
                  */
                 $writeDb->table('t_job_slip')->insert([
                     'NO_SPK' => $jobSlip->NO_SPK,
@@ -396,8 +425,10 @@ class MarshallingYardServices
                     'NO_CONT' => $noCont,
                     'NO_GATEPASS' => $jobSlip->NO_GATEPASS,
                     'TGL_GATEPASS' => $jobSlip->TGL_GATEPASS,
+
                     'LOKASI_AWAL' => $nmBlock,
                     'TIER_AWAL' => $nmTier,
+
                     'STATUS' => 'WAITING',
                     'KD_STATUS' => '20',
                     'WK_STATUS' => $now,
@@ -405,22 +436,19 @@ class MarshallingYardServices
                 ]);
 
                 /*
-                 * 6f. Catat pergerakan kontainer.
+                 * Catat pergerakan kontainer.
                  */
-                $writeDb->table('log_pergerakan_kontainer')
-                    ->insert([
-                        'NO_CONT' => $noCont,
-                        'NO_SPK' => $jobSlip->NO_SPK,
-                        'ACTIVITY' => 'MARSHALLING_YARD',
-                    ]);
+                $writeDb->table('log_pergerakan_kontainer')->insert([
+                    'NO_CONT' => $noCont,
+                    'NO_SPK' => $jobSlip->NO_SPK,
+                    'ACTIVITY' => 'MARSHALLING_YARD',
+                ]);
 
                 /*
-                 * 6g. Cari laporan di prod dan perbarui di prod_new.
-                 *
-                 * Asumsi: ID laporan di kedua database konsisten.
+                 * Perbarui report_behandle jika data laporan ditemukan.
+                 * Pencarian report mengikuti data sumber prod.
                  */
-                $report = $readDbReport = DB::connection('prod')
-                    ->table('report_behandle')
+                $report = $readDb->table('report_behandle')
                     ->where('NO_CONT', $noCont)
                     ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
                     ->where('RB1_NO_SPK', $jobSlip->NO_SPK)
@@ -428,6 +456,8 @@ class MarshallingYardServices
                     ->first();
 
                 if ($report) {
+                    $lokasiAfter = $nmBlock . '0' . $nmTier;
+
                     if (($data['job'] ?? '') === 'BEHANDLE 1') {
                         $writeDb->table('report_behandle')
                             ->where('ID', $report->ID)
@@ -435,7 +465,7 @@ class MarshallingYardServices
                             ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
                             ->update([
                                 'PB1_MARSHALLING_B1' => $now,
-                                'PB1_LOKASI_AFTER' => $nmBlock . '0' . $nmTier,
+                                'PB1_LOKASI_AFTER' => $lokasiAfter,
                             ]);
                     } else {
                         $writeDb->table('report_behandle')
@@ -444,19 +474,19 @@ class MarshallingYardServices
                             ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
                             ->update([
                                 'PB2_MARSHALLING_EX_B2' => $now,
-                                'PB2_LOKASI_AFTER' => $nmBlock . '0' . $nmTier,
+                                'PB2_LOKASI_AFTER' => $lokasiAfter,
                             ]);
                     }
                 }
             });
 
             $this->logInfo(
-                'stack',
+                'marshalling-yard',
                 'Penyimpanan Marshalling Yard berhasil.',
                 [
                     'id_job_slip' => $idJobSlip,
                     'no_cont' => $noCont,
-                    'lokasi_akhir' => $data['lokak'],
+                    'lokasi_akhir' => $lokasiAkhir,
                 ]
             );
 
@@ -466,8 +496,8 @@ class MarshallingYardServices
                 'message' => 'Marshalling Yard berhasil disimpan.',
             ];
         } catch (Throwable $e) {
-            $this->logInfo(
-                'stack',
+            $this->logError(
+                'marshalling-yard',
                 'Gagal menyimpan Marshalling Yard.',
                 [
                     'id_job_slip' => $idJobSlip,

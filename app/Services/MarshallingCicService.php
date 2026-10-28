@@ -12,22 +12,31 @@ class MarshallingCicService
 {
     use LogTraits;
 
+    /**
+     * Database lama: MySQL, database tpk_ipc.
+     * Digunakan untuk membaca data sumber dan job slip lama.
+     */
     protected function readDb()
     {
         return DB::connection('prod');
     }
 
+    /**
+     * Database baru: Oracle.
+     * Digunakan untuk proses tulis yang diarahkan ke database baru.
+     */
     protected function writeDb()
     {
         return DB::connection('prod_new');
     }
 
     /**
-     * Data monitoring Marshalling CIC.
+     * Mengambil daftar pekerjaan Marshalling CIC.
      */
     public function getAllJobs(int $perPage = 10): LengthAwarePaginator
     {
         $perPage = max(1, min($perPage, 50));
+
         $db = $this->readDb();
 
         $query = $db->table('t_job_slip as A')
@@ -79,7 +88,7 @@ class MarshallingCicService
     }
 
     /**
-     * Pencarian berdasarkan nomor container.
+     * Mencari pekerjaan berdasarkan nomor kontainer.
      */
     public function search(string $keyword)
     {
@@ -89,7 +98,7 @@ class MarshallingCicService
             return collect();
         }
 
-        return collect($this->readDb()->select(
+        $result = $this->readDb()->select(
             "SELECT DISTINCT
                 A.ID_JOB_SLIP,
                 A.NO_CONT,
@@ -113,6 +122,12 @@ class MarshallingCicService
                 AND A.LOKASI_AKHIR LIKE 'CIC%'
                 AND C.STATUS_CONT != 900
                 AND D.FL_ACTIVE = 'Y'
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM t_atensi_p2 P2
+                    WHERE P2.NO_CONT = C.NO_CONT
+                      AND P2.NO_SPK = B.NO_SPK
+                )
                 AND A.JENIS IN (
                     'BEHANDLE 1',
                     'BEHANDLE 2',
@@ -121,11 +136,13 @@ class MarshallingCicService
                 )
             ORDER BY A.ID_JOB_SLIP DESC",
             ['%' . $keyword . '%']
-        ));
+        );
+
+        return collect($result);
     }
 
     /**
-     * Detail job berdasarkan ID_JOB_SLIP.
+     * Mengambil detail pekerjaan berdasarkan ID job slip.
      */
     public function getDetail(int $idJobSlip)
     {
@@ -160,6 +177,12 @@ class MarshallingCicService
                 AND A.LOKASI_AKHIR LIKE 'CIC%'
                 AND C.STATUS_CONT != 900
                 AND D.FL_ACTIVE = 'Y'
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM t_atensi_p2 P2
+                    WHERE P2.NO_CONT = C.NO_CONT
+                      AND P2.NO_SPK = B.NO_SPK
+                )
                 AND A.JENIS IN (
                     'BEHANDLE 1',
                     'BEHANDLE 2',
@@ -173,7 +196,7 @@ class MarshallingCicService
     }
 
     /**
-     * Master jenis kegiatan.
+     * Master data jenis pekerjaan.
      */
     public function getJobActivities()
     {
@@ -183,7 +206,7 @@ class MarshallingCicService
     }
 
     /**
-     * Master alat.
+     * Master data alat.
      */
     public function getEquipments()
     {
@@ -193,7 +216,7 @@ class MarshallingCicService
     }
 
     /**
-     * Master truck.
+     * Master data truk.
      */
     public function getTrucks()
     {
@@ -203,7 +226,7 @@ class MarshallingCicService
     }
 
     /**
-     * Master operator.
+     * Master data operator.
      */
     public function getOperators()
     {
@@ -215,60 +238,61 @@ class MarshallingCicService
     }
 
     /**
-     * Simpan proses Marshalling CIC.
+     * Menyimpan proses Marshalling CIC.
      *
-     * Catatan:
-     * - Seluruh penulisan dilakukan pada prod_new.
-     * - Mekanisme ID_JOB_SLIP otomatis harus diverifikasi di Oracle.
-     * - Nama kolom harus sesuai skema database aktual.
+     * Job slip sumber dibaca dari MySQL (prod).
+     * Operasi tulis tetap menggunakan Oracle (prod_new),
+     * mengikuti pemisahan koneksi yang digunakan implementasi saat ini.
      */
     public function storeMarshallingCic(
         array $data,
         string $username
     ): array {
+        $readDb = $this->readDb();
         $db = $this->writeDb();
 
-        $idJobSlip = (int) ($data['idJobSlip'] ?? 0);
-        $noCont = strtoupper(trim((string) ($data['nocont'] ?? '')));
-        $lokasiAkhir = strtoupper(trim((string) ($data['lokak'] ?? '')));
-        $job = strtoupper(trim((string) ($data['job'] ?? '')));
-        $note = $data['note'] ?? null;
+        $idJobSlip = $data['idJobSlip'] ?? null;
 
-        if ($idJobSlip <= 0 || $noCont === '' || $lokasiAkhir === '') {
+        $noCont = strtoupper(
+            trim((string) ($data['nocont'] ?? ''))
+        );
+
+        $lokasiAkhir = strtoupper(
+            trim((string) ($data['lokak'] ?? ''))
+        );
+
+        $job = strtoupper(
+            trim((string) ($data['job'] ?? ''))
+        );
+
+        $note = $data['note'] ?? null;
+        $fumigasi = $data['fumigasi'] ?? null;
+
+        if (
+            empty($idJobSlip)
+            || $noCont === ''
+            || $lokasiAkhir === ''
+        ) {
             throw new RuntimeException(
-                'ID job slip, nomor container, dan lokasi akhir wajib diisi.'
+                'ID job slip, nomor kontainer, dan lokasi akhir wajib diisi.'
             );
         }
 
-        $db->beginTransaction();
+        /*
+         * Mengikuti legacy:
+         * NM_BLOCK = lima karakter pertama lokasi akhir.
+         * NM_TIER  = karakter terakhir lokasi akhir.
+         */
+        $nmBlock = strtoupper(substr($lokasiAkhir, 0, 5));
+        $nmTier = strtoupper(substr($lokasiAkhir, -1));
 
         try {
-            /*
-             * Ambil job slip lama.
-             */
-            $jobSlip = $db->table('t_job_slip')
-                ->where('ID_JOB_SLIP', $idJobSlip)
-                ->where('NO_CONT', $noCont)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$jobSlip) {
-                throw new RuntimeException(
-                    "Job slip {$idJobSlip} tidak ditemukan untuk container {$noCont}."
-                );
-            }
-
-            if (
-                $jobSlip->STATUS !== 'WAITING'
-                || (string) $jobSlip->KD_STATUS !== '20'
-            ) {
-                throw new RuntimeException(
-                    'Job slip sudah diproses atau statusnya tidak sesuai.'
-                );
-            }
+            $db->beginTransaction();
 
             /*
-             * Ambil tipe container.
+             * 1. Ambil tipe kontainer.
+             *
+             * Sesuai implementasi saat ini, tabel ini dibaca dari Oracle.
              */
             $container = $db->table('t_cocostscont')
                 ->where('NO_CONT', $noCont)
@@ -277,18 +301,114 @@ class MarshallingCicService
 
             if (!$container) {
                 throw new RuntimeException(
-                    "Data tipe container {$noCont} tidak ditemukan."
+                    "Kontainer {$noCont} tidak ditemukan di database Oracle."
                 );
             }
 
             /*
-             * Parsing lokasi mengikuti pola legacy.
+             * 2. Ambil job slip lama dari MySQL.
+             *
+             * PERBAIKAN:
+             * Sebelumnya query ini menggunakan $db, yaitu prod_new/Oracle.
+             * Sekarang menggunakan $readDb, yaitu prod/MySQL tpk_ipc.
              */
-            $nmBlock = strtoupper(substr($lokasiAkhir, 0, 5));
-            $nmTier = strtoupper(substr($lokasiAkhir, -1));
+            $jobSlip = $readDb->table('t_job_slip')
+                ->where('ID_JOB_SLIP', $idJobSlip)
+                ->where('NO_CONT', $noCont)
+                ->first();
+
+            if (!$jobSlip) {
+                throw new RuntimeException(
+                    "Job slip {$idJobSlip} untuk kontainer {$noCont} tidak ditemukan di MySQL tpk_ipc."
+                );
+            }
 
             /*
-             * Ambil SPK.
+             * 3. Insert detail pekerjaan ke Oracle.
+             */
+            $db->table('t_job_detail')->insert([
+                'ID_JOB_SLIP' => $idJobSlip,
+                'NO_SPK' => $jobSlip->NO_SPK,
+                'NO_CONT' => $noCont,
+                'JENIS' => 'CIC',
+                'TYPE_CONT' => $container->KD_CONT_TIPE,
+
+                'ID_PEKERJAAN' =>
+                    $data['jenispekerjaan1'] ?? null,
+
+                'ID_ALAT' =>
+                    $data['alat1'] ?? null,
+
+                'OPERATOR' =>
+                    $data['operator1'] ?? null,
+
+                'ID_PEKERJAAN_2' =>
+                    $data['jenispekerjaan2'] ?? null,
+
+                'ID_TRUCK' =>
+                    $data['truck1'] ?? null,
+
+                'OPERATOR_2' =>
+                    $data['operator2'] ?? null,
+
+                'ID_PEKERJAAN_3' =>
+                    $data['jenispekerjaan3'] ?? null,
+
+                'ID_ALAT_3' =>
+                    $data['alat3'] ?? null,
+
+                'OPERATOR_3' =>
+                    $data['operator3'] ?? null,
+
+                'ID_USER' => 'admin2',
+                'WK_STATUS' => now(),
+            ]);
+
+            /*
+             * 4. Update job slip.
+             *
+             * Tetap menggunakan Oracle dalam versi ini,
+             * sesuai alur tulis yang sudah ada.
+             */
+            $db->table('t_job_slip')
+                ->where('ID_JOB_SLIP', $idJobSlip)
+                ->update([
+                    'STATUS' => 'DONE',
+                    'STATUS_JOB' => 'Y',
+                    'STATUS_FUMIGASI' => $fumigasi,
+                    'NOTE' => $note,
+                    'KD_STATUS' => '50',
+                    'OPERATOR' => $username,
+                    'WK_STATUS' => now(),
+                ]);
+
+            /*
+             * 5. Query denah dan lokasi.
+             *
+             * Dipertahankan mengikuti legacy.
+             * Hasil query ini tidak digunakan dalam proses selanjutnya.
+             */
+            $db->table('t_denah_lapangan')
+                ->selectRaw(
+                    "NM_BLOK || '0' || LEVEL_4 AS DENAH"
+                )
+                ->where('NM_BLOK', $nmBlock)
+                ->where('LEVEL_4', $nmTier)
+                ->first();
+
+            $db->table('t_spk_cont')
+                ->where('LOKASI', $nmBlock)
+                ->where('TIER', $nmTier)
+                ->whereIn('STATUS_CONT', [
+                    '450',
+                    '460',
+                    '510',
+                    '530',
+                ])
+                ->get();
+
+            /*
+             * 6. Ambil SPK dari Oracle.
              */
             $spk = $db->table('t_spk')
                 ->where('NO_SPK', $jobSlip->NO_SPK)
@@ -297,54 +417,16 @@ class MarshallingCicService
 
             if (!$spk) {
                 throw new RuntimeException(
-                    "SPK {$jobSlip->NO_SPK} tidak ditemukan."
+                    "SPK {$jobSlip->NO_SPK} tidak ditemukan di Oracle."
                 );
             }
 
             /*
-             * Insert detail pekerjaan.
-             */
-            $db->table('t_job_detail')->insert([
-                'ID_JOB_SLIP' => $idJobSlip,
-                'NO_SPK' => $jobSlip->NO_SPK,
-                'NO_CONT' => $noCont,
-                'JENIS' => 'CIC',
-                'TYPE_CONT' => $container->KD_CONT_TIPE,
-                'ID_PEKERJAAN' => $data['jenispekerjaan1'] ?? null,
-                'ID_ALAT' => $data['alat1'] ?? null,
-                'OPERATOR' => $data['operator1'] ?? null,
-                'ID_PEKERJAAN_2' => $data['jenispekerjaan2'] ?? null,
-                'ID_TRUCK' => $data['truck1'] ?? null,
-                'OPERATOR_2' => $data['operator2'] ?? null,
-                'ID_PEKERJAAN_3' => $data['jenispekerjaan3'] ?? null,
-                'ID_ALAT_3' => $data['alat3'] ?? null,
-                'OPERATOR_3' => $data['operator3'] ?? null,
-                'ID_USER' => $username,
-                'WK_STATUS' => now(),
-            ]);
-
-            /*
-             * Update job slip lama.
+             * 7. Update lokasi dan status kontainer di Oracle.
              *
-             * Periksa nilai STATUS_FUMIGASI sesuai aturan legacy.
-             */
-            $db->table('t_job_slip')
-                ->where('ID_JOB_SLIP', $idJobSlip)
-                ->where('NO_CONT', $noCont)
-                ->update([
-                    'STATUS' => 'DONE',
-                    'STATUS_JOB' => 'Y',
-                    'STATUS_FUMIGASI' => $data['fumigasi'] ?: null,
-                    'NOTE' => $note,
-                    'KD_STATUS' => '50',
-                    'OPERATOR' => $username,
-                    'WK_STATUS' => now(),
-                ]);
-
-            /*
-             * Update lokasi/status container.
-             *
-             * Pastikan nama kolom TIER sesuai skema Oracle.
+             * Periksa skema tabel: kode legacy yang diberikan
+             * menggunakan nama kolom 'TIER ' dengan spasi di belakang.
+             * Di sini tetap menggunakan 'TIER' seperti kode Laravel awal.
              */
             $db->table('t_spk_cont')
                 ->where('NO_CONT', $noCont)
@@ -356,17 +438,17 @@ class MarshallingCicService
                 ]);
 
             /*
-             * Insert job slip baru.
+             * 8. Insert job slip baru ke Oracle.
              *
-             * ID_JOB_SLIP sengaja tidak diisi sesuai alur legacy.
-             * Database harus memiliki mekanisme ID otomatis.
+             * ID_JOB_SLIP tidak disertakan karena mekanisme sequence,
+             * trigger, atau default kolom Oracle belum dikonfirmasi.
              */
             $db->table('t_job_slip')->insert([
                 'NO_SPK' => $jobSlip->NO_SPK,
                 'TGL_SPK' => $jobSlip->TGL_SPK,
                 'JNS_DOK' => $jobSlip->JNS_DOK,
                 'NO_DOK' => $jobSlip->NO_DOK,
-                'NO_CONT' => $noCont,
+                'NO_CONT' => $jobSlip->NO_CONT,
                 'NO_GATEPASS' => $jobSlip->NO_GATEPASS,
                 'TGL_GATEPASS' => $jobSlip->TGL_GATEPASS,
                 'LOKASI_AWAL' => $nmBlock,
@@ -379,11 +461,11 @@ class MarshallingCicService
             ]);
 
             /*
-             * Verifikasi job slip baru.
+             * 9. Cari job slip baru.
              *
-             * Ini masih mengandalkan kombinasi kolom untuk menemukan
-             * record baru. Untuk lingkungan konkuren, gunakan ID hasil
-             * sequence/trigger Oracle jika mekanismenya sudah diketahui.
+             * Pencarian kombinasi field ini mengikuti implementasi awal.
+             * Untuk transaksi paralel, mekanisme pengambilan ID hasil
+             * insert perlu disesuaikan dengan sequence/trigger Oracle.
              */
             $newJobSlip = $db->table('t_job_slip')
                 ->where('NO_SPK', $jobSlip->NO_SPK)
@@ -399,12 +481,13 @@ class MarshallingCicService
 
             if (!$newJobSlip) {
                 throw new RuntimeException(
-                    'Job slip baru tidak ditemukan. Periksa sequence, trigger, atau default ID_JOB_SLIP pada Oracle.'
+                    'Job slip baru tidak ditemukan setelah INSERT. ' .
+                    'Periksa sequence, trigger, atau default ID_JOB_SLIP di Oracle.'
                 );
             }
 
             /*
-             * Log pergerakan container.
+             * 10. Insert log pergerakan kontainer ke Oracle.
              */
             $db->table('log_pergerakan_kontainer')->insert([
                 'NO_CONT' => $noCont,
@@ -413,7 +496,7 @@ class MarshallingCicService
             ]);
 
             /*
-             * Catat operasi.
+             * 11. Insert data operasi ke Oracle.
              */
             $db->table('t_operation_new')->insert([
                 'ID_SPK' => $spk->ID,
@@ -424,7 +507,7 @@ class MarshallingCicService
             ]);
 
             /*
-             * Update report behandle bila record ditemukan.
+             * 12. Ambil laporan behandle terbaru dari Oracle.
              */
             $report = $db->table('report_behandle')
                 ->where('NO_CONT', $noCont)
@@ -433,6 +516,9 @@ class MarshallingCicService
                 ->orderByDesc('ID')
                 ->first();
 
+            /*
+             * Update laporan jika ditemukan, mengikuti legacy.
+             */
             if ($report) {
                 if ($job === 'BEHANDLE 1') {
                     $db->table('report_behandle')
@@ -455,6 +541,9 @@ class MarshallingCicService
                 }
             }
 
+            /*
+             * Commit transaksi Oracle.
+             */
             $db->commit();
 
             $result = [
@@ -467,9 +556,11 @@ class MarshallingCicService
             ];
 
             $this->logInfo(
-                'marshalling_cic',
+                'marshalling-cic',
                 'Transaksi Marshalling CIC berhasil.',
-                $result + ['username' => $username]
+                $result + [
+                    'username' => $username,
+                ]
             );
 
             return $result;
@@ -479,8 +570,8 @@ class MarshallingCicService
             }
 
             $this->logError(
-                'marshalling_cic',
-                'Transaksi Marshalling CIC gagal dan di-rollback.',
+                'marshalling-cic',
+                'Transaksi Marshalling CIC gagal dan transaksi Oracle di-rollback.',
                 [
                     'id_job_slip' => $idJobSlip,
                     'no_cont' => $noCont,
