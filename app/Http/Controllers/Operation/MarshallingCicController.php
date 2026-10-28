@@ -218,7 +218,7 @@ class MarshallingCicController extends Controller
             if ((string) $validated['spk'] !== '460') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Proses ini hanya berlaku untuk SPK 460.',
+                    'message' => 'Container ini belum dilakukan job slip untuk stacking CIC.',
                 ], 422);
             }
 
