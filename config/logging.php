@@ -140,6 +140,13 @@ return [
             'level' => 'info',
             'days' => 7
         ],
+
+        'behandlein' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/behandlein.log'),
+            'level' => 'info',
+            'days' => 7
+        ],
     ],
 
 ];

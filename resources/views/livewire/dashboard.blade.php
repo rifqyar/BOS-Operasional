@@ -87,11 +87,11 @@
                         <h2 class="text-base font-semibold">Menu Handheld</h2>
                         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Akses operasi utama lapangan</p>
                     </div>
-                    <button type="button" wire:click="$refresh" data-reload-handheld
+                    {{-- <button type="button" wire:click="$refresh" data-reload-handheld
                         class="flex size-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
                         aria-label="Muat ulang data handheld">
                         <flux:icon.arrow-path class="size-5" />
-                    </button>
+                    </button> --}}
                 </div>
 
                 <div @class([

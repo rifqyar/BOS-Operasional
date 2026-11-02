@@ -10,9 +10,10 @@
     $selectedUkuran = $rows->UKR_CONT ?? '';
     $selectedTipe = strtoupper(trim($rows->TIPE_CONT ?? ''));
     $lokasiVal = trim($rows->LOKASI ?? '');
+    $lokasiVal .= !empty($rows->TIER) ? '0'.$rows->TIER : '';
 @endphp
 
-<form data-send-form class="p-4 sm:p-6 space-y-6">
+<form data-store-form class="p-4 sm:p-6 space-y-6">
     @csrf
 
     {{-- HIDDEN FIELDS --}}
@@ -89,7 +90,7 @@
                     class="h-11 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white">
                     <option value="">-- Pilih Kondisi Kontainer --</option>
                     @foreach ($containerConditionsList as $row)
-                        <option value="{{ $row->ID }}">{{ $row->KONDISI }}</option>
+                        <option value="{{ $row->id }}">{{ $row->kondisi }}</option>
                     @endforeach
                 </select>
             </label>
@@ -105,8 +106,8 @@
                         <option value="">-- Pilih Truk --</option>
                     @endif
                     @foreach ($trucksList as $rownya)
-                        @if ($rownya->NO_TRUCK !== $selectedFlat)
-                            <option value="{{ $rownya->NO_TRUCK }}">{{ $rownya->NO_TRUCK }}</option>
+                        @if ($rownya->no_truck !== $selectedFlat)
+                            <option value="{{ $rownya->no_truck }}">{{ $rownya->no_truck }}</option>
                         @endif
                     @endforeach
                 </select>

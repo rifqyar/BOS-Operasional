@@ -58,7 +58,7 @@
     /* ------------------------------------------------------------------ */
 
     const bindCoreHandlers = () => {
-        setupAjaxCsrf();
+        // setupAjaxCsrf();
 
         $(document).off('click.bosReloadHandheld', '[data-reload-handheld]');
         $(document).on('click.bosReloadHandheld', '[data-reload-handheld]', function () {

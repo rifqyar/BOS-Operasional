@@ -1,4 +1,4 @@
-<div class="mx-auto mb-5 max-w-3xl"
+<div class="mb-5"
     wire:ignore
     data-panel
     data-panel-name="pickup"
