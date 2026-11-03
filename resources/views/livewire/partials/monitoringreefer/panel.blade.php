@@ -27,7 +27,6 @@
 
     </div>
 
-
     {{-- Search --}}
     <form
         data-search-form
@@ -41,6 +40,7 @@
 
         <div class="mt-2 flex flex-col gap-3 sm:flex-row">
 
+            {{-- Input Search --}}
             <div class="relative flex-1">
 
                 <flux:icon.magnifying-glass
@@ -58,6 +58,7 @@
 
             </div>
 
+            {{-- Search Button --}}
             <button
                 type="submit"
                 data-search-button
@@ -69,10 +70,21 @@
 
             </button>
 
+            {{-- Reset Button --}}
+            <button
+                type="reset"
+                data-reset-button
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-white/10">
+
+                <flux:icon.arrow-path class="size-4" />
+
+                RESET
+
+            </button>
+
         </div>
 
     </form>
-
 
     {{-- Form hasil pencarian --}}
     <div

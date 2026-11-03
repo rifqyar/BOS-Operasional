@@ -43,16 +43,33 @@
                     class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white">
             </div>
 
-            <button
-                type="submit"
-                data-search-button
-                class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-slate-900">
+            <div class="flex gap-2">
+                <button
+                    type="submit"
+                    data-search-button
+                    class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-slate-900">
 
-                <flux:icon.magnifying-glass class="size-4" />
-                Search
-            </button>
+                    <flux:icon.magnifying-glass class="size-4" />
+                    Search
+                </button>
+
+                <button
+                    type="button"
+                    data-reset-button
+                    class="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-white/10 dark:focus:ring-offset-slate-900">
+
+                    <flux:icon.arrow-path class="size-4" />
+                    Reset
+                </button>
+            </div>
         </div>
     </form>
+
+    <div
+        data-message
+        role="alert"
+        class="mt-3 hidden rounded-md p-3 text-sm">
+    </div>
 
     <div
         class="mt-4"

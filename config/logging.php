@@ -123,6 +123,13 @@ return [
             'days' => 7,
         ],
 
+        'hold' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/hold.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
        
         'marshalling-cic' => [
             'driver' => 'daily',
@@ -149,6 +156,41 @@ return [
         'plugreefer' => [
             'driver' => 'daily',
             'path' => storage_path('logs/plugreefer.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'monitoring-reefer' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/monitoring-reefer.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'delivery' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/delivery.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'inspection-out' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/inspection-out.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'on_chassis' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/on_chassis.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'copyyard' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/copyyard.log'),
             'level' => 'info',
             'days' => 7,
         ],

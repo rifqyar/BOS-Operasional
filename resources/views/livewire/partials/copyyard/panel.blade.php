@@ -1,96 +1,78 @@
-<div
-    class="mx-auto mb-5 w-full max-w-4xl"
+<div class="mx-auto mb-5 max-w-3xl"
     data-panel
     data-panel-name="copyyard"
     data-search-url="{{ route('copyyard.search') }}"
     data-store-url="{{ route('copyyard.store') }}"
     data-csrf-token="{{ csrf_token() }}">
 
-    {{-- ============================================================
-         HEADER
-    ============================================================= --}}
-
-    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-        <a
-            href="{{ route('dashboard') }}"
+    <div class="mb-4 flex items-center justify-between gap-3">
+        <a href="{{ route('dashboard') }}"
             wire:navigate
             data-back-menu
-            class="inline-flex min-h-10 w-fit items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10">
-
+            class="inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10">
             <flux:icon.arrow-left class="size-4" />
-
             Menu Handheld
         </a>
 
-        <span
-            class="w-fit rounded-md bg-sky-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-300">
-
+        <span class="rounded-sm bg-sky-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
             Copy Yard
-
         </span>
-
     </div>
-
-
-    {{-- ============================================================
-         SEARCH
-    ============================================================= --}}
 
     <form
         data-search-form
-        class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950">
+        class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
 
         <label
-            for="copyyard-search"
+            for="copyyard-no-container"
             class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-
-            No Container
-
+            Nomor Container
         </label>
 
-        <div class="mt-2 flex flex-col gap-3 sm:flex-row">
-
-            <div class="relative flex-1">
-
+        <div class="mt-2 grid gap-3 sm:grid-cols-[1fr_auto]">
+            <div class="relative">
                 <flux:icon.magnifying-glass
                     class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
 
                 <input
-                    id="copyyard-search"
+                    id="copyyard-no-container"
                     name="search_cont"
                     type="text"
                     autocomplete="off"
-                    autofocus
+                    placeholder="SEARCH NO. CONTAINER"
+                    maxlength="30"
                     required
-                    placeholder="SEARCH NO CONTAINER"
-                    class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500">
-
+                    class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white">
             </div>
 
-            <button
-                type="submit"
-                data-search-button
-                class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-6 text-sm font-bold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-70">
+            <div class="flex gap-2">
+                <button
+                    type="submit"
+                    data-search-button
+                    class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70">
+                    <flux:icon.magnifying-glass class="size-4" />
+                    Search
+                </button>
 
-                <flux:icon.magnifying-glass class="size-4" />
-
-                SEARCH
-
-            </button>
-
+                <button
+                    type="button"
+                    data-reset-button
+                    class="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-white/10">
+                    <flux:icon.arrow-path class="size-4" />
+                    Reset
+                </button>
+            </div>
         </div>
-
     </form>
 
-
-    {{-- ============================================================
-         CONTENT
-    ============================================================= --}}
-
     <div
-        data-content
-        class="mt-5">
+        data-message
+        role="alert"
+        class="mt-3 hidden rounded-md p-3 text-sm">
     </div>
 
+    <div
+        class="mt-4"
+        data-content>
+    </div>
 </div>

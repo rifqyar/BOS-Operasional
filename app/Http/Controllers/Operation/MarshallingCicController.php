@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Operation;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\LogTraits;
 use App\Services\MarshallingCicService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -257,35 +259,202 @@ class MarshallingCicController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // 1. VALIDASI INPUT
             $validated = $request->validate([
-                'idJobSlip' => ['required', 'integer'],
-                'spk' => ['required', 'string'],
-                'nocont' => ['required', 'string', 'max:20'],
-                'ukrcont' => ['nullable', 'string', 'max:20'],
-                'lokaw' => ['nullable', 'string', 'max:50'],
-                'lokak' => ['required', 'string', 'max:50'],
-                'job' => ['required', 'string', 'max:100'],
-                'note' => ['nullable', 'string'],
-                'fumigasi' => ['nullable', 'string', 'max:10'],
-                'respon' => ['nullable', 'string', 'max:255'],
-                'jenispekerjaan1' => ['nullable', 'string', 'max:50'],
-                'alat1' => ['nullable', 'string', 'max:50'],
-                'operator1' => ['nullable', 'string', 'max:100'],
-                'jenispekerjaan2' => ['nullable', 'string', 'max:50'],
-                'truck1' => ['nullable', 'string', 'max:50'],
-                'operator2' => ['nullable', 'string', 'max:100'],
-                'jenispekerjaan3' => ['nullable', 'string', 'max:50'],
-                'alat3' => ['nullable', 'string', 'max:50'],
-                'operator3' => ['nullable', 'string', 'max:100'],
+                'idJobSlip' => [
+                    'bail',
+                    'required',
+                    'integer',
+                    'min:1',
+                ],
+
+                'spk' => [
+                    'bail',
+                    'required',
+                    'string',
+                    'max:20',
+                ],
+
+                'nocont' => [
+                    'bail',
+                    'required',
+                    'string',
+                    'max:20',
+                ],
+
+                'ukrcont' => [
+                    'nullable',
+                    'string',
+                    'max:20',
+                ],
+
+                'lokaw' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                ],
+
+                'lokak' => [
+                    'bail',
+                    'required',
+                    'string',
+                    'max:50',
+                ],
+
+                'job' => [
+                    'bail',
+                    'required',
+                    'string',
+                    'max:100',
+                ],
+
+                'note' => [
+                    'nullable',
+                    'string',
+                    'max:500',
+                ],
+
+                'fumigasi' => [
+                    'nullable',
+                    'string',
+                    'max:10',
+                ],
+
+                'respon' => [
+                    'nullable',
+                    'string',
+                    'max:255',
+                ],
+
+                /*
+                 * PEKERJAAN 1
+                 * Jika jenis pekerjaan = 0 (Tidak Ada Aktivitas),
+                 * alat dan operator boleh kosong.
+                 * Jika memilih pekerjaan lain, keduanya wajib diisi.
+                 */
+                'jenispekerjaan1' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                ],
+
+                'alat1' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                    Rule::requiredIf(
+                        fn () => $request->filled('jenispekerjaan1')
+                            && (string) $request->input('jenispekerjaan1') !== '0'
+                    ),
+                ],
+
+                'operator1' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                    Rule::requiredIf(
+                        fn () => $request->filled('jenispekerjaan1')
+                            && (string) $request->input('jenispekerjaan1') !== '0'
+                    ),
+                ],
+
+                /*
+                 * PEKERJAAN 2
+                 * Jika jenis pekerjaan = 0 (Tidak Ada Aktivitas),
+                 * truk dan operator boleh kosong.
+                 * Jika memilih pekerjaan lain, keduanya wajib diisi.
+                 */
+                'jenispekerjaan2' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                ],
+
+                'truck1' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                    Rule::requiredIf(
+                        fn () => $request->filled('jenispekerjaan2')
+                            && (string) $request->input('jenispekerjaan2') !== '0'
+                    ),
+                ],
+
+                'operator2' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                    Rule::requiredIf(
+                        fn () => $request->filled('jenispekerjaan2')
+                            && (string) $request->input('jenispekerjaan2') !== '0'
+                    ),
+                ],
+
+                /*
+                 * PEKERJAAN 3
+                 * Jika jenis pekerjaan = 0 (Tidak Ada Aktivitas),
+                 * alat dan operator boleh kosong.
+                 * Jika memilih pekerjaan lain, keduanya wajib diisi.
+                 */
+                'jenispekerjaan3' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                ],
+
+                'alat3' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                    Rule::requiredIf(
+                        fn () => $request->filled('jenispekerjaan3')
+                            && (string) $request->input('jenispekerjaan3') !== '0'
+                    ),
+                ],
+
+                'operator3' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                    Rule::requiredIf(
+                        fn () => $request->filled('jenispekerjaan3')
+                            && (string) $request->input('jenispekerjaan3') !== '0'
+                    ),
+                ],
+            ], [
+                'idJobSlip.required' => 'ID Job Slip wajib tersedia.',
+                'spk.required' => 'SPK wajib tersedia.',
+                'nocont.required' => 'Nomor kontainer wajib tersedia.',
+                'lokak.required' => 'Lokasi akhir wajib diisi.',
+                'job.required' => 'Pekerjaan wajib tersedia.',
+
+                'alat1.required' => 'Alat untuk Jenis Pekerjaan 1 wajib dipilih.',
+                'operator1.required' => 'Operator untuk Jenis Pekerjaan 1 wajib diisi.',
+
+                'truck1.required' => 'Truk untuk Jenis Pekerjaan 2 wajib dipilih.',
+                'operator2.required' => 'Operator untuk Jenis Pekerjaan 2 wajib diisi.',
+
+                'alat3.required' => 'Alat untuk Jenis Pekerjaan 3 wajib dipilih.',
+                'operator3.required' => 'Operator untuk Jenis Pekerjaan 3 wajib diisi.',
             ]);
 
+            // 2. VALIDASI ATURAN SPK
             if ((string) $validated['spk'] !== '460') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Container ini belum dilakukan job slip untuk stacking CIC.',
+                    'message' => 'SPK tidak valid untuk proses Marshalling CIC.',
+                    'errors' => [
+                        'spk' => [
+                            'SPK yang diterima harus 460.',
+                        ],
+                    ],
+                    'received' => [
+                        'spk' => $validated['spk'],
+                    ],
                 ], 422);
             }
 
+            // 3. VALIDASI SESSION LOGIN
             $username = session('USERLOGIN');
 
             if (!$username && auth()->check()) {
@@ -299,15 +468,22 @@ class MarshallingCicController extends Controller
             if (!$username) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Session login tidak ditemukan. Silakan login kembali.',
+                    'message' => 'Session login tidak ditemukan.',
+                    'errors' => [
+                        'session' => [
+                            'Username tidak ditemukan. Silakan login kembali.',
+                        ],
+                    ],
                 ], 401);
             }
 
+            // 4. PROSES PENYIMPANAN
             $result = $this->marshallingCicService->storeMarshallingCic(
                 $validated,
                 (string) $username
             );
 
+            // 5. LOG BERHASIL
             $this->logInfo(
                 'marshalling-cic',
                 'Marshalling CIC berhasil disimpan.',
@@ -323,8 +499,10 @@ class MarshallingCicController extends Controller
                 'success' => true,
                 'message' => 'Marshalling CIC berhasil disimpan.',
                 'data' => $result,
-            ]);
+            ], 200);
+
         } catch (ValidationException $e) {
+            // 6. ERROR VALIDASI
             $this->logWarning(
                 'marshalling-cic',
                 'Validasi penyimpanan Marshalling CIC gagal.',
@@ -337,34 +515,55 @@ class MarshallingCicController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Data Marshalling CIC tidak valid.',
+                'message' => 'Data Marshalling CIC belum lengkap atau tidak valid.',
                 'errors' => $e->errors(),
             ], 422);
-        } catch (Throwable $e) {
-            $exceptionCode = (int) $e->getCode();
 
-            $statusCode = in_array($exceptionCode, [400, 401, 403, 404, 409, 422], true)
-                ? $exceptionCode
-                : 500;
-
+        } catch (Exception $e) {
+            // 7. LOG DETAIL ERROR UNTUK DEBUGGING
             $this->logError(
                 'marshalling-cic',
                 'Marshalling CIC gagal disimpan.',
                 [
                     'id_job_slip' => $request->input('idJobSlip'),
                     'no_cont' => $request->input('nocont'),
+                    'username' => session('USERLOGIN'),
+                    'exception' => get_class($e),
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
+                    'code' => $e->getCode(),
+                    'trace' => $e->getTraceAsString(),
                 ]
             );
 
+            // 8. PENANGANAN ERROR ID_PEKERJAAN DARI ORACLE
+            $errorMessage = $e->getMessage();
+
+            if (
+                str_contains($errorMessage, 'ORA-01400') &&
+                str_contains($errorMessage, 'T_JOB_DETAIL') &&
+                str_contains($errorMessage, 'ID_PEKERJAAN')
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data Marshalling CIC belum lengkap.',
+                    'errors' => [
+                        'jenispekerjaan1' => [
+                            'Jenis Pekerjaan 1 belum terisi dengan benar. ' .
+                            'Silakan periksa pilihan jenis pekerjaan pertama.',
+                        ],
+                    ],
+                ], 422);
+            }
+
+            // 9. ERROR LAIN: JANGAN TAMPILKAN DETAIL DATABASE KE PENGGUNA
             return response()->json([
                 'success' => false,
-                'message' => $statusCode === 500
-                    ? 'Terjadi kesalahan saat menyimpan Marshalling CIC.'
-                    : $e->getMessage(),
-            ], $statusCode);
+                'message' => 'Terjadi kesalahan saat menyimpan Marshalling CIC. ' .
+                    'Silakan periksa data dan coba kembali.',
+                'error' => $errorMessage,
+            ], 500);
         }
     }
 }
