@@ -1,10 +1,10 @@
 <?php
-
 namespace App\Http\Controllers\Operation;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\LogTraits;
 use App\Services\MarshallingYardServices;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,17 +20,17 @@ class MarshallingYardController extends Controller
     }
 
     /**
-     * Initial data Marshalling Yard.
-     *
-     * Default:
-     * - 10 data per page
-     * - maksimal 50 data per page
+     * Mengambil daftar Job Slip Marshalling Yard.
      */
     public function indexData(Request $request): JsonResponse
     {
         try {
-            $perPage = (int) $request->input('per_page', 10);
-            $perPage = max(1, min($perPage, 50));
+            $validated = $request->validate([
+                'page' => ['nullable', 'integer', 'min:1'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            ]);
+
+            $perPage = (int) ($validated['per_page'] ?? 10);
 
             $rows = $this->marshallingYardServices
                 ->getAllJobsYard($perPage);
@@ -52,13 +52,13 @@ class MarshallingYardController extends Controller
                     'to' => $rows->lastItem(),
                 ],
             ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            $this->logInfo(
-                'stack',
-                'Gagal mengambil data Marshalling Yard.',
-                [
-                    'error' => $e->getMessage(),
-                ]
+            $this->logError(
+                'marshalling-yard',
+                'Gagal mengambil daftar Marshalling Yard.',
+                ['error' => $e->getMessage()]
             );
 
             return response()->json([
@@ -69,28 +69,15 @@ class MarshallingYardController extends Controller
     }
 
     /**
-     * Search berdasarkan No Container.
+     * Mencari data berdasarkan nomor kontainer.
      */
     public function search(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'no_cont' => [
-                    'required',
-                    'string',
-                    'max:20',
-                ],
-                'page' => [
-                    'nullable',
-                    'integer',
-                    'min:1',
-                ],
-                'per_page' => [
-                    'nullable',
-                    'integer',
-                    'min:1',
-                    'max:50',
-                ],
+                'no_cont' => ['required', 'string', 'max:20'],
+                'page' => ['nullable', 'integer', 'min:1'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             ]);
 
             $keyword = strtoupper(trim($validated['no_cont']));
@@ -98,78 +85,72 @@ class MarshallingYardController extends Controller
             if ($keyword === '') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nomor Container wajib diisi.',
+                    'message' => 'Nomor kontainer wajib diisi.',
                 ], 422);
             }
 
             $perPage = (int) ($validated['per_page'] ?? 10);
-            $perPage = max(1, min($perPage, 50));
 
-            $rows = $this->marshallingYardServices
-                ->searchYard($keyword, $perPage);
+            $rows = $this->marshallingYardServices->searchYard(
+                $keyword,
+                $perPage
+            );
 
             $view = view(
                 'livewire.partials.marshallingyard.table',
                 compact('rows')
             )->render();
 
+            $pagination = [
+                'current_page' => $rows->currentPage(),
+                'last_page' => $rows->lastPage(),
+                'per_page' => $rows->perPage(),
+                'total' => $rows->total(),
+                'from' => $rows->firstItem(),
+                'to' => $rows->lastItem(),
+            ];
+
             if ($rows->isEmpty()) {
                 return response()->json([
                     'success' => false,
                     'data' => $view,
                     'message' => 'Data Marshalling Yard tidak ditemukan.',
-                    'pagination' => [
-                        'current_page' => $rows->currentPage(),
-                        'last_page' => $rows->lastPage(),
-                        'per_page' => $rows->perPage(),
-                        'total' => $rows->total(),
-                        'from' => $rows->firstItem(),
-                        'to' => $rows->lastItem(),
-                    ],
+                    'pagination' => $pagination,
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'data' => $view,
-                'pagination' => [
-                    'current_page' => $rows->currentPage(),
-                    'last_page' => $rows->lastPage(),
-                    'per_page' => $rows->perPage(),
-                    'total' => $rows->total(),
-                    'from' => $rows->firstItem(),
-                    'to' => $rows->lastItem(),
-                ],
+                'pagination' => $pagination,
             ]);
         } catch (ValidationException $e) {
             throw $e;
         } catch (Throwable $e) {
-            $this->logInfo(
-                'stack',
-                'Gagal mencari Marshalling Yard.',
+            $this->logError(
+                'marshalling-yard',
+                'Gagal mencari data Marshalling Yard.',
                 [
+                    'no_cont' => $request->input('no_cont'),
                     'error' => $e->getMessage(),
                 ]
             );
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mencari Marshalling Yard.',
+                'message' => 'Terjadi kesalahan saat mencari data Marshalling Yard.',
             ], 500);
         }
     }
 
     /**
-     * Detail ketika tombol PROSES diklik.
+     * Mengambil detail untuk form proses Marshalling Yard.
      */
     public function detail(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'id_job_slip' => [
-                    'required',
-                    'integer',
-                ],
+                'id_job_slip' => ['required', 'integer', 'min:1'],
             ]);
 
             $row = $this->marshallingYardServices
@@ -214,9 +195,9 @@ class MarshallingYardController extends Controller
             ]);
         } catch (ValidationException $e) {
             throw $e;
-        } catch (Throwable $e) {
-            $this->logInfo(
-                'stack',
+        } catch (Exception $e) {
+            $this->logError(
+                'marshalling-yard',
                 'Gagal mengambil detail Marshalling Yard.',
                 [
                     'id_job_slip' => $request->input('id_job_slip'),
@@ -227,129 +208,43 @@ class MarshallingYardController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil detail Marshalling Yard.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Menyimpan proses Marshalling Yard.
+     *
+     * Marshalling Yard hanya menerima jalur SPK 450.
      */
     public function store(Request $request): JsonResponse
     {
-        /*
-         * Validasi di luar try-catch.
-         * Laravel akan menangani kegagalan validasi sebagai HTTP 422.
-         */
         $validated = $request->validate([
-            'idJobSlip' => [
-                'required',
-                'integer',
-            ],
-
-            'spk' => [
-                'required',
-                'in:450',
-            ],
-
-            'nocont' => [
-                'required',
-                'string',
-                'max:20',
-            ],
-
-            'ukrcont' => [
-                'nullable',
-                'string',
-                'max:10',
-            ],
-
-            'lokaw' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            'lokak' => [
-                'required',
-                'string',
-                'max:50',
-            ],
-
-            'job' => [
-                'required',
-                'string',
-                'max:50',
-            ],
-
-            'respon' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            'note' => [
-                'nullable',
-                'string',
-                'max:500',
-            ],
-
-            'fumigasi' => [
-                'nullable',
-            ],
+            'idJobSlip' => ['required', 'integer', 'min:1'],
+            'spk' => ['required', 'in:450'],
+            'nocont' => ['required', 'string', 'max:20'],
+            'ukrcont' => ['nullable', 'string', 'max:10'],
+            'lokaw' => ['nullable', 'string', 'max:50'],
+            'lokak' => ['required', 'string', 'max:50'],
+            'job' => ['required', 'string', 'max:50'],
+            'respon' => ['nullable', 'string', 'max:50'],
+            'note' => ['nullable', 'string', 'max:500'],
 
             /*
-             * Nama field mengikuti form legacy.
+             * Field aktivitas mengikuti form yang sudah ada.
              */
-            'jenispekerjaan1' => [
-                'nullable',
-                'integer',
-            ],
+            'jenispekerjaan1' => ['nullable', 'integer'],
+            'alat1' => ['nullable', 'string', 'max:50'],
+            'operator1' => ['nullable', 'string', 'max:50'],
 
-            'alat1' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
+            'jenispekerjaan2' => ['nullable', 'integer'],
+            'truck1' => ['nullable', 'string', 'max:50'],
+            'operator2' => ['nullable', 'string', 'max:50'],
 
-            'operator1' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            'jenispekerjaan2' => [
-                'nullable',
-                'integer',
-            ],
-
-            'truck1' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            'operator2' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            'jenispekerjaan3' => [
-                'nullable',
-                'integer',
-            ],
-
-            'alat3' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
-            'operator3' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
+            'jenispekerjaan3' => ['nullable', 'integer'],
+            'alat3' => ['nullable', 'string', 'max:50'],
+            'operator3' => ['nullable', 'string', 'max:50'],
         ]);
 
         try {
@@ -363,7 +258,8 @@ class MarshallingYardController extends Controller
                     'container_type_not_found' => 404,
 
                     'inspection_not_done',
-                    'invalid_location' => 422,
+                    'invalid_location',
+                    'invalid_spk' => 422,
 
                     default => 400,
                 };
@@ -379,14 +275,16 @@ class MarshallingYardController extends Controller
                 'success' => true,
                 'status' => 'success',
                 'message' => $result['message'],
-            ], 200);
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            $this->logInfo(
-                'stack',
+            $this->logError(
+                'marshalling-yard',
                 'Gagal menyimpan Marshalling Yard.',
                 [
                     'id_job_slip' => $validated['idJobSlip'],
-                    'nocont' => $validated['nocont'],
+                    'no_cont' => $validated['nocont'],
                     'error' => $e->getMessage(),
                 ]
             );

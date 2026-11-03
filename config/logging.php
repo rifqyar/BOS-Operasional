@@ -11,11 +11,6 @@ return [
     |--------------------------------------------------------------------------
     | Default Log Channel
     |--------------------------------------------------------------------------
-    |
-    | This option defines the default log channel that is utilized to write
-    | messages to your logs. The value provided here should match one of
-    | the channels present in the list of "channels" configured below.
-    |
     */
 
     'default' => env('LOG_CHANNEL', 'stack'),
@@ -24,11 +19,6 @@ return [
     |--------------------------------------------------------------------------
     | Deprecations Log Channel
     |--------------------------------------------------------------------------
-    |
-    | This option controls the log channel that should be used to log warnings
-    | regarding deprecated PHP and library features. This allows you to get
-    | your application ready for upcoming major versions of dependencies.
-    |
     */
 
     'deprecations' => [
@@ -40,14 +30,6 @@ return [
     |--------------------------------------------------------------------------
     | Log Channels
     |--------------------------------------------------------------------------
-    |
-    | Here you may configure the log channels for your application. Laravel
-    | utilizes the Monolog PHP logging library, which includes a variety
-    | of powerful log handlers and formatters that you're free to use.
-    |
-    | Available drivers: "single", "daily", "slack", "syslog",
-    |                    "errorlog", "monolog", "custom", "stack"
-    |
     */
 
     'channels' => [
@@ -131,14 +113,14 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/CheckTarNpct.log'),
             'level' => 'info',
-            'days' => 7
+            'days' => 7,
         ],
 
         'pickup' => [
             'driver' => 'daily',
             'path' => storage_path('logs/pickup.log'),
             'level' => 'info',
-            'days' => 7
+            'days' => 7,
         ],
 
         'behandlein' => [
@@ -147,6 +129,81 @@ return [
             'level' => 'info',
             'days' => 7
         ],
+
+        'hold' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/hold.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'marshalling-cic' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/marshalling-cic.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'marshalling-yard' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/marshalling-yard.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+
+        'pemeriksaan-behandle' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/pemeriksaan-behandle.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'plugreefer' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/plugreefer.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'monitoring-reefer' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/monitoring-reefer.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'delivery' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/delivery.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'inspection-out' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/inspection-out.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'on_chassis' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/on_chassis.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+        'copyyard' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/copyyard.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
+
+
+
     ],
 
 ];

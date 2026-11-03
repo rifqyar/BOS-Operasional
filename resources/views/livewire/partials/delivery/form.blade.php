@@ -1,5 +1,6 @@
 @if (($result['status'] ?? 0) === 1)
 
+    {{-- TRUCK IN --}}
     <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950">
 
         <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/5">
@@ -14,10 +15,17 @@
 
         <form data-store-form class="space-y-5 p-4">
 
+            @csrf
+
             <input
                 type="hidden"
                 name="nomercont"
                 value="{{ $result['no_cont'] ?? '' }}">
+
+            <input
+                type="hidden"
+                name="delivery_status"
+                value="1">
 
             <div class="grid gap-4 sm:grid-cols-2">
 
@@ -102,6 +110,7 @@
 
 @elseif (($result['status'] ?? 0) === 2)
 
+    {{-- GATE OUT --}}
     <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950">
 
         <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/5">
@@ -116,10 +125,17 @@
 
         <form data-store-form class="space-y-5 p-4">
 
+            @csrf
+
             <input
                 type="hidden"
                 name="nomercont"
                 value="{{ $result['no_cont'] ?? '' }}">
+
+            <input
+                type="hidden"
+                name="delivery_status"
+                value="2">
 
             <div>
                 <label class="text-sm font-semibold text-slate-700 dark:text-slate-200">

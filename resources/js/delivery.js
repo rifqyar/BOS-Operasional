@@ -1,194 +1,182 @@
-$(function () {
-    'use strict';
+document.addEventListener('submit', async function (event) {
+    const searchForm = event.target.closest('[data-search-form]');
+    const storeForm = event.target.closest('[data-store-form]');
 
-    const panel = $('[data-panel-name="delivery"]');
-
-    if (!panel.length) {
+    if (!searchForm && !storeForm) {
         return;
     }
 
-    function getCsrfToken() {
-        return panel.attr('data-csrf-token') || '';
+    event.preventDefault();
+
+    const form = searchForm || storeForm;
+    const panel = form.closest('[data-panel]');
+
+    if (!panel) {
+        return;
     }
 
-    function getSearchUrl() {
-        return panel.attr('data-search-url') || '';
-    }
+    const messageBox = panel.querySelector('[data-message]');
+    const content = panel.querySelector('[data-content]');
+    const csrfToken = panel.dataset.csrfToken;
 
-    function getStoreUrl() {
-        return panel.attr('data-store-url') || '';
-    }
+    const showMessage = (message, type = 'error') => {
+        if (!messageBox) return;
 
-    function showAlert(message) {
-        alert(message);
-    }
+        messageBox.textContent = message;
+        messageBox.classList.remove(
+            'hidden',
+            'bg-red-100',
+            'text-red-700',
+            'bg-green-100',
+            'text-green-700',
+            'bg-yellow-100',
+            'text-yellow-700'
+        );
 
-    function setButtonLoading(button, loading) {
-        if (loading) {
-            button.prop('disabled', true);
-
-            if (!button.data('original-html')) {
-                button.data('original-html', button.html());
-            }
-
-            button.html('Loading...');
+        if (type === 'success') {
+            messageBox.classList.add('bg-green-100', 'text-green-700');
+        } else if (type === 'warning') {
+            messageBox.classList.add('bg-yellow-100', 'text-yellow-700');
         } else {
-            button.prop('disabled', false);
-
-            const originalHtml = button.data('original-html');
-
-            if (originalHtml) {
-                button.html(originalHtml);
-            }
+            messageBox.classList.add('bg-red-100', 'text-red-700');
         }
+    };
+
+    const hideMessage = () => {
+        if (messageBox) {
+            messageBox.classList.add('hidden');
+            messageBox.textContent = '';
+        }
+    };
+
+    hideMessage();
+
+    const submitButton = form.querySelector(
+        '[data-search-button], [data-store-button]'
+    );
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
     }
 
-    /**
-     * SEARCH
-     *
-     * Search → langsung Form.
-     */
-    $(document).on(
-        'submit',
-        '[data-panel-name="delivery"] [data-search-form]',
-        function (e) {
-            e.preventDefault();
+    try {
+        const formData = new FormData(form);
 
-            const form = $(this);
-            const button = form.find('[data-search-button]');
-            const content = panel.find('[data-content]');
-            const noCont = $.trim(
-                form.find('[name="search_cont2"]').val()
+        const url = searchForm
+            ? panel.dataset.searchUrl
+            : panel.dataset.storeUrl;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            if (response.status === 419) {
+                throw new Error('Session telah berakhir. Silakan refresh halaman.');
+            }
+
+            throw new Error(
+                result.message ||
+                result.errors?.search_cont2?.[0] ||
+                result.errors?.nomercont?.[0] ||
+                'Permintaan gagal diproses.'
             );
+        }
 
-            if (!noCont) {
-                showAlert('Silakan masukkan No Container.');
+        if (searchForm) {
+            if (Number(result.status) === 0) {
+                if (content) content.innerHTML = '';
+                showMessage(result.message || 'Container tidak ditemukan.');
                 return;
             }
 
-            setButtonLoading(button, true);
+            if (content) {
+                content.innerHTML = result.data || '';
+            }
 
-            $.ajax({
-                url: getSearchUrl(),
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    search_cont2: noCont,
-                },
-                headers: {
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                },
-
-                success: function (response) {
-                    content.empty();
-
-                    if (response.status === 0) {
-                        showAlert(
-                            response.message ||
-                            `NO CONT : ${noCont} NOT FOUND`
-                        );
-
-                        return;
-                    }
-
-                    if (response.data) {
-                        content.html(response.data);
-                    }
-                },
-
-                error: function (xhr) {
-                    content.empty();
-
-                    if (xhr.status === 419) {
-                        showAlert(
-                            'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
-                        );
-
-                        return;
-                    }
-
-                    if (xhr.status === 422) {
-                        showAlert(
-                            'Nomor Container tidak valid.'
-                        );
-
-                        return;
-                    }
-
-                    showAlert(
-                        'Terjadi kesalahan saat mencari container.'
-                    );
-                },
-
-                complete: function () {
-                    setButtonLoading(button, false);
-                },
-            });
+            showMessage('Data container berhasil ditemukan.', 'success');
+            return;
         }
-    );
 
-    /**
-     * STORE
-     *
-     * Saat ini read-only.
-     * Tidak ada INSERT / UPDATE.
-     */
-    $(document).on(
-        'submit',
-        '[data-panel-name="delivery"] [data-store-form]',
-        function (e) {
-            e.preventDefault();
+        if (result.status === 'success' || result.success === true) {
+            showMessage(result.message || 'Delivery berhasil diproses.', 'success');
 
-            const form = $(this);
-            const button = form.find('[data-store-button]');
+            if (content) {
+                content.innerHTML = '';
+            }
 
-            setButtonLoading(button, true);
-
-            $.ajax({
-                url: getStoreUrl(),
-                type: 'POST',
-                dataType: 'json',
-                data: form.serialize(),
-                headers: {
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                },
-
-                success: function (response) {
-                    showAlert(
-                        response.message ||
-                        'Proses belum diaktifkan.'
-                    );
-                },
-
-                error: function (xhr) {
-                    if (xhr.status === 419) {
-                        showAlert(
-                            'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
-                        );
-
-                        return;
-                    }
-
-                    if (xhr.status === 422) {
-                        const response = xhr.responseJSON;
-
-                        showAlert(
-                            response?.message ||
-                            'Delivery masih dalam mode read-only.'
-                        );
-
-                        return;
-                    }
-
-                    showAlert(
-                        'Terjadi kesalahan saat memproses Delivery.'
-                    );
-                },
-
-                complete: function () {
-                    setButtonLoading(button, false);
-                },
-            });
+            return;
         }
-    );
+
+        showMessage(
+            result.message || 'Proses penyimpanan Delivery belum tersedia.'
+        );
+    } catch (error) {
+        showMessage(error.message || 'Terjadi kesalahan pada Delivery.');
+    } finally {
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+});
+
+/**
+ * Reset panel Delivery:
+ * - Mengosongkan input pencarian
+ * - Menghapus hasil form
+ * - Menghapus pesan
+ */
+document.addEventListener('click', function (event) {
+    const resetButton = event.target.closest('[data-reset-button]');
+
+    if (!resetButton) {
+        return;
+    }
+
+    const panel = resetButton.closest('[data-panel]');
+
+    if (!panel) {
+        return;
+    }
+
+    const searchForm = panel.querySelector('[data-search-form]');
+    const content = panel.querySelector('[data-content]');
+    const messageBox = panel.querySelector('[data-message]');
+
+    if (searchForm) {
+        searchForm.reset();
+
+        const searchInput = searchForm.querySelector('[name="search_cont2"]');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+        }
+    }
+
+    if (content) {
+        content.innerHTML = '';
+    }
+
+    if (messageBox) {
+        messageBox.textContent = '';
+        messageBox.classList.add('hidden');
+        messageBox.classList.remove(
+            'bg-red-100',
+            'text-red-700',
+            'bg-green-100',
+            'text-green-700',
+            'bg-yellow-100',
+            'text-yellow-700'
+        );
+    }
 });

@@ -13,6 +13,7 @@ use App\Http\Controllers\Operation\InspectionOutController;
 use App\Http\Controllers\Operation\OnChassisController;
 use App\Http\Controllers\Operation\CopyYardController;
 use App\Http\Controllers\Operation\StringStuffingController;
+
 use App\Livewire\Dashboard;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Operation\MarshallingYard;
@@ -89,12 +90,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/realisasi/detail', [RealisasiController::class, 'detail'])->name('realisasi.detail');
     Route::post('/realisasi/store', [RealisasiController::class, 'store'])->name('realisasi.store');
 
-    Route::get('/plug-reefer', Dashboard::class)->name('plugreefer');
-    Route::post('/plug-reefer/search', [PlugReeferController::class, 'search'])->name('plugreefer.search');
+    Route::get('/plug-reefer', Dashboard::class)
+        ->name('plugreefer');
 
-    Route::post('/plug-reefer/detail', [PlugReeferController::class, 'detail'])->name('plugreefer.detail');
+    Route::post('/plug-reefer/search', [
+        PlugReeferController::class,
+        'search',
+    ])->name('plugreefer.search');
 
-    Route::post('/plug-reefer/store', [PlugReeferController::class, 'store'])->name('plugreefer.store');
+    Route::post('/plug-reefer/detail', [
+        PlugReeferController::class,
+        'detail',
+    ])->name('plugreefer.detail');
+
+    Route::post('/plug-reefer/store', [
+        PlugReeferController::class,
+        'store',
+    ])->name('plugreefer.store');
 
     /** Monitoring Reefer */
     Route::get('/monitoring-reefer', Dashboard::class)->name('monitoringreefer');

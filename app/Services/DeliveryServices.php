@@ -6,8 +6,11 @@ use Illuminate\Support\Facades\DB;
 
 class DeliveryServices
 {
-
-    public function searchContainer(string $keyword)
+    /**
+     * Pencarian container berdasarkan gatepass dan status container.
+     * Seluruh validasi/read menggunakan database legacy prod.
+     */
+    public function searchContainer(string $keyword): array
     {
         return DB::connection('prod')->select(
             "SELECT A.*
@@ -17,36 +20,33 @@ class DeliveryServices
              WHERE A.NO_CONT LIKE ?
                AND A.JNS_KEGIATAN = '3'
                AND B.STATUS_CONT != 900",
-            ["%" . $keyword . "%"]
+            ['%' . $keyword . '%']
         );
     }
 
-
-    public function getGatepass(string $no_cont)
+    public function getGatepass(string $noCont): array
     {
         return DB::connection('prod')->select(
             "SELECT *
              FROM t_gatepass
-             WHERE NO_CONT LIKE ?
+             WHERE NO_CONT = ?
                AND JNS_KEGIATAN = '3'",
-            ["%" . $no_cont . "%"]
+            [$noCont]
         );
     }
 
-
-    public function getDelivery(string $no_cont)
+    public function getDelivery(string $noCont): array
     {
         return DB::connection('prod')->select(
             "SELECT *
              FROM t_op_delivery
-             WHERE NO_CONT LIKE ?
+             WHERE NO_CONT = ?
                AND WK_GATEOUT IS NULL",
-            ["%" . $no_cont . "%"]
+            [$noCont]
         );
     }
 
-
-    public function getCondition()
+    public function getCondition(): array
     {
         return DB::connection('prod')->select(
             "SELECT ID, KONDISI
@@ -54,28 +54,31 @@ class DeliveryServices
         );
     }
 
-
-    public function getDetail(string $no_cont): array
+    /**
+     * Menentukan form yang ditampilkan:
+     * status 1 = Truck In
+     * status 2 = Gate Out
+     */
+    public function getDetail(string $noCont): array
     {
-        $gatepass = $this->getGatepass($no_cont);
+        $noCont = strtoupper(trim($noCont));
 
-        $delivery = $this->getDelivery($no_cont);
+        $gatepass = $this->getGatepass($noCont);
+        $delivery = $this->getDelivery($noCont);
 
- 
-        if (count($gatepass) === 0) {
+        if (empty($gatepass)) {
             return [
                 'status' => 0,
                 'kode' => 1,
-                'no_cont' => $no_cont,
+                'no_cont' => $noCont,
                 'message' => 'NO CONT NOT FOUND',
             ];
         }
 
-
-        if (count($delivery) === 0) {
+        if (empty($delivery)) {
             return [
                 'status' => 1,
-                'no_cont' => $no_cont,
+                'no_cont' => $noCont,
                 'ukuran' => $gatepass[0]->UKR_CONT ?? null,
                 'delivery' => [],
                 'condition' => $this->getCondition(),
@@ -85,15 +88,15 @@ class DeliveryServices
         $deliveryRow = $delivery[0];
 
         $readyForGateOut =
-            $deliveryRow->WK_TRUCKIN !== null
-            && $deliveryRow->WK_CHASSIS !== null
-            && $deliveryRow->WK_INSPECT !== null
-            && $deliveryRow->WK_GATEOUT === null;
+            !empty($deliveryRow->WK_TRUCKIN)
+            && !empty($deliveryRow->WK_CHASSIS)
+            && !empty($deliveryRow->WK_INSPECT)
+            && empty($deliveryRow->WK_GATEOUT);
 
         if ($readyForGateOut) {
             return [
                 'status' => 2,
-                'no_cont' => $no_cont,
+                'no_cont' => $noCont,
                 'delivery' => $delivery,
                 'condition' => $this->getCondition(),
             ];
@@ -102,8 +105,8 @@ class DeliveryServices
         return [
             'status' => 0,
             'kode' => 1,
-            'no_cont' => $no_cont,
-            'message' => 'NO CONT NOT FOUND',
+            'no_cont' => $noCont,
+            'message' => 'Container belum memenuhi kondisi Delivery.',
         ];
     }
 }

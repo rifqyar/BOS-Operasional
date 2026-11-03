@@ -12,12 +12,12 @@ class RealisasiServices
     use LogTraits;
 
     /**
-     * Koneksi untuk membaca data.
+     * Koneksi untuk membaca data referensi.
      */
     private string $readConnection = 'prod';
 
     /**
-     * Koneksi untuk transaksi penulisan.
+     * Koneksi untuk proses insert/update pemeriksaan.
      */
     private string $writeConnection = 'prod_new';
 
@@ -28,48 +28,59 @@ class RealisasiServices
     {
         $keyword = trim($keyword);
 
-        $this->logInfo(
-            'operation',
-            'Memulai pencarian container realisasi.',
-            ['keyword' => $keyword]
-        );
+        try {
+            $data = DB::connection($this->readConnection)->select(
+                "SELECT
+                    A.*,
+                    B.NO_SPK,
+                    C.TIPE_CONT,
+                    E.ID_JOB_SLIP
+                 FROM t_spk_cont A
+                 INNER JOIN t_spk B
+                    ON A.ID = B.ID
+                 INNER JOIN t_request_cont C
+                    ON A.NO_CONT = C.NO_CONT
+                 INNER JOIN t_op_behandlein D
+                    ON A.NO_CONT = D.NO_CONT
+                 INNER JOIN t_job_slip E
+                    ON D.NO_SPK = E.NO_SPK
+                 WHERE A.NO_CONT LIKE UPPER(?)
+                   AND A.STATUS_CONT IN ('460')
+                 ORDER BY A.ID DESC
+                 LIMIT 1",
+                ['%' . strtoupper($keyword) . '%']
+            );
 
-        $data = DB::connection($this->readConnection)->select(
-            "SELECT
-                A.*,
-                B.NO_SPK,
-                C.TIPE_CONT,
-                E.ID_JOB_SLIP
-             FROM t_spk_cont A
-             INNER JOIN t_spk B
-                ON A.ID = B.ID
-             INNER JOIN t_request_cont C
-                ON A.NO_CONT = C.NO_CONT
-             INNER JOIN t_op_behandlein D
-                ON A.NO_CONT = D.NO_CONT
-             INNER JOIN t_job_slip E
-                ON D.NO_SPK = E.NO_SPK
-             WHERE A.NO_CONT LIKE UPPER(?)
-               AND A.STATUS_CONT IN ('460')
-             ORDER BY A.ID DESC
-             LIMIT 1",
-            ['%' . strtoupper($keyword) . '%']
-        );
+            $this->logInfo(
+                'pemeriksaan-behandle',
+                'Pencarian container realisasi selesai.',
+                [
+                    'keyword' => $keyword,
+                    'jumlah_data' => count($data),
+                ]
+            );
 
-        $this->logInfo(
-            'operation',
-            'Pencarian container realisasi selesai.',
-            [
-                'keyword' => $keyword,
-                'jumlah_data' => count($data),
-            ]
-        );
+            return $data;
+        } catch (Throwable $e) {
+            $this->logError(
+                'pemeriksaan-behandle',
+                'Gagal mencari container realisasi.',
+                [
+                    'keyword' => $keyword,
+                    'error' => $e->getMessage(),
+                ]
+            );
 
-        return $data;
+            throw $e;
+        }
     }
 
     /**
      * Mengambil data pemeriksaan berstatus WAITING.
+     *
+     * Catatan:
+     * Pembacaan di sini mengikuti koneksi prod sebagaimana kode awal.
+     * Periksa konsistensinya dengan prod_new jika kedua koneksi berbeda.
      */
     public function getStatus(string $no_cont)
     {
@@ -90,7 +101,7 @@ class RealisasiServices
     public function getAlat()
     {
         return DB::connection($this->readConnection)->select(
-            "SELECT * FROM t_reff_alat"
+            'SELECT * FROM t_reff_alat'
         );
     }
 
@@ -112,8 +123,7 @@ class RealisasiServices
     public function getCondition()
     {
         return DB::connection($this->readConnection)->select(
-            "SELECT ID, KONDISI
-             FROM reff_kondisi"
+            'SELECT ID, KONDISI FROM reff_kondisi'
         );
     }
 
@@ -227,7 +237,7 @@ class RealisasiServices
 
         if ($join === '1') {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Proses JOIN ditolak karena migrasi belum selesai.',
                 ['no_cont' => $noCont]
             );
@@ -238,7 +248,7 @@ class RealisasiServices
         }
 
         $this->logInfo(
-            'operation',
+            'pemeriksaan-behandle',
             'Memulai proses realisasi pemeriksaan.',
             [
                 'no_cont' => $noCont,
@@ -253,7 +263,7 @@ class RealisasiServices
 
         if (!$container) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Container tidak ditemukan atau statusnya tidak memenuhi syarat.',
                 ['no_cont' => $noCont]
             );
@@ -274,14 +284,14 @@ class RealisasiServices
         }
 
         /*
-         * Jika form mengirimkan nomor SPK, validasi terhadap data database.
+         * Jika form mengirimkan nomor SPK, validasi terhadap database.
          */
         if (
             !empty($input['nospk'])
             && trim($input['nospk']) !== (string) $noSpk
         ) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Nomor SPK dari form tidak sesuai dengan data container.',
                 [
                     'no_cont' => $noCont,
@@ -295,11 +305,14 @@ class RealisasiServices
             );
         }
 
-        $jobSlip = $this->getJobSlip($noCont, (string) $noSpk);
+        $jobSlip = $this->getJobSlip(
+            $noCont,
+            (string) $noSpk
+        );
 
         if (!$jobSlip) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Job slip tidak ditemukan.',
                 [
                     'no_cont' => $noCont,
@@ -327,7 +340,7 @@ class RealisasiServices
 
         if (!$gatepass) {
             $this->logWarning(
-                'operation',
+                'pemeriksaan-behandle',
                 'Data gatepass tidak ditemukan.',
                 [
                     'no_cont' => $noCont,
@@ -341,8 +354,8 @@ class RealisasiServices
         }
 
         /*
-         * Pemeriksaan WAITING dibaca dari database penulisan
-         * agar status proses mengikuti koneksi transaksi.
+         * Status pemeriksaan WAITING dibaca dari koneksi penulisan,
+         * sesuai implementasi awal storePemeriksaan().
          */
         $inspection = DB::connection($this->writeConnection)
             ->selectOne(
@@ -411,95 +424,88 @@ class RealisasiServices
 
         $connection = DB::connection($this->writeConnection);
 
+        /*
+         * Transaksi eksplisit mengikuti pola PickupController.
+         */
+        $connection->beginTransaction();
+
         try {
-            $connection->transaction(function () use (
-                $connection,
-                $input,
-                $container,
-                $jobSlip,
-                $gatepass,
-                $operatorLogin,
-                $noCont,
-                $noSpk,
-                $now
-            ) {
-                /*
-                 * Periksa ulang di dalam transaksi untuk mengurangi
-                 * risiko dua proses mulai berjalan bersamaan.
-                 */
-                $waiting = $connection->table('t_op_inspection')
-                    ->where('NO_CONT', $noCont)
-                    ->where('STATUS', 'WAITING')
-                    ->lockForUpdate()
-                    ->first();
+            /*
+             * Periksa ulang di dalam transaksi untuk mengurangi
+             * risiko dua proses mulai berjalan bersamaan.
+             */
+            $waiting = $connection->table('t_op_inspection')
+                ->where('NO_CONT', $noCont)
+                ->where('STATUS', 'WAITING')
+                ->lockForUpdate()
+                ->first();
 
-                if ($waiting) {
-                    throw new RuntimeException(
-                        'Pemeriksaan container sudah dimulai.'
-                    );
-                }
-
-                $lokasi = ($gatepass->LOKASI ?? '')
-                    . '0'
-                    . ($gatepass->TIER ?? '');
-
-                $jnsKegiatan = $gatepass->JNS_KEGIATAN ?? null;
-                $noDok = $gatepass->NO_DOK ?? $jobSlip->NO_DOK ?? null;
-                $jnsDok = $gatepass->JNS_DOK ?? null;
-                $tglDok = $gatepass->TGL_DOK ?? null;
-
-                $connection->table('t_op_inspection')->insert([
-                    'NO_CONT' => $noCont,
-                    'OPERATOR_START' => $operatorLogin,
-                    'LOKASI' => $lokasi,
-                    'JNS_KEGIATAN' => $jnsKegiatan,
-                    'NO_DOK' => $noDok,
-                    'JNS_DOK' => $jnsDok,
-                    'TGL_DOK' => $tglDok,
-                    'NO_SPK' => $noSpk,
-                    'START_INSP' => $now,
-                    'STATUS' => 'WAITING',
-                ]);
-
-                /*
-                 * Catatan pergerakan container.
-                 */
-                $connection->table('log_pergerakan_kontainer')->insert([
-                    'NO_CONT' => $noCont,
-                    'NO_SPK' => $noSpk,
-                    'ACTIVITY' => 'START_PERIKSA',
-                    'WK_ACTIVITY' => $now,
-                    'OPERATOR' => $operatorLogin,
-                ]);
-
-                /*
-                 * Memperbarui waktu mulai pada tabel operation.
-                 */
-                $connection->table('t_operation')
-                    ->where('NO_CONT', $noCont)
-                    ->update([
-                        'WK_START' => $now,
-                    ]);
-
-                /*
-                 * Pembaruan laporan behandle.
-                 *
-                 * Nama kolom mengikuti cabang aktivitas legacy.
-                 */
-                $reportColumn = (string) $jnsKegiatan === '1'
-                    ? 'PB1_START_PERIKSA'
-                    : 'PB2_START_PERIKSA';
-
-                $this->updateReportBehandle(
-                    $connection,
-                    (string) $noSpk,
-                    $reportColumn,
-                    $now
+            if ($waiting) {
+                throw new RuntimeException(
+                    'Pemeriksaan container sudah dimulai.'
                 );
-            });
+            }
+
+            $lokasi = ($gatepass->LOKASI ?? '')
+                . '0'
+                . ($gatepass->TIER ?? '');
+
+            $jnsKegiatan = $gatepass->JNS_KEGIATAN ?? null;
+            $noDok = $gatepass->NO_DOK ?? $jobSlip->NO_DOK ?? null;
+            $jnsDok = $gatepass->JNS_DOK ?? null;
+            $tglDok = $gatepass->TGL_DOK ?? null;
+
+            $connection->table('t_op_inspection')->insert([
+                'NO_CONT' => $noCont,
+                'OPERATOR_START' => $operatorLogin,
+                'LOKASI' => $lokasi,
+                'JNS_KEGIATAN' => $jnsKegiatan,
+                'NO_DOK' => $noDok,
+                'JNS_DOK' => $jnsDok,
+                'TGL_DOK' => $tglDok,
+                'NO_SPK' => $noSpk,
+                'START_INSP' => $now,
+                'STATUS' => 'WAITING',
+            ]);
+
+            /*
+             * Catatan pergerakan container.
+             */
+            $connection->table('log_pergerakan_kontainer')->insert([
+                'NO_CONT' => $noCont,
+                'NO_SPK' => $noSpk,
+                'ACTIVITY' => 'START_PERIKSA',
+                'WK_ACTIVITY' => $now,
+                'OPERATOR' => $operatorLogin,
+            ]);
+
+            /*
+             * Memperbarui waktu mulai pada tabel operation.
+             */
+            $connection->table('t_operation')
+                ->where('NO_CONT', $noCont)
+                ->update([
+                    'WK_START' => $now,
+                ]);
+
+            /*
+             * Pembaruan laporan behandle.
+             */
+            $reportColumn = (string) $jnsKegiatan === '1'
+                ? 'PB1_START_PERIKSA'
+                : 'PB2_START_PERIKSA';
+
+            $this->updateReportBehandle(
+                $connection,
+                (string) $noSpk,
+                $reportColumn,
+                $now
+            );
+
+            $connection->commit();
 
             $this->logInfo(
-                'operation',
+                'pemeriksaan-behandle',
                 'Pemeriksaan container berhasil dimulai.',
                 [
                     'no_cont' => $noCont,
@@ -518,12 +524,17 @@ class RealisasiServices
                 ],
             ];
         } catch (Throwable $e) {
+            if ($connection->transactionLevel() > 0) {
+                $connection->rollBack();
+            }
+
             $this->logError(
-                'operation',
+                'pemeriksaan-behandle',
                 'Gagal memulai pemeriksaan container.',
                 [
                     'no_cont' => $noCont,
                     'no_spk' => $noSpk,
+                    'operator' => $operatorLogin,
                     'error' => $e->getMessage(),
                 ]
             );
@@ -551,6 +562,7 @@ class RealisasiServices
             ?? null;
 
         $idAlat = $input['alat'] ?? null;
+
         $tipeCont = $input['tipecont']
             ?? $container->TIPE_CONT
             ?? null;
@@ -559,174 +571,164 @@ class RealisasiServices
 
         $connection = DB::connection($this->writeConnection);
 
+        /*
+         * Transaksi eksplisit mengikuti pola PickupController.
+         */
+        $connection->beginTransaction();
+
         try {
-            $connection->transaction(function () use (
-                $connection,
-                $input,
-                $container,
-                $jobSlip,
-                $gatepass,
-                $inspection,
-                $operatorLogin,
-                $noCont,
-                $noSeal,
-                $noSpk,
-                $idAlat,
-                $tipeCont,
-                $now
-            ) {
-                /*
-                 * Kunci data pemeriksaan yang sedang berlangsung.
-                 */
-                $waiting = $connection->table('t_op_inspection')
-                    ->where('NO_CONT', $noCont)
-                    ->where('STATUS', 'WAITING')
-                    ->lockForUpdate()
-                    ->first();
+            /*
+             * Kunci data pemeriksaan yang sedang berlangsung.
+             */
+            $waiting = $connection->table('t_op_inspection')
+                ->where('NO_CONT', $noCont)
+                ->where('STATUS', 'WAITING')
+                ->lockForUpdate()
+                ->first();
 
-                if (!$waiting) {
-                    throw new RuntimeException(
-                        'Pemeriksaan aktif tidak ditemukan atau sudah selesai.'
-                    );
-                }
+            if (!$waiting) {
+                throw new RuntimeException(
+                    'Pemeriksaan aktif tidak ditemukan atau sudah selesai.'
+                );
+            }
 
-                /*
-                 * Menyelesaikan pemeriksaan.
-                 */
-                $connection->table('t_op_inspection')
-                    ->where('ID', $waiting->ID)
-                    ->update([
-                        'NO_SEAL' => $noSeal,
-                        'OPERATOR_FINISH' => $operatorLogin,
-                        'STATUS' => 'DONE',
-                        'FINISH_INSP' => $now,
-                    ]);
-
-                /*
-                 * Catatan pergerakan container.
-                 */
-                $connection->table('log_pergerakan_kontainer')->insert([
-                    'NO_CONT' => $noCont,
-                    'NO_SPK' => $noSpk,
-                    'ACTIVITY' => 'FINISH_PERIKSA',
-                    'WK_ACTIVITY' => $now,
-                    'OPERATOR' => $operatorLogin,
+            /*
+             * Menyelesaikan pemeriksaan.
+             */
+            $connection->table('t_op_inspection')
+                ->where('ID', $waiting->ID)
+                ->update([
+                    'NO_SEAL' => $noSeal,
+                    'OPERATOR_FINISH' => $operatorLogin,
+                    'STATUS' => 'DONE',
+                    'FINISH_INSP' => $now,
                 ]);
 
+            /*
+             * Catatan pergerakan container.
+             */
+            $connection->table('log_pergerakan_kontainer')->insert([
+                'NO_CONT' => $noCont,
+                'NO_SPK' => $noSpk,
+                'ACTIVITY' => 'FINISH_PERIKSA',
+                'WK_ACTIVITY' => $now,
+                'OPERATOR' => $operatorLogin,
+            ]);
+
+            /*
+             * Memperbarui nomor seal dan waktu selesai.
+             */
+            $connection->table('t_operation')
+                ->where('NO_CONT', $noCont)
+                ->update([
+                    'NO_SEAL' => $noSeal,
+                    'WK_FINISH' => $now,
+                ]);
+
+            /*
+             * Memperbarui status container dari 460 menjadi 500.
+             */
+            $connection->table('t_spk_cont')
+                ->where('NO_CONT', $noCont)
+                ->where('STATUS_CONT', '460')
+                ->update([
+                    'NO_SEAL' => $noSeal,
+                    'STATUS_CONT' => '500',
+                ]);
+
+            $connection->table('t_spk')
+                ->where('NO_SPK', $noSpk)
+                ->update([
+                    'KD_STATUS' => '500',
+                ]);
+
+            /*
+             * Memperbarui job slip menjadi MARSHALLING.
+             */
+            $jnsKegiatan = (string) (
+                $gatepass->JNS_KEGIATAN ?? ''
+            );
+
+            $jenis = $jnsKegiatan === '1'
+                ? 'EX BEHANDLE 1'
+                : 'EX BEHANDLE 2';
+
+            $updated = $connection->table('t_job_slip')
+                ->where('ID_JOB_SLIP', $jobSlip->ID_JOB_SLIP)
+                ->update([
+                    'JNS_JOB_SLIP' => 'MARSHALLING',
+                    'JENIS' => $jenis,
+                    'JNS_DOK' => $gatepass->JNS_DOK ?? null,
+                    'KD_STATUS' => '20',
+                ]);
+
+            if ($updated === 0) {
                 /*
-                 * Memperbarui nomor seal dan waktu selesai.
+                 * Update bisa mengembalikan 0 jika nilai tidak berubah.
+                 * Pastikan record masih ada sebelum melanjutkan.
                  */
-                $connection->table('t_operation')
-                    ->where('NO_CONT', $noCont)
-                    ->update([
-                        'NO_SEAL' => $noSeal,
-                        'WK_FINISH' => $now,
-                    ]);
-
-                /*
-                 * Karena proses JOIN belum didukung, cabang ini
-                 * merupakan penyelesaian pemeriksaan non-JOIN.
-                 */
-                $connection->table('t_spk_cont')
-                    ->where('NO_CONT', $noCont)
-                    ->where('STATUS_CONT', '460')
-                    ->update([
-                        'NO_SEAL' => $noSeal,
-                        'STATUS_CONT' => '500',
-                    ]);
-
-                $connection->table('t_spk')
-                    ->where('NO_SPK', $noSpk)
-                    ->update([
-                        'KD_STATUS' => '500',
-                    ]);
-
-                /*
-                 * Memperbarui job slip menjadi MARSHALLING.
-                 */
-                $jnsKegiatan = (string) (
-                    $gatepass->JNS_KEGIATAN ?? ''
-                );
-
-                $jenis = $jnsKegiatan === '1'
-                    ? 'EX BEHANDLE 1'
-                    : 'EX BEHANDLE 2';
-
-                $updated = $connection->table('t_job_slip')
+                $exists = $connection->table('t_job_slip')
                     ->where('ID_JOB_SLIP', $jobSlip->ID_JOB_SLIP)
-                    ->update([
-                        'JNS_JOB_SLIP' => 'MARSHALLING',
-                        'JENIS' => $jenis,
-                        'JNS_DOK' => $gatepass->JNS_DOK ?? null,
-                        'KD_STATUS' => '20',
-                    ]);
+                    ->exists();
 
-                if ($updated === 0) {
-                    /*
-                     * Update dapat mengembalikan 0 bila nilai tidak
-                     * berubah. Karena itu, pastikan record tetap ada.
-                     */
-                    $exists = $connection->table('t_job_slip')
-                        ->where('ID_JOB_SLIP', $jobSlip->ID_JOB_SLIP)
-                        ->exists();
-
-                    if (!$exists) {
-                        throw new RuntimeException(
-                            'Job slip tidak ditemukan saat pembaruan.'
-                        );
-                    }
-                }
-
-                /*
-                 * Mencari job slip PICKUP untuk detail pemeriksaan.
-                 */
-                $pickup = $connection->table('t_job_slip')
-                    ->where('NO_CONT', $noCont)
-                    ->where('NO_SPK', $noSpk)
-                    ->where('JNS_JOB_SLIP', 'PICKUP')
-                    ->orderByDesc('ID_JOB_SLIP')
-                    ->first();
-
-                if (!$pickup) {
+                if (!$exists) {
                     throw new RuntimeException(
-                        'Job slip PICKUP tidak ditemukan.'
+                        'Job slip tidak ditemukan saat pembaruan.'
                     );
                 }
+            }
 
-                /*
-                 * Membuat detail job slip pemeriksaan.
-                 */
-                $connection->table('t_job_detail')->insert([
-                    'ID_JOB_SLIP' => $pickup->ID_JOB_SLIP,
-                    'JENIS' => 'PEMERIKSAAN',
-                    'NO_SPK' => $noSpk,
-                    'NO_CONT' => $noCont,
-                    'TYPE_CONT' => $tipeCont,
-                    'ID_PEKERJAAN' => 4,
-                    'ID_ALAT' => $idAlat,
-                    'OPERATOR' => $operatorLogin,
-                ]);
+            /*
+             * Mencari job slip PICKUP untuk detail pemeriksaan.
+             */
+            $pickup = $connection->table('t_job_slip')
+                ->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $noSpk)
+                ->where('JNS_JOB_SLIP', 'PICKUP')
+                ->orderByDesc('ID_JOB_SLIP')
+                ->first();
 
-                /*
-                 * Memperbarui laporan behandle sesuai pola legacy.
-                 */
-                $this->updateReportBehandle(
-                    $connection,
-                    (string) $noSpk,
-                    'PB2_FINISH_PERIKSA',
-                    $now
+            if (!$pickup) {
+                throw new RuntimeException(
+                    'Job slip PICKUP tidak ditemukan.'
                 );
+            }
 
-                $this->updateReportBehandle(
-                    $connection,
-                    (string) $noSpk,
-                    'PB2_NEW_NO_SEAL',
-                    $noSeal
-                );
-            });
+            /*
+             * Membuat detail job slip pemeriksaan.
+             */
+            $connection->table('t_job_detail')->insert([
+                'ID_JOB_SLIP' => $pickup->ID_JOB_SLIP,
+                'JENIS' => 'PEMERIKSAAN',
+                'NO_SPK' => $noSpk,
+                'NO_CONT' => $noCont,
+                'TYPE_CONT' => $tipeCont,
+                'ID_PEKERJAAN' => 4,
+                'ID_ALAT' => $idAlat,
+                'OPERATOR' => $operatorLogin,
+            ]);
+
+            /*
+             * Memperbarui laporan behandle.
+             */
+            $this->updateReportBehandle(
+                $connection,
+                (string) $noSpk,
+                'PB2_FINISH_PERIKSA',
+                $now
+            );
+
+            $this->updateReportBehandle(
+                $connection,
+                (string) $noSpk,
+                'PB2_NEW_NO_SEAL',
+                $noSeal
+            );
+
+            $connection->commit();
 
             $this->logInfo(
-                'operation',
+                'pemeriksaan-behandle',
                 'Pemeriksaan container berhasil diselesaikan.',
                 [
                     'no_cont' => $noCont,
@@ -746,8 +748,12 @@ class RealisasiServices
                 ],
             ];
         } catch (Throwable $e) {
+            if ($connection->transactionLevel() > 0) {
+                $connection->rollBack();
+            }
+
             $this->logError(
-                'operation',
+                'pemeriksaan-behandle',
                 'Gagal menyelesaikan pemeriksaan container.',
                 [
                     'no_cont' => $noCont,
@@ -763,9 +769,6 @@ class RealisasiServices
 
     /**
      * Memperbarui kolom laporan behandle.
-     *
-     * Nama tabel, kolom pencarian, dan kolom target perlu dicocokkan
-     * dengan struktur database aktual sebelum digunakan di produksi.
      */
     private function updateReportBehandle(
         $connection,

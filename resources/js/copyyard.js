@@ -1,22 +1,21 @@
 $(function () {
     'use strict';
 
-    const panel = $('[data-panel-name="copyyard"]');
+    const panelSelector = '[data-panel-name="copyyard"]';
 
-    if (!panel.length) {
-        return;
+    function getPanel() {
+        return $(panelSelector);
     }
 
-
-    function getCsrfToken() {
+    function getCsrfToken(panel) {
         return panel.attr('data-csrf-token') || '';
     }
 
-    function getSearchUrl() {
+    function getSearchUrl(panel) {
         return panel.attr('data-search-url') || '';
     }
 
-    function getStoreUrl() {
+    function getStoreUrl(panel) {
         return panel.attr('data-store-url') || '';
     }
 
@@ -24,280 +23,318 @@ $(function () {
         alert(message);
     }
 
-    function setButtonLoading(button, loading) {
+    function setButtonLoading(button, loading, loadingText = 'Loading...') {
+        if (!button || !button.length) {
+            return;
+        }
 
         if (loading) {
-
             button.prop('disabled', true);
 
             if (!button.data('original-html')) {
-                button.data(
-                    'original-html',
-                    button.html()
-                );
+                button.data('original-html', button.html());
             }
 
-            button.html('Loading...');
-
+            button.html(loadingText);
         } else {
-
             button.prop('disabled', false);
 
-            const originalHtml =
-                button.data('original-html');
+            const originalHtml = button.data('original-html');
 
             if (originalHtml) {
                 button.html(originalHtml);
             }
-
         }
     }
 
+    function clearMessage(panel) {
+        panel.find('[data-message]')
+            .addClass('hidden')
+            .removeClass(
+                'bg-red-100 text-red-700 ' +
+                'bg-green-100 text-green-700 ' +
+                'bg-amber-100 text-amber-700'
+            )
+            .text('');
+    }
 
-    $(document).on(
-        'submit',
-        '[data-panel-name="copyyard"] [data-search-form]',
-        function (e) {
+    function resetCopyYard(panel) {
+        const searchForm = panel.find('[data-search-form]');
 
-            e.preventDefault();
+        if (searchForm.length) {
+            searchForm[0].reset();
+        }
 
-            const form = $(this);
+        panel.find('[data-content]').empty();
+        clearMessage(panel);
 
-            const button =
-                form.find('[data-search-button]');
+        panel.find('[name="search_cont"]').trigger('focus');
+    }
 
-            const content =
-                panel.find('[data-content]');
+    // =====================================================
+    // SEARCH CONTAINER
+    // =====================================================
+    $(document)
+        .off(
+            'submit.copyyardSearch',
+            `${panelSelector} [data-search-form]`
+        )
+        .on(
+            'submit.copyyardSearch',
+            `${panelSelector} [data-search-form]`,
+            function (e) {
+                e.preventDefault();
 
-            const noCont = $.trim(
-                form.find('[name="search_cont"]').val()
-            );
+                const form = $(this);
+                const panel = form.closest(panelSelector);
+                const button = form.find('[data-search-button]');
+                const content = panel.find('[data-content]');
 
-            if (!noCont) {
-
-                showAlert(
-                    'Silakan masukkan No Container.'
+                const noCont = $.trim(
+                    form.find('[name="search_cont"]').val()
                 );
 
-                return;
-            }
+                if (!noCont) {
+                    showAlert('Silakan masukkan No Container.');
+                    return;
+                }
 
-            setButtonLoading(button, true);
+                clearMessage(panel);
+                content.empty();
 
-            content.empty();
+                setButtonLoading(button, true, 'Searching...');
 
-            $.ajax({
-                url: getSearchUrl(),
-                type: 'POST',
-                dataType: 'json',
-
-                data: {
-                    search_cont: noCont,
-                },
-
-                headers: {
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                },
-
-                success: function (response) {
-
+                $.ajax({
+                    url: getSearchUrl(panel),
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        search_cont: noCont
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': getCsrfToken(panel)
+                    }
+                })
+                .done(function (response) {
                     content.empty();
 
                     if (response.status === 0) {
-
                         showAlert(
                             response.message ||
-                            `KONTAINER : ${noCont} NOT FOUND`
+                            `CONTAINER: ${noCont} NOT FOUND`
                         );
-
                         return;
                     }
 
-                    if (response.data) {
-
-                        content.html(
-                            response.data
-                        );
-
-                    }
-
-                },
-
-                error: function (xhr) {
-
-                    content.empty();
-
-                    if (xhr.status === 419) {
-
-                        showAlert(
-                            'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
-                        );
-
+                    if (response.status === 1 && response.data) {
+                        content.html(response.data);
                         return;
                     }
-
-                    if (xhr.status === 422) {
-
-                        showAlert(
-                            'Nomor Container wajib diisi.'
-                        );
-
-                        return;
-                    }
-
-                    showAlert(
-                        'Terjadi kesalahan saat mencari container.'
-                    );
-
-                },
-
-                complete: function () {
-
-                    setButtonLoading(
-                        button,
-                        false
-                    );
-
-                },
-
-            });
-
-        }
-    );
-
-
-    $(document).on(
-        'change',
-        '[data-panel-name="copyyard"] [data-action-block]',
-        function () {
-
-            const action =
-                $(this).val();
-
-            const locationInput =
-                panel.find('[data-new-location]');
-
-            if (!locationInput.length) {
-                return;
-            }
-
-            if (action === 'dua') {
-
-                locationInput
-                    .val('SAMPAH')
-                    .prop('disabled', true);
-
-            } else {
-
-                locationInput
-                    .val('')
-                    .prop('disabled', false);
-
-            }
-
-        }
-    );
-
-
-    $(document).on(
-        'submit',
-        '[data-panel-name="copyyard"] [data-store-form]',
-        function (e) {
-
-            e.preventDefault();
-
-            const form = $(this);
-
-            const button =
-                form.find('[data-store-button]');
-
-            const actionBlock =
-                form.find('[name="mySelect"]').val();
-
-            const newLocation =
-                $.trim(
-                    form.find('[name="lokbar"]').val()
-                );
-
-            if (actionBlock === 'dua') {
-
-                form.find('[name="lokbar"]')
-                    .val('SAMPAH');
-
-            } else if (!newLocation) {
-
-                showAlert(
-                    'Lokasi baru wajib diisi.'
-                );
-
-                return;
-
-            }
-
-            setButtonLoading(button, true);
-
-            $.ajax({
-                url: getStoreUrl(),
-                type: 'POST',
-                dataType: 'json',
-
-                data: form.serialize(),
-
-                headers: {
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                },
-
-                success: function (response) {
 
                     showAlert(
                         response.message ||
-                        'Copy Yard belum diaktifkan.'
+                        'Data container tidak ditemukan.'
                     );
-
-                },
-
-                error: function (xhr) {
+                })
+                .fail(function (xhr) {
+                    content.empty();
 
                     if (xhr.status === 419) {
-
                         showAlert(
                             'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
                         );
-
                         return;
                     }
 
                     if (xhr.status === 422) {
-
-                        const response =
-                            xhr.responseJSON;
-
                         showAlert(
-                            response?.message ||
-                            'Copy Yard masih dalam mode read-only.'
+                            xhr.responseJSON?.message ||
+                            'Nomor Container wajib diisi.'
                         );
+                        return;
+                    }
 
+                    if (xhr.status === 404) {
+                        showAlert(
+                            xhr.responseJSON?.message ||
+                            `CONTAINER: ${noCont} NOT FOUND`
+                        );
                         return;
                     }
 
                     showAlert(
+                        xhr.responseJSON?.message ||
+                        'Terjadi kesalahan saat mencari container.'
+                    );
+                })
+                .always(function () {
+                    setButtonLoading(button, false);
+                });
+            }
+        );
+
+    // =====================================================
+    // RESET
+    // =====================================================
+    $(document)
+        .off(
+            'click.copyyardReset',
+            `${panelSelector} [data-reset-button]`
+        )
+        .on(
+            'click.copyyardReset',
+            `${panelSelector} [data-reset-button]`,
+            function () {
+                const panel = $(this).closest(panelSelector);
+                resetCopyYard(panel);
+            }
+        );
+
+    // =====================================================
+    // CHANGE ACTION: BLOK LAPANGAN / BLOK SAMPAH
+    // =====================================================
+    $(document)
+        .off(
+            'change.copyyardAction',
+            `${panelSelector} [data-action-block]`
+        )
+        .on(
+            'change.copyyardAction',
+            `${panelSelector} [data-action-block]`,
+            function () {
+                const action = $(this).val();
+                const form = $(this).closest('[data-store-form]');
+                const locationInput = form.find('[data-new-location]');
+
+                if (!locationInput.length) {
+                    return;
+                }
+
+                if (action === 'dua') {
+                    locationInput
+                        .val('SAMPAH')
+                        .prop('readonly', true)
+                        .prop('required', false);
+                } else {
+                    locationInput
+                        .val('')
+                        .prop('readonly', false)
+                        .prop('required', true);
+                }
+            }
+        );
+
+    // =====================================================
+    // STORE COPY YARD
+    // =====================================================
+    $(document)
+        .off(
+            'submit.copyyardStore',
+            `${panelSelector} [data-store-form]`
+        )
+        .on(
+            'submit.copyyardStore',
+            `${panelSelector} [data-store-form]`,
+            function (e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const panel = form.closest(panelSelector);
+                const button = form.find('[data-store-button]');
+
+                const noCont = $.trim(
+                    form.find('[name="nomerkon"]').val()
+                );
+
+                const actionBlock = form.find('[name="mySelect"]').val();
+
+                const locationInput = form.find('[name="lokbar"]');
+                let newLocation = $.trim(locationInput.val());
+
+                if (!noCont) {
+                    showAlert('Nomor container tidak ditemukan pada form.');
+                    return;
+                }
+
+                if (actionBlock === 'dua') {
+                    newLocation = 'SAMPAH';
+                    locationInput.val('SAMPAH');
+                } else if (!newLocation) {
+                    showAlert('Lokasi baru wajib diisi.');
+                    locationInput.trigger('focus');
+                    return;
+                }
+
+                // Payload eksplisit: input disabled tidak ikut serialize().
+                const payload = {
+                    nomerkon: noCont,
+                    mySelect: actionBlock
+                };
+
+                if (actionBlock === 'satu') {
+                    payload.lokbar = newLocation;
+                }
+
+                setButtonLoading(button, true, 'Menyimpan...');
+
+                $.ajax({
+                    url: getStoreUrl(panel),
+                    type: 'POST',
+                    dataType: 'json',
+                    data: payload,
+                    headers: {
+                        'X-CSRF-TOKEN': getCsrfToken(panel)
+                    }
+                })
+                .done(function (response) {
+                    if (response.status === 'success') {
+                        showAlert(
+                            response.message ||
+                            'Copy Yard berhasil disimpan.'
+                        );
+
+                        resetCopyYard(panel);
+                        return;
+                    }
+
+                    showAlert(
+                        response.message ||
+                        'Proses Copy Yard gagal.'
+                    );
+                })
+                .fail(function (xhr) {
+                    if (xhr.status === 419) {
+                        showAlert(
+                            'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
+                        );
+                        return;
+                    }
+
+                    if (xhr.status === 422) {
+                        showAlert(
+                            xhr.responseJSON?.message ||
+                            'Data Copy Yard tidak valid.'
+                        );
+                        return;
+                    }
+
+                    if (xhr.status === 404) {
+                        showAlert(
+                            xhr.responseJSON?.message ||
+                            'Container tidak ditemukan atau statusnya sudah berubah.'
+                        );
+                        return;
+                    }
+
+                    showAlert(
+                        xhr.responseJSON?.message ||
                         'Terjadi kesalahan saat memproses Copy Yard.'
                     );
-
-                },
-
-                complete: function () {
-
-                    setButtonLoading(
-                        button,
-                        false
-                    );
-
-                },
-
-            });
-
-        }
-    );
+                })
+                .always(function () {
+                    setButtonLoading(button, false);
+                });
+            }
+        );
 
 });
