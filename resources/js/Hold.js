@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     initHold();
 });
+document.addEventListener('livewire:navigated', () => {
+    initHold();
+});
 
 
 function initHold() {
@@ -117,56 +120,30 @@ function initHold() {
         text,
         type = 'error'
     ) {
+        const icon = type === 'warning' ? 'info' : type;
+        const title = {
+            success: 'Berhasil',
+            info: 'Informasi',
+            error: 'Gagal',
+        }[icon] || 'Informasi';
 
-        if (!message) {
+        if (typeof window.showAlert === 'function') {
+            window.showAlert(icon, title, text);
             return;
         }
 
-
-        message.className =
-            'mt-4 rounded-lg border px-4 py-3 text-sm';
-
-
-        if (type === 'success') {
-
-            message.classList.add(
-                'border-emerald-200',
-                'bg-emerald-50',
-                'text-emerald-700',
-                'dark:border-emerald-400/20',
-                'dark:bg-emerald-400/10',
-                'dark:text-emerald-300'
-            );
-
-        } else if (type === 'warning') {
-
-            message.classList.add(
-                'border-amber-200',
-                'bg-amber-50',
-                'text-amber-700',
-                'dark:border-amber-400/20',
-                'dark:bg-amber-400/10',
-                'dark:text-amber-300'
-            );
-
-        } else {
-
-            message.classList.add(
-                'border-red-200',
-                'bg-red-50',
-                'text-red-700',
-                'dark:border-red-400/20',
-                'dark:bg-red-400/10',
-                'dark:text-red-300'
-            );
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon,
+                title,
+                text,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0369a1',
+            });
+            return;
         }
 
-
-        message.textContent = text;
-
-        message.classList.remove(
-            'hidden'
-        );
+        window.alert(`${title}: ${text}`);
     }
 
 
@@ -247,30 +224,89 @@ function initHold() {
         }
     }
 
-    // =========================================================
-// RESET SEARCH
-// =========================================================
+    function clearSearchResult() {
+        result?.classList.add('hidden');
 
-function resetSearch() {
-    if (searchInput) {
-        searchInput.value = '';
+        if (rows) {
+            rows.innerHTML = '';
+        }
     }
 
-    if (result) {
-        result.classList.add('hidden');
+
+    function resetSearch() {
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        clearSearchResult();
+        hideMessage();
+        searchInput?.focus();
+
+        // Kembalikan daftar HOLD ke halaman pertama.
+        loadHeldContainers(1);
     }
 
-    if (rows) {
-        rows.innerHTML = '';
+
+    function getResponseError(data, fallback) {
+        const validationError = Object.values(data?.errors || {})
+            .flat()
+            .find((error) => typeof error === 'string' && error.trim());
+
+        return data?.message || validationError || fallback;
     }
 
-    hideMessage();
 
-    searchInput?.focus();
+    function setActionLoading(button, loading, label) {
+        if (!button) {
+            return;
+        }
 
-    // Kembalikan daftar HOLD ke halaman pertama.
-    loadHeldContainers(1);
-}
+        button.disabled = loading;
+        button.innerHTML = loading
+            ? `<svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg> Memproses...`
+            : label;
+    }
+
+
+    async function storeContainer(form) {
+        const url = getUrl('storeUrl');
+
+        if (!url) {
+            showMessage('URL simpan HOLD tidak ditemukan.');
+            return;
+        }
+
+        const button = form.querySelector('[data-hold-submit]');
+        const originalHtml = button?.innerHTML || '';
+        const payload = Object.fromEntries(new FormData(form).entries());
+
+        setActionLoading(button, true, originalHtml);
+        hideMessage();
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    getResponseError(data, 'Container gagal diproses HOLD.')
+                );
+            }
+
+            clearSearchResult();
+            await loadHeldContainers(1, false);
+            showMessage(data.message || 'Container berhasil diproses HOLD.', 'success');
+        } catch (error) {
+            console.error('HOLD STORE ERROR:', error);
+            showMessage(error.message || 'Container gagal diproses HOLD.');
+        } finally {
+            setActionLoading(button, false, originalHtml);
+        }
+    }
     /*
      * =========================================================
      * TABLE LOADING
@@ -499,7 +535,8 @@ function resetSearch() {
      */
 
     async function loadHeldContainers(
-        page = 1
+        page = 1,
+        notifyError = true
     ) {
 
         const url =
@@ -579,6 +616,12 @@ function resetSearch() {
                 error
             );
 
+            if (notifyError) {
+                showMessage(
+                    error.message || 'Gagal mengambil data HOLD.'
+                );
+            }
+
 
             holdRows.innerHTML = `
                 <div class="px-4 py-8 text-center">
@@ -629,16 +672,16 @@ function resetSearch() {
         }
 
 
-        const id =
-            button.dataset.id || '';
-
-
-        const noCont =
-            button.dataset.noCont || '';
-
-
-        const noSpk =
-            button.dataset.noSpk || '';
+        const form = button.closest('[data-release-form]');
+        const id = form?.querySelector('[name="id"]')?.value
+            || button.dataset.id
+            || '';
+        const noCont = form?.querySelector('[name="nomercont"]')?.value
+            || button.dataset.noCont
+            || '';
+        const noSpk = form?.querySelector('[name="nospk"]')?.value
+            || button.dataset.noSpk
+            || '';
 
 
         if (
@@ -654,10 +697,17 @@ function resetSearch() {
         }
 
 
-        const confirmed =
-            window.confirm(
-                `Release container ${noCont}?`
-            );
+        const confirmed = window.Swal && typeof window.Swal.fire === 'function'
+            ? (await window.Swal.fire({
+                icon: 'warning',
+                title: 'Konfirmasi RELEASE',
+                text: `Release container ${noCont}?`,
+                showCancelButton: true,
+                confirmButtonText: 'Ya, RELEASE',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+            })).isConfirmed
+            : window.confirm(`Release container ${noCont}?`);
 
 
         if (!confirmed) {
@@ -731,39 +781,21 @@ function resetSearch() {
                 await response.json();
 
 
-            if (!response.ok) {
-
+            if (!response.ok || !data.success) {
                 throw new Error(
-                    data.message ||
-                    'Container gagal diproses.'
-                );
-            }
-
-
-            if (!data.success) {
-
-                throw new Error(
-                    data.message ||
-                    'Container gagal diproses.'
+                    getResponseError(data, 'Container gagal diproses RELEASE.')
                 );
             }
 
 
             showMessage(
                 data.message ||
-                'Validasi RELEASE berhasil.',
+                'Container berhasil diproses RELEASE.',
                 'success'
             );
 
-
-            /*
-             * Backend masih read-only.
-             *
-             * Table tetap di-refresh
-             * supaya siap ketika UPDATE
-             * nanti diaktifkan.
-             */
-            await loadHeldContainers(1);
+            clearSearchResult();
+            await loadHeldContainers(1, false);
 
 
         } catch (error) {
@@ -951,6 +983,19 @@ function resetSearch() {
     }
 
 
+    panel.addEventListener(
+        'submit',
+        async (event) => {
+            const form = event.target;
+
+            if (form.matches('[data-hold-store-form]')) {
+                event.preventDefault();
+                await storeContainer(form);
+            }
+        }
+    );
+
+
     /*
      * =========================================================
      * DELEGATED CLICK
@@ -1055,6 +1100,16 @@ function resetSearch() {
                     releaseButton
                 );
 
+                return;
+            }
+
+
+            const releaseFormButton = event.target.closest(
+                '[data-release-form-button]'
+            );
+
+            if (releaseFormButton) {
+                await releaseContainer(releaseFormButton);
                 return;
             }
 

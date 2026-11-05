@@ -57,9 +57,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/hold/search', [HoldController::class, 'search'])
         ->name('hold.search');
 
-    Route::post('/hold/detail', [HoldController::class, 'detail'])
-        ->name('hold.detail');
-
     Route::get('/hold/data', [HoldController::class, 'indexData'])
         ->name('hold.data');
 

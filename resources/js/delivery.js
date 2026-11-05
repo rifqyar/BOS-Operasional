@@ -1,71 +1,62 @@
 document.addEventListener('submit', async function (event) {
     const searchForm = event.target.closest('[data-search-form]');
     const storeForm = event.target.closest('[data-store-form]');
-
-    if (!searchForm && !storeForm) {
-        return;
-    }
+    if (!searchForm && !storeForm) return;
 
     event.preventDefault();
-
     const form = searchForm || storeForm;
     const panel = form.closest('[data-panel]');
+    if (!panel) return;
 
-    if (!panel) {
-        return;
-    }
-
-    const messageBox = panel.querySelector('[data-message]');
     const content = panel.querySelector('[data-content]');
-    const csrfToken = panel.dataset.csrfToken;
+    const csrfToken = panel.dataset.csrfToken || '';
 
-    const showMessage = (message, type = 'error') => {
-        if (!messageBox) return;
-
-        messageBox.textContent = message;
-        messageBox.classList.remove(
-            'hidden',
-            'bg-red-100',
-            'text-red-700',
-            'bg-green-100',
-            'text-green-700',
-            'bg-yellow-100',
-            'text-yellow-700'
-        );
-
-        if (type === 'success') {
-            messageBox.classList.add('bg-green-100', 'text-green-700');
-        } else if (type === 'warning') {
-            messageBox.classList.add('bg-yellow-100', 'text-yellow-700');
+    const showAlert = (icon, title, text) => {
+        if (typeof window.showAlert === 'function') {
+            window.showAlert(icon, title, text);
+        } else if (window.Swal?.fire) {
+            window.Swal.fire({
+                icon,
+                title,
+                text,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0369a1',
+            });
         } else {
-            messageBox.classList.add('bg-red-100', 'text-red-700');
+            window.alert(text);
         }
     };
 
-    const hideMessage = () => {
-        if (messageBox) {
-            messageBox.classList.add('hidden');
-            messageBox.textContent = '';
+    const showToast = (icon, title, text = '') => {
+        if (typeof window.showToast === 'function') {
+            window.showToast(icon, title, text);
+        } else if (window.Swal?.fire) {
+            window.Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon,
+                title: title || text,
+                text: title ? text : '',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        } else {
+            window.alert(text || title);
         }
     };
 
-    hideMessage();
-
-    const submitButton = form.querySelector(
-        '[data-search-button], [data-store-button]'
-    );
-
-    if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+    const button = form.querySelector('[data-search-button], [data-store-button]');
+    const defaultButtonHtml = button?.innerHTML || '';
+    if (button) {
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+            button.textContent = searchForm ? 'Mencari...' : 'Memproses...';
     }
 
     try {
-        const formData = new FormData(form);
-
-        const url = searchForm
-            ? panel.dataset.searchUrl
-            : panel.dataset.storeUrl;
+        const url = searchForm ? panel.dataset.searchUrl : panel.dataset.storeUrl;
+        if (!url) throw new Error('URL Delivery belum dikonfigurasi.');
 
         const response = await fetch(url, {
             method: 'POST',
@@ -74,109 +65,72 @@ document.addEventListener('submit', async function (event) {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
             },
-            body: formData,
+            body: new FormData(form),
         });
-
         const result = await response.json();
 
         if (!response.ok) {
-            if (response.status === 419) {
-                throw new Error('Session telah berakhir. Silakan refresh halaman.');
-            }
-
-            throw new Error(
-                result.message ||
-                result.errors?.search_cont2?.[0] ||
-                result.errors?.nomercont?.[0] ||
-                'Permintaan gagal diproses.'
+            const error = new Error(
+                result.message || result.errors?.search_cont2?.[0]
+                || result.errors?.nomercont?.[0]
+                || 'Permintaan Delivery gagal diproses.'
             );
+            error.status = response.status;
+            throw error;
         }
 
         if (searchForm) {
-            if (Number(result.status) === 0) {
+            if (result.status === 0 || result.status === 'info') {
                 if (content) content.innerHTML = '';
-                showMessage(result.message || 'Container tidak ditemukan.');
+                showAlert('info', 'Informasi', result.message || 'Container tidak ditemukan.');
                 return;
             }
 
-            if (content) {
-                content.innerHTML = result.data || '';
-            }
-
-            showMessage('Data container berhasil ditemukan.', 'success');
+            if (content) content.innerHTML = result.data || '';
+            showToast('info', 'Informasi', 'Data container berhasil ditemukan.');
             return;
         }
 
-        if (result.status === 'success' || result.success === true) {
-            showMessage(result.message || 'Delivery berhasil diproses.', 'success');
-
-            if (content) {
-                content.innerHTML = '';
-            }
-
+        if (result.status === 'success') {
+            showToast('success', 'Berhasil', result.message || 'Delivery berhasil diproses.');
+            if (content) content.innerHTML = '';
             return;
         }
 
-        showMessage(
-            result.message || 'Proses penyimpanan Delivery belum tersedia.'
-        );
+        showAlert('info', 'Informasi', result.message || 'Delivery belum dapat diproses.');
     } catch (error) {
-        showMessage(error.message || 'Terjadi kesalahan pada Delivery.');
+        if (error.status === 419) {
+            showAlert('warning', 'Sesi berakhir', 'Silakan refresh halaman dan coba kembali.');
+        } else if ([404, 409, 422].includes(error.status)) {
+            showAlert('info', 'Informasi', error.message);
+        } else {
+            showAlert('error', 'Gagal', error.message || 'Terjadi kesalahan pada Delivery.');
+        }
     } finally {
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        if (button) {
+            button.disabled = false;
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+            button.innerHTML = defaultButtonHtml;
         }
     }
 });
 
-/**
- * Reset panel Delivery:
- * - Mengosongkan input pencarian
- * - Menghapus hasil form
- * - Menghapus pesan
- */
 document.addEventListener('click', function (event) {
     const resetButton = event.target.closest('[data-reset-button]');
-
-    if (!resetButton) {
-        return;
-    }
+    if (!resetButton) return;
 
     const panel = resetButton.closest('[data-panel]');
-
-    if (!panel) {
-        return;
-    }
+    if (!panel) return;
 
     const searchForm = panel.querySelector('[data-search-form]');
     const content = panel.querySelector('[data-content]');
-    const messageBox = panel.querySelector('[data-message]');
-
     if (searchForm) {
         searchForm.reset();
-
         const searchInput = searchForm.querySelector('[name="search_cont2"]');
         if (searchInput) {
             searchInput.value = '';
             searchInput.focus();
         }
     }
-
-    if (content) {
-        content.innerHTML = '';
-    }
-
-    if (messageBox) {
-        messageBox.textContent = '';
-        messageBox.classList.add('hidden');
-        messageBox.classList.remove(
-            'bg-red-100',
-            'text-red-700',
-            'bg-green-100',
-            'text-green-700',
-            'bg-yellow-100',
-            'text-yellow-700'
-        );
-    }
+    if (content) content.innerHTML = '';
 });

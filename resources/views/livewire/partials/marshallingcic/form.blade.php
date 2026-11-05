@@ -9,6 +9,7 @@
     $noCont = $row->NO_CONT ?? '';
     $ukrCont = $row->UKR_CONT ?? '';
     $jenisJob = $row->JENIS ?? '';
+    $statusSpkText = $row->STATUS_SPK_TEXT ?? 'Status SPK tidak terdaftar';
     $lokasiAwal = $row->LOKASI_AWAL ?? '';
     $tierAwal = $row->TIER_AWAL ?? '';
     $lokasiAkhir = $row->LOKASI_AKHIR ?? '';
@@ -49,7 +50,6 @@
              DATA UTAMA
         =========================================== --}}
         <input type="hidden" name="idJobSlip" value="{{ $idJobSlip }}">
-        <input type="hidden" name="spk" value="460">
         <input type="hidden" name="nocont" value="{{ $noCont }}">
         <input type="hidden" name="ukrcont" value="{{ $ukrCont }}">
         <input type="hidden" name="lokaw" value="{{ $lokasiAwal }}">
@@ -114,6 +114,19 @@
                     type="text"
                     readonly
                     value="{{ $jenisJob ?: '-' }}"
+                    class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                >
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold uppercase text-zinc-500">
+                    Status SPK
+                </label>
+
+                <input
+                    type="text"
+                    readonly
+                    value="{{ $statusSpkText }}"
                     class="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-800"
                 >
             </div>

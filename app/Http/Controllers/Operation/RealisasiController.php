@@ -47,10 +47,13 @@ class RealisasiController extends Controller
                 );
 
                 return response()->json([
-                    'status' => 0,
+                    'status' => 'error',
+                    'success' => false,
                     'kode' => 1,
                     'nilai' => $noCont,
                     'message' => "Container {$noCont} tidak ditemukan.",
+                    'error' => "Container {$noCont} tidak ditemukan.",
+                    'data' => null,
                 ], 404);
             }
 
@@ -69,12 +72,13 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 2,
+                'status' => 'success',
+                'success' => true,
                 'message' => 'Data container berhasil ditemukan.',
                 'data' => $html,
             ]);
         } catch (ValidationException $e) {
-            $this->logWarning(
+            $this->logError(
                 'pemeriksaan-behandle',
                 'Validasi pencarian realisasi gagal.',
                 [
@@ -84,9 +88,12 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Nomor container tidak valid.',
+                'error' => 'Nomor container tidak valid.',
                 'errors' => $e->errors(),
+                'data' => null,
             ], 422);
         } catch (Throwable $e) {
             report($e);
@@ -102,8 +109,11 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Gagal mengambil data container.',
+                'error' => $e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }
@@ -133,8 +143,11 @@ class RealisasiController extends Controller
                 );
 
                 return response()->json([
-                    'status' => 0,
+                    'status' => 'error',
+                    'success' => false,
                     'message' => "Container {$noCont} tidak ditemukan.",
+                    'error' => "Container {$noCont} tidak ditemukan.",
+                    'data' => null,
                 ], 404);
             }
 
@@ -197,13 +210,14 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 1,
+                'status' => 'success',
+                'success' => true,
                 'message' => 'Detail pemeriksaan berhasil diambil.',
                 'kond' => $kond,
                 'data' => $html,
             ]);
         } catch (ValidationException $e) {
-            $this->logWarning(
+            $this->logError(
                 'pemeriksaan-behandle',
                 'Validasi detail pemeriksaan gagal.',
                 [
@@ -213,9 +227,12 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Nomor container tidak valid.',
+                'error' => 'Nomor container tidak valid.',
                 'errors' => $e->errors(),
+                'data' => null,
             ], 422);
         } catch (Throwable $e) {
             report($e);
@@ -231,8 +248,11 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Gagal mengambil detail pemeriksaan.',
+                'error' => $e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }
@@ -275,15 +295,18 @@ class RealisasiController extends Controller
                 !is_string($operatorLogin)
                 || trim($operatorLogin) === ''
             ) {
-                $this->logWarning(
+                $this->logError(
                     'pemeriksaan-behandle',
                     'Proses pemeriksaan ditolak karena identitas operator tidak ditemukan.',
                     ['no_cont' => $noCont]
                 );
 
                 return response()->json([
-                    'status' => 0,
+                    'status' => 'error',
+                    'success' => false,
                     'message' => 'Identitas operator tidak ditemukan. Silakan login kembali.',
+                    'error' => 'Identitas operator tidak ditemukan.',
+                    'data' => null,
                 ], 401);
             }
 
@@ -305,14 +328,15 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => $result['status'] ?? 1,
+                'status' => 'success',
+                'success' => true,
                 'kode' => $result['kode'] ?? 0,
                 'message' => $result['message']
                     ?? 'Pemeriksaan berhasil diproses.',
                 'data' => $result['data'] ?? null,
             ]);
         } catch (ValidationException $e) {
-            $this->logWarning(
+            $this->logError(
                 'pemeriksaan-behandle',
                 'Validasi data pemeriksaan gagal.',
                 [
@@ -322,12 +346,14 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Data pemeriksaan tidak valid.',
                 'errors' => $e->errors(),
+                'data' => null,
             ], 422);
         } catch (RuntimeException $e) {
-            $this->logWarning(
+            $this->logError(
                 'pemeriksaan-behandle',
                 'Proses pemeriksaan ditolak oleh validasi bisnis.',
                 [
@@ -337,8 +363,11 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => $e->getMessage(),
+                'error' => $e->getMessage(),
+                'data' => null,
             ], 422);
         } catch (Throwable $e) {
             report($e);
@@ -354,8 +383,11 @@ class RealisasiController extends Controller
             );
 
             return response()->json([
-                'status' => 0,
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Terjadi kesalahan saat memproses pemeriksaan.',
+                'error' => $e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }

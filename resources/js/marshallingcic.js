@@ -105,6 +105,24 @@
         }
     }
 
+    function showToast(type, title, message) {
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: type,
+                title: title || message,
+                text: title ? (message || '') : '',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+            return;
+        }
+
+        showAlert(type, title, message);
+    }
+
     /*
      * =========================================================
      * BUTTON LOADING
@@ -731,21 +749,17 @@
 
             success: function (response) {
                 if (response && response.success) {
-                    showAlert(
+                    showToast(
                         'success',
                         'Berhasil',
-                        response.message ||
-                            'Marshalling CIC berhasil disimpan.',
-                        function () {
-                            $panel.find(
-                                '[data-detail-container]'
-                            )
-                                .addClass('hidden')
-                                .empty();
-
-                            loadInitialTable(1);
-                        }
+                        response.message || 'Marshalling CIC berhasil disimpan.'
                     );
+
+                    $panel.find('[data-detail-container]')
+                        .addClass('hidden')
+                        .empty();
+
+                    loadInitialTable(1);
 
                     return;
                 }
@@ -789,18 +803,30 @@
                     }
                 }
 
+                let alertType = 'error';
+                let alertTitle = 'Proses Gagal';
+
                 if (xhr.status === 419) {
+                    alertType = 'warning';
+                    alertTitle = 'Sesi Tidak Valid';
                     message =
                         'Sesi telah berakhir. Silakan muat ulang halaman lalu login kembali.';
                 } else if (xhr.status === 401) {
+                    alertType = 'info';
+                    alertTitle = 'Login Diperlukan';
                     message =
                         response.message ||
                         'Sesi login tidak ditemukan. Silakan login kembali.';
+                } else if ([404, 409, 422].includes(xhr.status)) {
+                    alertType = 'info';
+                    alertTitle = xhr.status === 422
+                        ? 'Data Belum Sesuai'
+                        : 'Data Tidak Dapat Diproses';
                 }
 
                 showAlert(
-                    'error',
-                    'Proses Gagal',
+                    alertType,
+                    alertTitle,
                     message
                 );
             },

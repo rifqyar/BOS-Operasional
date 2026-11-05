@@ -8,8 +8,8 @@ use App\Services\PlugReeferServices;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class PlugReeferController extends Controller
@@ -28,13 +28,14 @@ class PlugReeferController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'no_cont' => ['required', 'string', 'max:30'],
-        ]);
-
-        $noCont = strtoupper(trim($validated['no_cont']));
+        $noCont = null;
 
         try {
+            $validated = $request->validate([
+                'no_cont' => ['required', 'string', 'max:30'],
+            ]);
+
+            $noCont = strtoupper(trim($validated['no_cont']));
             $rows = $this->services->searchReefer($noCont);
 
             if (empty($rows)) {
@@ -47,7 +48,11 @@ class PlugReeferController extends Controller
                 );
 
                 return response()->json([
+                    'status' => 'error',
+                    'success' => false,
                     'message' => 'Data container tidak ditemukan atau tidak memenuhi syarat Plug Reefer.',
+                    'error' => 'Data container tidak ditemukan atau tidak memenuhi syarat Plug Reefer.',
+                    'data' => null,
                 ], 404);
             }
 
@@ -68,8 +73,29 @@ class PlugReeferController extends Controller
             );
 
             return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'message' => 'Pencarian container Plug Reefer berhasil.',
                 'data' => $view,
             ]);
+        } catch (ValidationException $e) {
+            $this->logError(
+                'plugreefer',
+                'Validasi pencarian Plug Reefer gagal',
+                [
+                    'no_container' => $noCont ?? $request->input('no_cont'),
+                    'errors' => $e->errors(),
+                ]
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Nomor container tidak valid.',
+                'error' => 'Nomor container tidak valid.',
+                'errors' => $e->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $e) {
             $this->logError(
                 'plugreefer',
@@ -81,8 +107,11 @@ class PlugReeferController extends Controller
             );
 
             return response()->json([
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Terjadi kesalahan saat mencari data Plug Reefer.',
                 'error' => $e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }
@@ -95,13 +124,14 @@ class PlugReeferController extends Controller
      */
     public function detail(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'no_cont' => ['required', 'string', 'max:30'],
-        ]);
-
-        $noCont = strtoupper(trim($validated['no_cont']));
+        $noCont = null;
 
         try {
+            $validated = $request->validate([
+                'no_cont' => ['required', 'string', 'max:30'],
+            ]);
+
+            $noCont = strtoupper(trim($validated['no_cont']));
             $rows = $this->services->searchReefer($noCont);
 
             if (empty($rows)) {
@@ -114,7 +144,11 @@ class PlugReeferController extends Controller
                 );
 
                 return response()->json([
+                    'status' => 'error',
+                    'success' => false,
                     'message' => 'Data container tidak ditemukan.',
+                    'error' => 'Data container tidak ditemukan.',
+                    'data' => null,
                 ], 404);
             }
 
@@ -177,8 +211,29 @@ class PlugReeferController extends Controller
             );
 
             return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'message' => 'Detail Plug Reefer berhasil diambil.',
                 'data' => $view,
             ]);
+        } catch (ValidationException $e) {
+            $this->logError(
+                'plugreefer',
+                'Validasi detail Plug Reefer gagal',
+                [
+                    'no_container' => $noCont ?? $request->input('no_cont'),
+                    'errors' => $e->errors(),
+                ]
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Nomor container tidak valid.',
+                'error' => 'Nomor container tidak valid.',
+                'errors' => $e->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $e) {
             $this->logError(
                 'plugreefer',
@@ -190,8 +245,11 @@ class PlugReeferController extends Controller
             );
 
             return response()->json([
+                'status' => 'error',
+                'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil detail Plug Reefer.',
                 'error' => $e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }
@@ -204,21 +262,25 @@ class PlugReeferController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nomerkon' => ['required', 'string', 'max:30'],
-            'temperature' => ['required', 'numeric'],
-            'note' => ['nullable', 'string'],
-            'action' => ['required', 'in:plugin,unplugin'],
-        ]);
-
-        $noCont = strtoupper(trim($validated['nomerkon']));
-        $temperature = $validated['temperature'];
-        $note = $validated['note'] ?? null;
-        $action = $validated['action'];
-
+        $noCont = $request->input('nomerkon');
+        $temperature = $request->input('temperature');
+        $action = $request->input('action');
+        // t_op_reefer menyimpan state Plug yang nanti di-update saat Unplug,
+        // jadi insert dan update harus tetap berada pada koneksi legacy prod.
         $connection = DB::connection('prod');
 
         try {
+            $validated = $request->validate([
+                'nomerkon' => ['required', 'string', 'max:30'],
+                'temperature' => ['required', 'numeric'],
+                'note' => ['nullable', 'string'],
+                'action' => ['required', 'in:plugin,unplugin'],
+            ]);
+
+            $noCont = strtoupper(trim($validated['nomerkon']));
+            $temperature = $validated['temperature'];
+            $note = $validated['note'] ?? null;
+            $action = $validated['action'];
             $connection->beginTransaction();
 
             /*
@@ -253,8 +315,13 @@ class PlugReeferController extends Controller
              */
             $checked = $this->services->checked($noCont);
 
-            $operator = Auth::user()?->username
-                ?? Auth::user()?->user_name
+            $user = $request->user();
+            $operator = data_get($user, 'USERLOGIN')
+                ?? data_get($user, 'userlogin')
+                ?? data_get($user, 'username')
+                ?? data_get($user, 'user_name')
+                ?? $request->session()->get('USERLOGIN')
+                ?? $request->session()->get('userlogin')
                 ?? 'SYSTEM';
 
             $now = now();
@@ -304,8 +371,10 @@ class PlugReeferController extends Controller
 
                 return response()->json([
                     'status' => 'success',
+                    'success' => true,
                     'message' => 'Container berhasil di-Plugin.',
                     'cont' => $spk,
+                    'data' => $spk,
                 ]);
             }
 
@@ -381,12 +450,33 @@ class PlugReeferController extends Controller
 
                 return response()->json([
                     'status' => 'success',
+                    'success' => true,
                     'message' => 'Container berhasil di-Unplug.',
                     'cont' => $spk,
+                    'data' => $spk,
                 ]);
             }
 
             throw new Exception('Action Plug Reefer tidak valid.', 422);
+        } catch (ValidationException $e) {
+            $this->logError(
+                'plugreefer',
+                'Validasi simpan Plug Reefer gagal',
+                [
+                    'no_container' => $noCont,
+                    'action' => $action,
+                    'errors' => $e->errors(),
+                ]
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Data Plug Reefer tidak valid.',
+                'error' => 'Data Plug Reefer tidak valid.',
+                'errors' => $e->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $e) {
             if ($connection->transactionLevel() > 0) {
                 $connection->rollBack();
@@ -411,9 +501,11 @@ class PlugReeferController extends Controller
 
             return response()->json([
                 'status' => 'error',
+                'success' => false,
                 'message' => $e->getMessage()
                     ?: 'Terjadi kesalahan saat memproses Plug Reefer.',
                 'error' => $e->getMessage(),
+                'data' => null,
             ], $statusCode);
         }
     }

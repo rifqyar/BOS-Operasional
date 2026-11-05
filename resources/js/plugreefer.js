@@ -79,6 +79,39 @@
         }
 
         alert(text);
+
+    };
+
+    const showToast = (icon, title, text = '') => {
+        if (typeof window.showToast === 'function') {
+            window.showToast(icon, title, text);
+            return;
+        }
+
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon,
+                title: title || text,
+                text: title ? text : '',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+            return;
+        }
+
+        alert(text || title);
+    };
+
+    const getAjaxErrorMessage = (xhr, fallback) => {
+        const response = xhr.responseJSON || {};
+        const firstValidationError = Object.values(response.errors || {})
+            .flat()
+            .find((message) => typeof message === 'string' && message.trim());
+
+        return firstValidationError || response.message || fallback;
     };
 
 
@@ -663,10 +696,18 @@
                         }
 
                         showAlert(
-                            'error',
-                            'Gagal',
-                            xhr.responseJSON?.message ||
+                            xhr.status === 404 || xhr.status === 422
+                                ? 'info'
+                                : 'error',
+                            xhr.status === 404
+                                ? 'Container tidak ditemukan'
+                                : xhr.status === 422
+                                    ? 'Data tidak valid'
+                                    : 'Gagal',
+                            getAjaxErrorMessage(
+                                xhr,
                                 'Gagal mengambil detail Plug Reefer.'
+                            )
                         );
                     },
 
@@ -796,12 +837,27 @@
 
                     success: (response) => {
 
-                        showAlert(
+                        const noCont = String(
+                            $form.find('[name="nomerkon"]').val() || ''
+                        ).trim().toUpperCase();
+
+                        showToast(
                             'success',
                             'Berhasil',
-                            response.message ||
-                                'Data berhasil diproses.'
+                            response.message || 'Data berhasil diproses.'
                         );
+
+                        const $detailButton = $(
+                            '[data-panel-name="plugreefer"] [data-detail-button]'
+                        ).filter(function () {
+                            return String(
+                                $(this).data('no-cont') || ''
+                            ).trim().toUpperCase() === noCont;
+                        }).first();
+
+                        if ($detailButton.length) {
+                            $detailButton.trigger('click');
+                        }
                     },
 
 
@@ -825,10 +881,20 @@
                         }
 
                         showAlert(
-                            'error',
-                            'Gagal',
-                            xhr.responseJSON?.message ||
+                            [404, 409, 422].includes(xhr.status)
+                                ? 'info'
+                                : 'error',
+                            xhr.status === 409
+                                ? 'Status container berubah'
+                                : xhr.status === 422
+                                    ? 'Data tidak valid'
+                                    : xhr.status === 404
+                                        ? 'Container tidak ditemukan'
+                                        : 'Gagal',
+                            getAjaxErrorMessage(
+                                xhr,
                                 'Data gagal diproses.'
+                            )
                         );
                     },
 

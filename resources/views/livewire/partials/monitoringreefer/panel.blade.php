@@ -3,6 +3,7 @@
     data-panel
     data-panel-name="monitoringreefer"
     data-search-url="{{ route('monitoringreefer.search') }}"
+    data-detail-url="{{ route('monitoringreefer.detail') }}"
     data-store-url="{{ route('monitoringreefer.store') }}"
     data-csrf-token="{{ csrf_token() }}">
 
@@ -87,9 +88,9 @@
     </form>
 
     {{-- Form hasil pencarian --}}
-    <div
-        data-content
-        class="mt-5">
+    <div data-content class="mt-5">
+        <div data-table></div>
+        <div data-detail class="mt-5"></div>
     </div>
 
 </div>

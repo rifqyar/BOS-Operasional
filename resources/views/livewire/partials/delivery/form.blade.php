@@ -22,11 +22,6 @@
                 name="nomercont"
                 value="{{ $result['no_cont'] ?? '' }}">
 
-            <input
-                type="hidden"
-                name="delivery_status"
-                value="1">
-
             <div class="grid gap-4 sm:grid-cols-2">
 
                 <div>
@@ -66,6 +61,7 @@
                     id="delivery-no-truck"
                     type="text"
                     name="nomertruck"
+                    required
                     autocomplete="off"
                     placeholder="MASUKKAN NO TRUCK"
                     class="mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white">
@@ -81,6 +77,7 @@
                 <select
                     id="delivery-gate"
                     name="gate"
+                    required
                     class="mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white">
 
                     <option value="">Pilih Gate</option>
@@ -132,11 +129,6 @@
                 name="nomercont"
                 value="{{ $result['no_cont'] ?? '' }}">
 
-            <input
-                type="hidden"
-                name="delivery_status"
-                value="2">
-
             <div>
                 <label class="text-sm font-semibold text-slate-700 dark:text-slate-200">
                     No Container
@@ -159,6 +151,7 @@
                 <select
                     id="delivery-gate-out"
                     name="gate"
+                    required
                     class="mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white">
 
                     <option value="">Pilih Gate</option>

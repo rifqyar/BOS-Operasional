@@ -2,6 +2,7 @@
     data-panel
     data-panel-name="delivery"
     data-search-url="{{ route('delivery.search') }}"
+    data-detail-url="{{ route('delivery.detail') }}"
     data-store-url="{{ route('delivery.store') }}"
     data-csrf-token="{{ csrf_token() }}">
 

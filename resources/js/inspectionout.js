@@ -19,8 +19,47 @@ $(function () {
         return panel.attr('data-store-url') || '';
     }
 
-    function showAlert(message) {
+    function showAlert(icon, title, message) {
+        if (typeof window.showAlert === 'function') {
+            window.showAlert(icon, title, message);
+            return;
+        }
+
+        if (window.Swal?.fire) {
+            window.Swal.fire({
+                icon,
+                title,
+                text: message,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0369a1',
+            });
+            return;
+        }
+
         alert(message);
+    }
+
+    function showToast(icon, title, text = '') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(icon, title, text);
+            return;
+        }
+
+        if (window.Swal?.fire) {
+            window.Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon,
+                title: title || text,
+                text: title ? text : '',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+            return;
+        }
+
+        alert(text || title);
     }
 
     function setButtonLoading(button, loading) {
@@ -57,7 +96,7 @@ $(function () {
             );
 
             if (!noCont) {
-                showAlert('Silakan masukkan No Container.');
+                showAlert('info', 'Informasi', 'Silakan masukkan No Container.');
                 return;
             }
 
@@ -87,6 +126,8 @@ $(function () {
                      */
                     if (response.status === 0) {
                         showAlert(
+                            'info',
+                            'Informasi',
                             response.message ||
                             `WARNING ! NO CONT : ${noCont} NOT FOUND`
                         );
@@ -100,6 +141,7 @@ $(function () {
                      */
                     if (response.data) {
                         content.html(response.data);
+                        showToast('info', 'Informasi', 'Container siap diproses Inspection Out.');
                     }
                 },
 
@@ -108,6 +150,8 @@ $(function () {
 
                     if (xhr.status === 419) {
                         showAlert(
+                            'warning',
+                            'Sesi berakhir',
                             'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
                         );
 
@@ -116,13 +160,17 @@ $(function () {
 
                     if (xhr.status === 422) {
                         showAlert(
-                            'Nomor Container tidak valid.'
+                            'info',
+                            'Informasi',
+                            xhr.responseJSON?.message || 'Nomor Container tidak valid.'
                         );
 
                         return;
                     }
 
                     showAlert(
+                        'error',
+                        'Gagal',
                         'Terjadi kesalahan saat mencari container.'
                     );
                 },
@@ -142,6 +190,7 @@ $(function () {
 
             const form = $(this);
             const button = form.find('[data-store-button]');
+            const content = panel.find('[data-content]');
 
             setButtonLoading(button, true);
 
@@ -157,34 +206,47 @@ $(function () {
                 },
 
                 success: function (response) {
-                    showAlert(
-                        response.message ||
-                        'Proses belum diaktifkan.'
-                    );
+                    if (response.status === 'success') {
+                        showToast(
+                            'success',
+                            'Berhasil',
+                            response.message || 'Inspection Out berhasil diproses.'
+                        );
+                        content.empty();
+                        return;
+                    }
+
+                    showAlert('info', 'Informasi', response.message || 'Container belum dapat diproses.');
                 },
 
                 error: function (xhr) {
                     if (xhr.status === 419) {
                         showAlert(
+                            'warning',
+                            'Sesi berakhir',
                             'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
                         );
 
                         return;
                     }
 
-                    if (xhr.status === 422) {
+                    if ([404, 409, 422].includes(xhr.status)) {
                         const response = xhr.responseJSON;
 
                         showAlert(
+                            'info',
+                            'Informasi',
                             response?.message ||
-                            'Inspection Out masih dalam mode read-only.'
+                            'Data belum valid untuk diproses.'
                         );
 
                         return;
                     }
 
                     showAlert(
-                        'Terjadi kesalahan saat memproses Inspection Out.'
+                        'error',
+                        'Gagal',
+                        xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses Inspection Out.'
                     );
                 },
 

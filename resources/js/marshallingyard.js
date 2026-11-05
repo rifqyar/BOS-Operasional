@@ -29,13 +29,20 @@
      */
 
     function showAlert(message, type = 'error') {
+        const titles = {
+            success: 'Berhasil',
+            error: 'Gagal',
+            warning: 'Perhatian',
+            info: 'Informasi',
+        };
+
         // Hindari pemanggilan berulang jika window.showAlert
         // ternyata menunjuk ke fungsi yang sama.
         if (
             typeof window.showAlert === 'function' &&
             window.showAlert !== showAlert
         ) {
-            window.showAlert(message, type);
+            window.showAlert(type, titles[type] || 'Informasi', message);
             return;
         }
 
@@ -44,13 +51,39 @@
 
             window.Swal.fire({
                 icon: allowedTypes.includes(type) ? type : 'error',
+                title: titles[type] || 'Informasi',
                 text: message,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0369a1',
             });
 
             return;
         }
 
         window.alert(message);
+    }
+
+    function showToast(icon, title, text = '') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(icon, title, text);
+            return;
+        }
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icon,
+                title: title || text,
+                text: title ? text : '',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+            return;
+        }
+
+        window.alert(text || title);
     }
 
     /*
@@ -344,7 +377,7 @@
                 showAlert(
                     response?.message ||
                         'Gagal mencari data Marshalling Yard.',
-                    'error'
+                    xhr.status === 404 || xhr.status === 422 ? 'info' : 'error'
                 );
             })
             .always(function () {
@@ -571,7 +604,7 @@
         })
             .done(function (response) {
                 // Pastikan backend benar-benar mengembalikan success: true.
-                if (!response || response.success !== true) {
+                if (!response || response.status !== 'success') {
                     showAlert(
                         response?.message ||
                             'Marshalling Yard gagal disimpan.',
@@ -580,10 +613,10 @@
                     return;
                 }
 
-                showAlert(
-                    response.message ||
-                        'Marshalling Yard berhasil disimpan.',
-                    'success'
+                showToast(
+                    'success',
+                    'Berhasil',
+                    response.message || 'Marshalling Yard berhasil disimpan.'
                 );
 
                 // Muat ulang daftar setelah proses berhasil.
@@ -609,7 +642,7 @@
                         messages ||
                             response.message ||
                             'Data yang dikirim belum valid.',
-                        'error'
+                        'info'
                     );
 
                     return;
@@ -618,7 +651,7 @@
                 showAlert(
                     response?.message ||
                         'Gagal memproses Marshalling Yard.',
-                    'error'
+                    xhr.status === 404 || xhr.status === 409 ? 'info' : 'error'
                 );
             })
             .always(function () {

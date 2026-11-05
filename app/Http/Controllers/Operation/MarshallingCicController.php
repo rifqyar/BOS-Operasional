@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Operation;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\LogTraits;
 use App\Services\MarshallingCicService;
-use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Throwable;
 
 class MarshallingCicController extends Controller
@@ -268,13 +268,6 @@ class MarshallingCicController extends Controller
                     'min:1',
                 ],
 
-                'spk' => [
-                    'bail',
-                    'required',
-                    'string',
-                    'max:20',
-                ],
-
                 'nocont' => [
                     'bail',
                     'required',
@@ -423,7 +416,6 @@ class MarshallingCicController extends Controller
                 ],
             ], [
                 'idJobSlip.required' => 'ID Job Slip wajib tersedia.',
-                'spk.required' => 'SPK wajib tersedia.',
                 'nocont.required' => 'Nomor kontainer wajib tersedia.',
                 'lokak.required' => 'Lokasi akhir wajib diisi.',
                 'job.required' => 'Pekerjaan wajib tersedia.',
@@ -438,23 +430,7 @@ class MarshallingCicController extends Controller
                 'operator3.required' => 'Operator untuk Jenis Pekerjaan 3 wajib diisi.',
             ]);
 
-            // 2. VALIDASI ATURAN SPK
-            if ((string) $validated['spk'] !== '460') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'SPK tidak valid untuk proses Marshalling CIC.',
-                    'errors' => [
-                        'spk' => [
-                            'SPK yang diterima harus 460.',
-                        ],
-                    ],
-                    'received' => [
-                        'spk' => $validated['spk'],
-                    ],
-                ], 422);
-            }
-
-            // 3. VALIDASI SESSION LOGIN
+            // 2. VALIDASI SESSION LOGIN
             $username = session('USERLOGIN');
 
             if (!$username && auth()->check()) {
@@ -468,7 +444,9 @@ class MarshallingCicController extends Controller
             if (!$username) {
                 return response()->json([
                     'success' => false,
+                    'status' => 'error',
                     'message' => 'Session login tidak ditemukan.',
+                    'data' => null,
                     'errors' => [
                         'session' => [
                             'Username tidak ditemukan. Silakan login kembali.',
@@ -477,13 +455,13 @@ class MarshallingCicController extends Controller
                 ], 401);
             }
 
-            // 4. PROSES PENYIMPANAN
+            // 3. PROSES PENYIMPANAN
             $result = $this->marshallingCicService->storeMarshallingCic(
                 $validated,
                 (string) $username
             );
 
-            // 5. LOG BERHASIL
+            // 4. LOG BERHASIL
             $this->logInfo(
                 'marshalling-cic',
                 'Marshalling CIC berhasil disimpan.',
@@ -497,13 +475,14 @@ class MarshallingCicController extends Controller
 
             return response()->json([
                 'success' => true,
+                'status' => 'success',
                 'message' => 'Marshalling CIC berhasil disimpan.',
                 'data' => $result,
             ], 200);
 
         } catch (ValidationException $e) {
-            // 6. ERROR VALIDASI
-            $this->logWarning(
+            // 5. ERROR VALIDASI
+            $this->logError(
                 'marshalling-cic',
                 'Validasi penyimpanan Marshalling CIC gagal.',
                 [
@@ -515,12 +494,33 @@ class MarshallingCicController extends Controller
 
             return response()->json([
                 'success' => false,
+                'status' => 'error',
                 'message' => 'Data Marshalling CIC belum lengkap atau tidak valid.',
                 'errors' => $e->errors(),
+                'data' => null,
             ], 422);
 
-        } catch (Exception $e) {
-            // 7. LOG DETAIL ERROR UNTUK DEBUGGING
+        } catch (RuntimeException $e) {
+            $this->logError(
+                'marshalling-cic',
+                'Validasi bisnis Marshalling CIC gagal.',
+                [
+                    'id_job_slip' => $request->input('idJobSlip'),
+                    'no_cont' => $request->input('nocont'),
+                    'username' => session('USERLOGIN'),
+                    'error' => $e->getMessage(),
+                ]
+            );
+
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'error' => $e->getMessage(),
+                'data' => null,
+            ], 422);
+        } catch (Throwable $e) {
+            // 6. LOG DETAIL ERROR UNTUK DEBUGGING
             $this->logError(
                 'marshalling-cic',
                 'Marshalling CIC gagal disimpan.',
@@ -537,32 +537,13 @@ class MarshallingCicController extends Controller
                 ]
             );
 
-            // 8. PENANGANAN ERROR ID_PEKERJAAN DARI ORACLE
-            $errorMessage = $e->getMessage();
-
-            if (
-                str_contains($errorMessage, 'ORA-01400') &&
-                str_contains($errorMessage, 'T_JOB_DETAIL') &&
-                str_contains($errorMessage, 'ID_PEKERJAAN')
-            ) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Data Marshalling CIC belum lengkap.',
-                    'errors' => [
-                        'jenispekerjaan1' => [
-                            'Jenis Pekerjaan 1 belum terisi dengan benar. ' .
-                            'Silakan periksa pilihan jenis pekerjaan pertama.',
-                        ],
-                    ],
-                ], 422);
-            }
-
-            // 9. ERROR LAIN: JANGAN TAMPILKAN DETAIL DATABASE KE PENGGUNA
+            // 7. ERROR LAIN: JANGAN TAMPILKAN DETAIL DATABASE KE PENGGUNA
             return response()->json([
                 'success' => false,
+                'status' => 'error',
                 'message' => 'Terjadi kesalahan saat menyimpan Marshalling CIC. ' .
                     'Silakan periksa data dan coba kembali.',
-                'error' => $errorMessage,
+                'data' => null,
             ], 500);
         }
     }

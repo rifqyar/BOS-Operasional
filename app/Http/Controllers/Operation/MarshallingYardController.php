@@ -7,6 +7,7 @@ use App\Services\MarshallingYardServices;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -216,13 +217,12 @@ class MarshallingYardController extends Controller
     /**
      * Menyimpan proses Marshalling Yard.
      *
-     * Marshalling Yard hanya menerima jalur SPK 450.
+     * Status container diperiksa dari tabel referensi pada service.
      */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'idJobSlip' => ['required', 'integer', 'min:1'],
-            'spk' => ['required', 'in:450'],
             'nocont' => ['required', 'string', 'max:20'],
             'ukrcont' => ['nullable', 'string', 'max:10'],
             'lokaw' => ['nullable', 'string', 'max:50'],
@@ -248,51 +248,29 @@ class MarshallingYardController extends Controller
         ]);
 
         try {
-            $result = $this->marshallingYardServices
-                ->storeMarshallingYard($validated);
-
-            if (!$result['success']) {
-                $statusCode = match ($result['status']) {
-                    'not_found',
-                    'spk_not_found',
-                    'container_type_not_found' => 404,
-
-                    'inspection_not_done',
-                    'invalid_location',
-                    'invalid_spk' => 422,
-
-                    default => 400,
-                };
-
-                return response()->json([
-                    'success' => false,
-                    'status' => $result['status'],
-                    'message' => $result['message'],
-                ], $statusCode);
-            }
+            $username = (string) (Auth::user()?->username
+                ?? Auth::user()?->user_name
+                ?? session('USERLOGIN', ''));
+            $result = $this->marshallingYardServices->storeMarshallingYard($validated, $username);
 
             return response()->json([
-                'success' => true,
                 'status' => 'success',
                 'message' => $result['message'],
+                'data' => $result['data'],
             ]);
         } catch (ValidationException $e) {
             throw $e;
         } catch (Throwable $e) {
-            $this->logError(
-                'marshalling-yard',
-                'Gagal menyimpan Marshalling Yard.',
-                [
-                    'id_job_slip' => $validated['idJobSlip'],
-                    'no_cont' => $validated['nocont'],
-                    'error' => $e->getMessage(),
-                ]
-            );
+            $statusCode = (int) $e->getCode();
+            $statusCode = in_array($statusCode, [404, 409, 422], true) ? $statusCode : 500;
 
             return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat menyimpan Marshalling Yard.',
-            ], 500);
+                'status' => $statusCode === 422 ? 'info' : 'error',
+                'message' => $statusCode === 500
+                    ? 'Terjadi kesalahan saat menyimpan Marshalling Yard.'
+                    : $e->getMessage(),
+                'data' => null,
+            ], $statusCode);
         }
     }
 }

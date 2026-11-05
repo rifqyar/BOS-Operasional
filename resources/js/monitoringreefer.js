@@ -21,6 +21,10 @@ $(function () {
         return panel.attr('data-search-url') || '';
     }
 
+    function getDetailUrl() {
+        return panel.attr('data-detail-url') || '';
+    }
+
     /**
      * Store URL
      */
@@ -31,8 +35,82 @@ $(function () {
     /**
      * Alert
      */
-    function showAlert(message) {
-        alert(message);
+    function showAlert(icon, title, text) {
+        if (typeof window.showAlert === 'function') {
+            window.showAlert(icon, title, text);
+            return;
+        }
+
+        if (window.Swal) {
+            Swal.fire({
+                icon,
+                title,
+                text,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0369a1',
+            });
+            return;
+        }
+
+        alert(text);
+    }
+
+    function showToast(icon, title, text = '') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(icon, title, text);
+            return;
+        }
+
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon,
+                title: title || text,
+                text: title ? text : '',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+            return;
+        }
+
+        alert(text || title);
+    }
+
+    function getAjaxErrorMessage(xhr, fallback) {
+        const response = xhr.responseJSON || {};
+        const firstValidationError = Object.values(response.errors || {})
+            .flat()
+            .find((message) => typeof message === 'string' && message.trim());
+
+        return firstValidationError || response.message || fallback;
+    }
+
+    function showRequestError(xhr, fallback) {
+        if (xhr.status === 419) {
+            showAlert(
+                'warning',
+                'Sesi Tidak Valid',
+                'CSRF token tidak valid atau sesi telah berubah. Silakan refresh halaman.'
+            );
+            return;
+        }
+
+        const isInfo = [401, 404, 409, 422].includes(xhr.status);
+        showAlert(
+            isInfo ? 'info' : 'error',
+            xhr.status === 404
+                ? 'Container tidak ditemukan'
+                : xhr.status === 401
+                    ? 'Sesi pengguna tidak ditemukan'
+                    : xhr.status === 409
+                        ? 'Status container berubah'
+                        : xhr.status === 422
+                            ? 'Data tidak valid'
+                            : 'Terjadi Kesalahan',
+            getAjaxErrorMessage(xhr, fallback)
+        );
     }
 
     /**
@@ -77,12 +155,14 @@ $(function () {
 
             const searchForm = panel.find('[data-search-form]');
             const searchInput = searchForm.find('[name="no_cont"]');
-            const content = panel.find('[data-content]');
+            const table = panel.find('[data-table]');
+            const detail = panel.find('[data-detail]');
 
             searchForm[0]?.reset();
 
             searchInput.val('');
-            content.empty();
+            table.empty();
+            detail.empty();
 
             searchInput.trigger('focus');
         }
@@ -106,19 +186,25 @@ $(function () {
 
             const form = $(this);
             const button = form.find('[data-search-button]');
-            const content = panel.find('[data-content]');
+            const table = panel.find('[data-table]');
+            const detail = panel.find('[data-detail]');
 
             const noCont = $.trim(
                 form.find('[name="no_cont"]').val()
             );
 
             if (!noCont) {
-                showAlert('Silakan masukkan No Container.');
+                showAlert(
+                    'info',
+                    'No Container kosong',
+                    'Silakan masukkan No Container.'
+                );
                 return;
             }
 
             setButtonLoading(button, true);
-            content.empty();
+            table.empty();
+            detail.empty();
 
             $.ajax({
                 url: getSearchUrl(),
@@ -134,64 +220,95 @@ $(function () {
                 },
 
                 success: function (response) {
-                    content.empty();
+                    table.empty();
+                    detail.empty();
 
-                    if (!response.status) {
+                    if (response.success !== true) {
                         showAlert(
+                            'info',
+                            'Monitoring tidak tersedia',
                             response.message ||
-                            `NO CONT : ${noCont} TIDAK DAPAT DIMONITOR`
+                                `NO CONT : ${noCont} TIDAK DAPAT DIMONITOR`
                         );
 
                         return;
                     }
 
                     if (response.data) {
-                        content.html(response.data);
+                        table.html(response.data);
                     } else {
                         showAlert(
-                            response.message ||
-                            'Data monitoring tidak tersedia.'
+                            'info',
+                            'Data tidak tersedia',
+                            response.message || 'Data monitoring tidak tersedia.'
                         );
                     }
                 },
 
                 error: function (xhr) {
-                    content.empty();
+                    table.empty();
+                    detail.empty();
 
-                    const response = xhr.responseJSON;
-
-                    if (xhr.status === 404) {
-                        showAlert(
-                            response?.message ||
-                            `NO CONT : ${noCont} SUDAH UNPLUGIN / TIDAK AKTIF MONITORING`
-                        );
-
-                        return;
-                    }
-
-                    if (xhr.status === 419) {
-                        showAlert(
-                            'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
-                        );
-
-                        return;
-                    }
-
-                    if (xhr.status === 422) {
-                        showAlert(
-                            response?.message ||
-                            'Nomor Container wajib diisi.'
-                        );
-
-                        return;
-                    }
-
-                    showAlert(
-                        response?.message ||
-                        'Terjadi kesalahan saat mencari container.'
+                    showRequestError(
+                        xhr,
+                        `NO CONT : ${noCont} TIDAK AKTIF MONITORING`
                     );
                 },
 
+                complete: function () {
+                    setButtonLoading(button, false);
+                },
+            });
+        }
+    );
+
+    /** Ambil form untuk container yang dipilih dari daftar pencarian. */
+    $(document).on(
+        'click',
+        '[data-panel-name="monitoringreefer"] [data-detail-button]',
+        function (e) {
+            e.preventDefault();
+
+            const button = $(this);
+            const noCont = String(button.data('no-cont') || '').trim();
+            const detail = panel.find('[data-detail]');
+            const url = getDetailUrl();
+
+            if (!noCont) {
+                showAlert('info', 'No Container kosong', 'No Container tidak ditemukan.');
+                return;
+            }
+
+            if (!url) {
+                showAlert('error', 'Konfigurasi belum lengkap', 'URL detail Monitoring Reefer tidak ditemukan.');
+                return;
+            }
+
+            setButtonLoading(button, true);
+            detail.empty();
+
+            $.ajax({
+                url,
+                type: 'POST',
+                dataType: 'json',
+                data: { no_cont: noCont },
+                headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+                success: function (response) {
+                    if (response.success !== true || !response.data) {
+                        showAlert(
+                            'info',
+                            'Monitoring tidak tersedia',
+                            response.message || 'Data monitoring tidak tersedia.'
+                        );
+                        return;
+                    }
+
+                    detail.html(response.data);
+                    detail[0]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                },
+                error: function (xhr) {
+                    showRequestError(xhr, 'Gagal mengambil detail Monitoring Reefer.');
+                },
                 complete: function () {
                     setButtonLoading(button, false);
                 },
@@ -223,12 +340,20 @@ $(function () {
             );
 
             if (!noCont) {
-                showAlert('Nomor Container wajib diisi.');
+                showAlert(
+                    'info',
+                    'No Container kosong',
+                    'Nomor Container wajib diisi.'
+                );
                 return;
             }
 
             if (!temperature) {
-                showAlert('Temperature saat ini wajib diisi.');
+                showAlert(
+                    'info',
+                    'Temperature kosong',
+                    'Temperature saat ini wajib diisi.'
+                );
                 return;
             }
 
@@ -246,16 +371,19 @@ $(function () {
                 },
 
                 success: function (response) {
-                    if (!response.status) {
+                    if (response.success !== true) {
                         showAlert(
-                            response.message ||
-                            'Data monitoring gagal disimpan.'
+                            'info',
+                            'Data tidak dapat disimpan',
+                            response.message || 'Data monitoring gagal disimpan.'
                         );
 
                         return;
                     }
 
-                    showAlert(
+                    showToast(
+                        'success',
+                        'Berhasil',
                         response.message ||
                         'Monitoring Reefer berhasil disimpan.'
                     );
@@ -266,54 +394,20 @@ $(function () {
                      */
                     const searchForm = panel.find('[data-search-form]');
                     const searchInput = searchForm.find('[name="no_cont"]');
-                    const content = panel.find('[data-content]');
+                    const table = panel.find('[data-table]');
+                    const detail = panel.find('[data-detail]');
 
                     searchForm[0]?.reset();
                     searchInput.val('');
-                    content.empty();
+                    table.empty();
+                    detail.empty();
 
                     searchInput.trigger('focus');
                 },
 
                 error: function (xhr) {
-                    const response = xhr.responseJSON;
-
-                    if (xhr.status === 419) {
-                        showAlert(
-                            'Session/CSRF token sudah tidak valid. Silakan refresh halaman.'
-                        );
-
-                        return;
-                    }
-
-                    if (xhr.status === 401) {
-                        showAlert(
-                            response?.message ||
-                            'Session pengguna tidak ditemukan. Silakan login kembali.'
-                        );
-
-                        return;
-                    }
-
-                    if (xhr.status === 422) {
-                        let message =
-                            response?.message ||
-                            'Data monitoring tidak valid.';
-
-                        if (response?.data && typeof response.data === 'object') {
-                            const errors = Object.values(response.data).flat();
-
-                            if (errors.length) {
-                                message = errors.join('\n');
-                            }
-                        }
-
-                        showAlert(message);
-                        return;
-                    }
-
-                    showAlert(
-                        response?.message ||
+                    showRequestError(
+                        xhr,
                         'Terjadi kesalahan saat menyimpan Monitoring Reefer.'
                     );
                 },

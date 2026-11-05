@@ -123,37 +123,32 @@ class InspectionOutServices
         string $noCont,
         string $conditionId
     ): array {
-        $gatepass = DB::connection('prod')->select(
-            "SELECT *
-             FROM t_gatepass
-             WHERE NO_CONT = ?
-               AND JNS_KEGIATAN = '3'",
-            [$noCont]
-        );
+        $gatepass = DB::connection('prod')->table('t_gatepass')
+            ->where('NO_CONT', $noCont)
+            ->where('JNS_KEGIATAN', '3')
+            ->lockForUpdate()
+            ->first();
 
-        if (count($gatepass) === 0) {
+        if (!$gatepass) {
             return [
                 'valid' => false,
                 'message' => "Gatepass kegiatan Inspection Out untuk container {$noCont} tidak ditemukan.",
             ];
         }
 
-        $delivery = DB::connection('prod')->select(
-            "SELECT *
-             FROM t_op_delivery
-             WHERE NO_CONT = ?
-               AND WK_GATEOUT IS NULL",
-            [$noCont]
-        );
+        $deliveryRow = DB::connection('prod')->table('t_op_delivery')
+            ->where('NO_CONT', $noCont)
+            ->whereNull('WK_GATEOUT')
+            ->orderByDesc('ID')
+            ->lockForUpdate()
+            ->first();
 
-        if (count($delivery) === 0) {
+        if (!$deliveryRow) {
             return [
                 'valid' => false,
                 'message' => "Data delivery container {$noCont} tidak ditemukan atau sudah Gate Out.",
             ];
         }
-
-        $deliveryRow = $delivery[0];
 
         if (
             $deliveryRow->WK_TRUCKIN === null
@@ -189,6 +184,8 @@ class InspectionOutServices
             ->table('t_spk_cont')
             ->where('NO_CONT', $noCont)
             ->whereIn('STATUS_CONT', [450, 800, 850, 870])
+            ->orderByDesc('ID')
+            ->lockForUpdate()
             ->first();
 
         if (!$spkCont) {
@@ -205,6 +202,7 @@ class InspectionOutServices
         $spk = DB::connection('prod')
             ->table('t_spk')
             ->where('ID', $spkCont->ID)
+            ->lockForUpdate()
             ->first();
 
         if (!$spk) {

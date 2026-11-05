@@ -21,9 +21,7 @@ class MonitoringReeferController extends Controller
     ) {
     }
 
-    /**
-     * Search container aktif untuk monitoring reefer.
-     */
+    /** Pencarian awal daftar container, setara list_reefer() legacy. */
     public function search(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -31,41 +29,60 @@ class MonitoringReeferController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $this->logError(
+                $this->logChannel,
+                'Validasi pencarian Monitoring Reefer gagal.',
+                [
+                    'action' => 'search',
+                    'no_cont' => $request->input('no_cont'),
+                    'errors' => $validator->errors()->toArray(),
+                ]
+            );
+
             return response()->json([
-                'status'  => false,
+                'status'  => 'error',
+                'success' => false,
                 'kode'    => 422,
                 'message' => 'Data pencarian tidak valid.',
-                'data'    => $validator->errors(),
+                'errors'  => $validator->errors(),
+                'data'    => null,
             ], 422);
         }
 
         $keyword = strtoupper(trim($validator->validated()['no_cont']));
 
         try {
-            $monitoring = $this->service->getMonitoring($keyword);
+            $rows = $this->service->searchReefer($keyword);
 
-            if (!$monitoring) {
+            if (empty($rows)) {
+                $this->logError(
+                    $this->logChannel,
+                    'Container tidak ditemukan pada pencarian Monitoring Reefer.',
+                    [
+                        'action' => 'search',
+                        'no_cont' => $keyword,
+                    ]
+                );
+
                 return response()->json([
-                    'status'  => false,
+                    'status'  => 'error',
+                    'success' => false,
                     'kode'    => 404,
-                    'message' => "NO CONT : {$keyword} TIDAK DITEMUKAN / SUDAH UNPLUGIN.",
+                    'message' => "NO CONT : {$keyword} TIDAK DITEMUKAN.",
                     'data'    => null,
                 ], 404);
             }
 
-            $temprev = $this->service->getLastTemperature($keyword);
-
             $html = view(
-                'livewire.partials.monitoringreefer.form',
+                'livewire.partials.monitoringreefer.table',
                 [
-                    'nilai'   => $monitoring,
-                    'temprev' => $temprev,
+                    'data' => $rows,
                 ]
             )->render();
 
             $this->logInfo(
                 $this->logChannel,
-                'Search Monitoring Reefer berhasil.',
+                'Pencarian container Monitoring Reefer berhasil.',
                 [
                     'action'  => 'search',
                     'no_cont' => $keyword,
@@ -74,9 +91,10 @@ class MonitoringReeferController extends Controller
             );
 
             return response()->json([
-                'status'  => true,
+                'status'  => 'success',
+                'success' => true,
                 'kode'    => 200,
-                'message' => 'Data monitoring reefer berhasil ditemukan.',
+                'message' => 'Container berhasil ditemukan.',
                 'data'    => $html,
             ]);
         } catch (Throwable $e) {
@@ -92,10 +110,112 @@ class MonitoringReeferController extends Controller
             );
 
             return response()->json([
-                'status'  => false,
+                'status'  => 'error',
+                'success' => false,
                 'kode'    => 500,
                 'message' => 'Terjadi kesalahan saat mencari data Monitoring Reefer.',
+                'error'   => $e->getMessage(),
                 'data'    => null,
+            ], 500);
+        }
+    }
+
+    /** Mengambil detail container aktif untuk form monitoring legacy. */
+    public function detail(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'no_cont' => ['required', 'string', 'max:50'],
+        ]);
+
+        if ($validator->fails()) {
+            $this->logError(
+                $this->logChannel,
+                'Validasi detail Monitoring Reefer gagal.',
+                [
+                    'action' => 'detail',
+                    'no_cont' => $request->input('no_cont'),
+                    'errors' => $validator->errors()->toArray(),
+                ]
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'kode' => 422,
+                'message' => 'Nomor container tidak valid.',
+                'errors' => $validator->errors(),
+                'data' => null,
+            ], 422);
+        }
+
+        $keyword = strtoupper(trim($validator->validated()['no_cont']));
+
+        try {
+            $monitoring = $this->service->getMonitoring($keyword);
+
+            if (!$monitoring) {
+                $this->logError(
+                    $this->logChannel,
+                    'Container tidak aktif untuk Monitoring Reefer.',
+                    [
+                        'action' => 'detail',
+                        'no_cont' => $keyword,
+                    ]
+                );
+
+                return response()->json([
+                    'status' => 'error',
+                    'success' => false,
+                    'kode' => 404,
+                    'message' => "NO CONT : {$keyword} SUDAH UNPLUGIN / TIDAK AKTIF MONITORING.",
+                    'data' => null,
+                ], 404);
+            }
+
+            $temprev = $this->service->getLastTemperature($keyword);
+            $html = view(
+                'livewire.partials.monitoringreefer.form',
+                [
+                    'nilai' => $monitoring,
+                    'temprev' => $temprev,
+                ]
+            )->render();
+
+            $this->logInfo(
+                $this->logChannel,
+                'Detail Monitoring Reefer berhasil diambil.',
+                [
+                    'action' => 'detail',
+                    'no_cont' => $keyword,
+                ]
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'kode' => 200,
+                'message' => 'Detail Monitoring Reefer berhasil diambil.',
+                'data' => $html,
+            ]);
+        } catch (Throwable $e) {
+            $this->logError(
+                $this->logChannel,
+                'Gagal mengambil detail Monitoring Reefer.',
+                [
+                    'action' => 'detail',
+                    'no_cont' => $keyword,
+                    'exception' => get_class($e),
+                    'error' => $e->getMessage(),
+                ]
+            );
+
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'kode' => 500,
+                'message' => 'Terjadi kesalahan saat mengambil detail Monitoring Reefer.',
+                'error' => $e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }
@@ -113,11 +233,23 @@ class MonitoringReeferController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $this->logError(
+                $this->logChannel,
+                'Validasi penyimpanan Monitoring Reefer gagal.',
+                [
+                    'action' => 'store',
+                    'no_cont' => $request->input('nomerkon'),
+                    'errors' => $validator->errors()->toArray(),
+                ]
+            );
+
             return response()->json([
-                'status'  => false,
+                'status'  => 'error',
+                'success' => false,
                 'kode'    => 422,
                 'message' => 'Data monitoring tidak valid.',
-                'data'    => $validator->errors(),
+                'errors'  => $validator->errors(),
+                'data'    => null,
             ], 422);
         }
 
@@ -127,10 +259,21 @@ class MonitoringReeferController extends Controller
         $username = (string) $request->session()->get('USERLOGIN', '');
 
         if ($username === '') {
+            $this->logError(
+                $this->logChannel,
+                'Penyimpanan Monitoring Reefer ditolak karena session pengguna tidak ditemukan.',
+                [
+                    'action' => 'store',
+                    'no_cont' => $noCont,
+                ]
+            );
+
             return response()->json([
-                'status'  => false,
+                'status'  => 'error',
+                'success' => false,
                 'kode'    => 401,
                 'message' => 'Session pengguna tidak ditemukan. Silakan login kembali.',
+                'error'   => 'Session pengguna tidak ditemukan.',
                 'data'    => null,
             ], 401);
         }
@@ -160,13 +303,14 @@ class MonitoringReeferController extends Controller
             );
 
             return response()->json([
-                'status'  => true,
+                'status'  => 'success',
+                'success' => true,
                 'kode'    => 200,
                 'message' => "NO CONT : {$noCont} MONITORING BERHASIL.",
                 'data'    => $result,
             ]);
         } catch (\InvalidArgumentException $e) {
-            $this->logInfo(
+            $this->logError(
                 $this->logChannel,
                 'Monitoring Reefer ditolak oleh validasi bisnis.',
                 [
@@ -178,9 +322,11 @@ class MonitoringReeferController extends Controller
             );
 
             return response()->json([
-                'status'  => false,
+                'status'  => 'error',
+                'success' => false,
                 'kode'    => 422,
                 'message' => $e->getMessage(),
+                'error'   => $e->getMessage(),
                 'data'    => null,
             ], 422);
         } catch (Throwable $e) {
@@ -198,9 +344,11 @@ class MonitoringReeferController extends Controller
             );
 
             return response()->json([
-                'status'  => false,
+                'status'  => 'error',
+                'success' => false,
                 'kode'    => 500,
                 'message' => 'Terjadi kesalahan saat menyimpan Monitoring Reefer.',
+                'error'   => $e->getMessage(),
                 'data'    => null,
             ], 500);
         }

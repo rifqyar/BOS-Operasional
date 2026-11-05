@@ -8,8 +8,25 @@ use Throwable;
 class MonitoringReeferServices
 {
     /**
+     * Mencari daftar reefer yang pernah di-Plugin, seperti
+     * searchmonitorreefer() pada legacy.
+     */
+    public function searchReefer(string $keyword): array
+    {
+        return DB::connection('prod')->select(
+            "SELECT *
+             FROM t_op_reefer
+             WHERE WAKTU IS NOT NULL
+               AND NO_CONT LIKE ?
+             ORDER BY ID ASC
+             LIMIT 1",
+            ['%' . $keyword . '%']
+        );
+    }
+
+    /**
      * Mengambil data container yang masih plugin.
-     * Seluruh pembacaan menggunakan database legacy prod.
+     * Mengikuti serchmonitor() pada legacy.
      */
     public function getMonitoring(string $keyword)
     {
@@ -31,17 +48,42 @@ class MonitoringReeferServices
      */
     public function getLastTemperature(string $keyword)
     {
-        return DB::connection('prod')->selectOne(
-            "SELECT TEMPERATURE_MONITOR
-             FROM t_op_reefer
-             WHERE WAKTU_MONITOR IS NOT NULL
-               AND NO_CONT LIKE ?
-               AND WAKTU_END IS NULL
-               AND FL_MONITOR = 'Y'
-             ORDER BY ID DESC
-             LIMIT 1",
-            ['%' . $keyword . '%']
-        );
+        $latestProd = DB::connection('prod')
+            ->table('t_op_reefer')
+            ->select('TEMPERATURE_MONITOR', 'WAKTU_MONITOR', 'ID')
+            ->whereNotNull('WAKTU_MONITOR')
+            ->where('NO_CONT', 'LIKE', '%' . $keyword . '%')
+            ->whereNull('WAKTU_END')
+            ->where('FL_MONITOR', 'Y')
+            ->orderByDesc('ID')
+            ->first();
+
+        /*
+         * Monitoring baru disimpan ke prod_new. Baca temperatur terakhir
+         * dari sana untuk tampilan, bukan untuk validasi proses.
+         */
+        $latestProdNew = DB::connection('prod_new')
+            ->table('T_OP_REEFER')
+            ->select('TEMPERATURE_MONITOR', 'WAKTU_MONITOR', 'ID')
+            ->whereNotNull('WAKTU_MONITOR')
+            ->where('NO_CONT', 'LIKE', '%' . $keyword . '%')
+            ->whereNull('WAKTU_END')
+            ->where('FL_MONITOR', 'Y')
+            ->orderByDesc('ID')
+            ->first();
+
+        if (!$latestProdNew) {
+            return $latestProd;
+        }
+
+        if (!$latestProd) {
+            return $latestProdNew;
+        }
+
+        return strtotime((string) $latestProdNew->WAKTU_MONITOR)
+            > strtotime((string) $latestProd->WAKTU_MONITOR)
+                ? $latestProdNew
+                : $latestProd;
     }
 
     /**

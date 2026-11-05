@@ -9,12 +9,6 @@
 
     <input
         type="hidden"
-        name="spk"
-        value="450"
-    >
-
-    <input
-        type="hidden"
         name="nocont"
         value="{{ $row->NO_CONT }}"
     >

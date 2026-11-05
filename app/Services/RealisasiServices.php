@@ -17,9 +17,9 @@ class RealisasiServices
     private string $readConnection = 'prod';
 
     /**
-     * Koneksi untuk proses insert/update pemeriksaan.
+     * Koneksi tujuan untuk insert catatan/detail yang bersifat append-only.
      */
-    private string $writeConnection = 'prod_new';
+    private string $insertConnection = 'prod_new';
 
     /**
      * Mencari container yang memenuhi kriteria realisasi.
@@ -78,9 +78,7 @@ class RealisasiServices
     /**
      * Mengambil data pemeriksaan berstatus WAITING.
      *
-     * Catatan:
-     * Pembacaan di sini mengikuti koneksi prod sebagaimana kode awal.
-     * Periksa konsistensinya dengan prod_new jika kedua koneksi berbeda.
+     * Status WAITING adalah state operasional legacy dan dibaca dari prod.
      */
     public function getStatus(string $no_cont)
     {
@@ -181,6 +179,14 @@ class RealisasiServices
              FROM t_job_slip
              WHERE NO_CONT = ?
                AND NO_SPK = ?
+               AND STATUS = 'WAITING'
+               AND KD_STATUS = '20'
+               AND JENIS IN (
+                    'BEHANDLE 1',
+                    'BEHANDLE 2',
+                    'EX BEHANDLE 1',
+                    'EX BEHANDLE 2'
+               )
              ORDER BY ID_JOB_SLIP DESC
              LIMIT 1",
             [$noCont, $noSpk]
@@ -200,6 +206,7 @@ class RealisasiServices
              WHERE NO_CONT = ?
                AND NO_DOK = ?
                AND JNS_KEGIATAN IN ('1', '2')
+               AND FL_ACTIVE = 'Y'
              ORDER BY ID DESC
              LIMIT 1",
             [$noCont, $noDok]
@@ -354,10 +361,10 @@ class RealisasiServices
         }
 
         /*
-         * Status pemeriksaan WAITING dibaca dari koneksi penulisan,
-         * sesuai implementasi awal storePemeriksaan().
+         * Status pemeriksaan adalah state operasional legacy, jadi selalu
+         * dibaca dan ditulis pada prod seperti implementasi legacy.
          */
-        $inspection = DB::connection($this->writeConnection)
+        $inspection = DB::connection($this->readConnection)
             ->selectOne(
                 "SELECT *
                  FROM t_op_inspection
@@ -422,19 +429,18 @@ class RealisasiServices
 
         $now = now();
 
-        $connection = DB::connection($this->writeConnection);
-
-        /*
-         * Transaksi eksplisit mengikuti pola PickupController.
-         */
-        $connection->beginTransaction();
+        $prod = DB::connection($this->readConnection);
+        $insertDb = DB::connection($this->insertConnection);
 
         try {
+            $prod->beginTransaction();
+            $insertDb->beginTransaction();
+
             /*
              * Periksa ulang di dalam transaksi untuk mengurangi
              * risiko dua proses mulai berjalan bersamaan.
              */
-            $waiting = $connection->table('t_op_inspection')
+            $waiting = $prod->table('t_op_inspection')
                 ->where('NO_CONT', $noCont)
                 ->where('STATUS', 'WAITING')
                 ->lockForUpdate()
@@ -455,7 +461,12 @@ class RealisasiServices
             $jnsDok = $gatepass->JNS_DOK ?? null;
             $tglDok = $gatepass->TGL_DOK ?? null;
 
-            $connection->table('t_op_inspection')->insert([
+            /*
+             * t_op_inspection adalah state proses yang nanti diperbarui
+             * saat selesai, sehingga record otoritatifnya harus berada
+             * di prod agar validasi awal/selesai membaca state yang sama.
+             */
+            $prod->table('t_op_inspection')->insert([
                 'NO_CONT' => $noCont,
                 'OPERATOR_START' => $operatorLogin,
                 'LOKASI' => $lokasi,
@@ -471,7 +482,7 @@ class RealisasiServices
             /*
              * Catatan pergerakan container.
              */
-            $connection->table('log_pergerakan_kontainer')->insert([
+            $insertDb->table('log_pergerakan_kontainer')->insert([
                 'NO_CONT' => $noCont,
                 'NO_SPK' => $noSpk,
                 'ACTIVITY' => 'START_PERIKSA',
@@ -482,8 +493,9 @@ class RealisasiServices
             /*
              * Memperbarui waktu mulai pada tabel operation.
              */
-            $connection->table('t_operation')
+            $prod->table('t_operation')
                 ->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $noSpk)
                 ->update([
                     'WK_START' => $now,
                 ]);
@@ -496,13 +508,15 @@ class RealisasiServices
                 : 'PB2_START_PERIKSA';
 
             $this->updateReportBehandle(
-                $connection,
+                $prod,
+                $noCont,
                 (string) $noSpk,
                 $reportColumn,
                 $now
             );
 
-            $connection->commit();
+            $prod->commit();
+            $insertDb->commit();
 
             $this->logInfo(
                 'pemeriksaan-behandle',
@@ -524,9 +538,11 @@ class RealisasiServices
                 ],
             ];
         } catch (Throwable $e) {
-            if ($connection->transactionLevel() > 0) {
-                $connection->rollBack();
-            }
+            $this->rollbackTransactions(
+                [$prod, $insertDb],
+                $noCont,
+                $operatorLogin
+            );
 
             $this->logError(
                 'pemeriksaan-behandle',
@@ -562,6 +578,10 @@ class RealisasiServices
             ?? null;
 
         $idAlat = $input['alat'] ?? null;
+        $operatorDetail = trim((string) ($input['operator'] ?? ''));
+        if ($operatorDetail === '') {
+            $operatorDetail = $operatorLogin;
+        }
 
         $tipeCont = $input['tipecont']
             ?? $container->TIPE_CONT
@@ -569,19 +589,19 @@ class RealisasiServices
 
         $now = now();
 
-        $connection = DB::connection($this->writeConnection);
-
-        /*
-         * Transaksi eksplisit mengikuti pola PickupController.
-         */
-        $connection->beginTransaction();
+        $prod = DB::connection($this->readConnection);
+        $insertDb = DB::connection($this->insertConnection);
 
         try {
+            $prod->beginTransaction();
+            $insertDb->beginTransaction();
+
             /*
              * Kunci data pemeriksaan yang sedang berlangsung.
              */
-            $waiting = $connection->table('t_op_inspection')
+            $waiting = $prod->table('t_op_inspection')
                 ->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $noSpk)
                 ->where('STATUS', 'WAITING')
                 ->lockForUpdate()
                 ->first();
@@ -595,7 +615,7 @@ class RealisasiServices
             /*
              * Menyelesaikan pemeriksaan.
              */
-            $connection->table('t_op_inspection')
+            $prod->table('t_op_inspection')
                 ->where('ID', $waiting->ID)
                 ->update([
                     'NO_SEAL' => $noSeal,
@@ -607,7 +627,7 @@ class RealisasiServices
             /*
              * Catatan pergerakan container.
              */
-            $connection->table('log_pergerakan_kontainer')->insert([
+            $insertDb->table('log_pergerakan_kontainer')->insert([
                 'NO_CONT' => $noCont,
                 'NO_SPK' => $noSpk,
                 'ACTIVITY' => 'FINISH_PERIKSA',
@@ -618,8 +638,9 @@ class RealisasiServices
             /*
              * Memperbarui nomor seal dan waktu selesai.
              */
-            $connection->table('t_operation')
+            $prod->table('t_operation')
                 ->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $noSpk)
                 ->update([
                     'NO_SEAL' => $noSeal,
                     'WK_FINISH' => $now,
@@ -628,15 +649,17 @@ class RealisasiServices
             /*
              * Memperbarui status container dari 460 menjadi 500.
              */
-            $connection->table('t_spk_cont')
+            $prod->table('t_spk_cont')
                 ->where('NO_CONT', $noCont)
+                ->where('ID', $container->ID)
                 ->where('STATUS_CONT', '460')
                 ->update([
                     'NO_SEAL' => $noSeal,
                     'STATUS_CONT' => '500',
                 ]);
 
-            $connection->table('t_spk')
+            $prod->table('t_spk')
+                ->where('ID', $container->ID)
                 ->where('NO_SPK', $noSpk)
                 ->update([
                     'KD_STATUS' => '500',
@@ -653,8 +676,11 @@ class RealisasiServices
                 ? 'EX BEHANDLE 1'
                 : 'EX BEHANDLE 2';
 
-            $updated = $connection->table('t_job_slip')
+            $updated = $prod->table('t_job_slip')
                 ->where('ID_JOB_SLIP', $jobSlip->ID_JOB_SLIP)
+                ->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $noSpk)
+                ->where('STATUS', 'WAITING')
                 ->update([
                     'JNS_JOB_SLIP' => 'MARSHALLING',
                     'JENIS' => $jenis,
@@ -667,8 +693,11 @@ class RealisasiServices
                  * Update bisa mengembalikan 0 jika nilai tidak berubah.
                  * Pastikan record masih ada sebelum melanjutkan.
                  */
-                $exists = $connection->table('t_job_slip')
+                $exists = $prod->table('t_job_slip')
                     ->where('ID_JOB_SLIP', $jobSlip->ID_JOB_SLIP)
+                    ->where('NO_CONT', $noCont)
+                    ->where('NO_SPK', $noSpk)
+                    ->where('STATUS', 'WAITING')
                     ->exists();
 
                 if (!$exists) {
@@ -681,10 +710,10 @@ class RealisasiServices
             /*
              * Mencari job slip PICKUP untuk detail pemeriksaan.
              */
-            $pickup = $connection->table('t_job_slip')
+            $pickup = $prod->table('t_job_slip')
                 ->where('NO_CONT', $noCont)
                 ->where('NO_SPK', $noSpk)
-                ->where('JNS_JOB_SLIP', 'PICKUP')
+                ->where('JENIS', 'PICKUP')
                 ->orderByDesc('ID_JOB_SLIP')
                 ->first();
 
@@ -695,37 +724,57 @@ class RealisasiServices
             }
 
             /*
+             * Resolve the mirrored Oracle job slip ID for the insert FK.
+             * Business validation remains against the source row in prod.
+             */
+            $pickupForInsert = $insertDb->table('t_job_slip')
+                ->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $noSpk)
+                ->where('JNS_JOB_SLIP', 'PICKUP')
+                ->orderByDesc('ID_JOB_SLIP')
+                ->first();
+
+            if (!$pickupForInsert) {
+                throw new RuntimeException(
+                    'Job slip PICKUP belum tersedia pada database tujuan untuk detail pemeriksaan.'
+                );
+            }
+
+            /*
              * Membuat detail job slip pemeriksaan.
              */
-            $connection->table('t_job_detail')->insert([
-                'ID_JOB_SLIP' => $pickup->ID_JOB_SLIP,
+            $insertDb->table('t_job_detail')->insert([
+                'ID_JOB_SLIP' => $pickupForInsert->ID_JOB_SLIP,
                 'JENIS' => 'PEMERIKSAAN',
                 'NO_SPK' => $noSpk,
                 'NO_CONT' => $noCont,
                 'TYPE_CONT' => $tipeCont,
                 'ID_PEKERJAAN' => 4,
                 'ID_ALAT' => $idAlat,
-                'OPERATOR' => $operatorLogin,
+                'OPERATOR' => $operatorDetail,
             ]);
 
             /*
              * Memperbarui laporan behandle.
              */
             $this->updateReportBehandle(
-                $connection,
+                $prod,
+                $noCont,
                 (string) $noSpk,
                 'PB2_FINISH_PERIKSA',
                 $now
             );
 
             $this->updateReportBehandle(
-                $connection,
+                $prod,
+                $noCont,
                 (string) $noSpk,
                 'PB2_NEW_NO_SEAL',
                 $noSeal
             );
 
-            $connection->commit();
+            $prod->commit();
+            $insertDb->commit();
 
             $this->logInfo(
                 'pemeriksaan-behandle',
@@ -748,9 +797,11 @@ class RealisasiServices
                 ],
             ];
         } catch (Throwable $e) {
-            if ($connection->transactionLevel() > 0) {
-                $connection->rollBack();
-            }
+            $this->rollbackTransactions(
+                [$prod, $insertDb],
+                $noCont,
+                $operatorLogin
+            );
 
             $this->logError(
                 'pemeriksaan-behandle',
@@ -772,6 +823,7 @@ class RealisasiServices
      */
     private function updateReportBehandle(
         $connection,
+        string $noCont,
         string $noSpk,
         string $column,
         $value
@@ -789,10 +841,47 @@ class RealisasiServices
             );
         }
 
+        $report = $connection->table('report_behandle')
+            ->where('NO_CONT', $noCont)
+            ->where('RB1_NO_SPK', $noSpk)
+            ->orderByDesc('ID')
+            ->first();
+
+        if (!$report) {
+            return;
+        }
+
         $connection->table('report_behandle')
-            ->where('NO_SPK', $noSpk)
-            ->update([
-                $column => $value,
-            ]);
+            ->where('ID', $report->ID)
+            ->where('NO_CONT', $noCont)
+            ->where('RB1_NO_SPK', $noSpk)
+            ->update([$column => $value]);
+    }
+
+    /**
+     * Roll back setiap koneksi yang transaksinya masih terbuka.
+     */
+    private function rollbackTransactions(
+        array $connections,
+        string $noCont,
+        string $operatorLogin
+    ): void {
+        foreach ($connections as $connection) {
+            try {
+                if ($connection->transactionLevel() > 0) {
+                    $connection->rollBack();
+                }
+            } catch (Throwable $rollbackException) {
+                $this->logError(
+                    'pemeriksaan-behandle',
+                    'Rollback transaksi pemeriksaan gagal.',
+                    [
+                        'no_cont' => $noCont,
+                        'operator' => $operatorLogin,
+                        'rollback_error' => $rollbackException->getMessage(),
+                    ]
+                );
+            }
+        }
     }
 }

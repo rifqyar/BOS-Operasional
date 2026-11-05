@@ -78,8 +78,7 @@ class InspectionOutController extends Controller
     /**
      * Store Inspection Out.
      *
-     * Validasi/read  : prod (legacy MySQL)
-     * Update         : prod_new (Oracle)
+     * Validasi dan seluruh perubahan dilakukan pada MySQL prod.
      */
     public function store(Request $request): JsonResponse
     {
@@ -94,13 +93,18 @@ class InspectionOutController extends Controller
         $noCont = strtoupper(trim($validated['nomercont']));
 
         $prod = DB::connection('prod');
-        $prodNew = DB::connection('prod_new');
+        $transactionStarted = false;
+        $stage = 'begin_transaction';
 
         try {
+            $prod->beginTransaction();
+            $transactionStarted = true;
+
             /*
-             * Validasi ulang dari legacy DB.
-             * Jangan mengandalkan data dari hasil pencarian saja.
+             * Validasi ulang dari prod, di dalam transaksi agar
+             * state yang diperiksa sama dengan state yang diubah.
              */
+            $stage = 'validasi_inspection_out';
             $validation = $this->inspectionOutService
                 ->validateInspectionOut($noCont, $validated['kondisi']);
 
@@ -113,6 +117,7 @@ class InspectionOutController extends Controller
 
             $spkCont = $validation['spk_cont'];
             $spk = $validation['spk'];
+            $delivery = $validation['delivery'];
 
             $noSpk = $spk->NO_SPK ?? null;
 
@@ -135,17 +140,11 @@ class InspectionOutController extends Controller
                 ?? 'SYSTEM';
 
             /*
-             * Mulai transaksi pada masing-masing koneksi.
-             * Transaksi MySQL dan Oracle berjalan terpisah.
-             */
-            $prod->beginTransaction();
-            $prodNew->beginTransaction();
-
-            /*
-             * 1. UPDATE t_operation (Oracle)
+             * 1. UPDATE t_operation (MySQL prod)
              * Mengikuti key legacy: NO_CONT + NO_SPK.
              */
-            $operationUpdated = $prodNew
+            $stage = 'update_t_operation';
+            $operationUpdated = $prod
                 ->table('t_operation')
                 ->where('NO_CONT', $noCont)
                 ->where('NO_SPK', $noSpk)
@@ -161,12 +160,14 @@ class InspectionOutController extends Controller
             }
 
             /*
-             * 2. UPDATE t_spk_cont (Oracle)
+             * 2. UPDATE t_spk_cont (MySQL prod)
              * Status container menjadi 870.
              * Status 900 tidak boleh diubah.
              */
-            $spkContUpdated = $prodNew
+            $stage = 'update_t_spk_cont';
+            $spkContUpdated = $prod
                 ->table('t_spk_cont')
+                ->where('ID', $spkCont->ID)
                 ->where('NO_CONT', $noCont)
                 ->whereIn('STATUS_CONT', ['450', '800', '850', '870'])
                 ->where('STATUS_CONT', '<>', '900')
@@ -174,7 +175,7 @@ class InspectionOutController extends Controller
                     'STATUS_CONT' => '870',
                 ]);
 
-            if ($spkContUpdated === 0) {
+            if ($spkContUpdated === 0 && (string) $spkCont->STATUS_CONT !== '870') {
                 throw new Exception(
                     'Status container tidak memenuhi syarat atau gagal diperbarui.',
                     422
@@ -182,11 +183,13 @@ class InspectionOutController extends Controller
             }
 
             /*
-             * 3. UPDATE t_op_delivery (Oracle)
+             * 3. UPDATE t_op_delivery (MySQL prod)
              * Mengikuti field yang di-update oleh legacy set_inspect().
              */
-            $deliveryUpdated = $prodNew
+            $stage = 'update_t_op_delivery';
+            $deliveryUpdated = $prod
                 ->table('t_op_delivery')
+                ->where('ID', $delivery->ID)
                 ->where('NO_CONT', $noCont)
                 ->whereNull('WK_INSPECT')
                 ->whereNull('WK_GATEOUT')
@@ -205,11 +208,9 @@ class InspectionOutController extends Controller
                 );
             }
 
-            /*
-             * Commit kedua koneksi.
-             */
+            $stage = 'commit';
             $prod->commit();
-            $prodNew->commit();
+            $transactionStarted = false;
 
             $this->logInfo(
                 'inspection-out',
@@ -221,13 +222,14 @@ class InspectionOutController extends Controller
                     'kondisi' => $validated['kondisi'],
                     'kondisi_seal' => $validated['optradio'],
                     'no_seal' => $validated['noseal'] ?? null,
+                    'stage' => 'selesai',
                 ]
             );
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Inspection Out berhasil diproses.',
-                'cont' => [
+                'data' => [
                     'no_cont' => $noCont,
                     'no_spk' => $noSpk,
                     'wk_inspect' => $now,
@@ -238,16 +240,8 @@ class InspectionOutController extends Controller
              * Rollback hanya jika transaksi masih aktif.
              */
             try {
-                if ($prod->transactionLevel() > 0) {
+                if ($transactionStarted && $prod->transactionLevel() > 0) {
                     $prod->rollBack();
-                }
-            } catch (Throwable) {
-                // Pertahankan exception utama.
-            }
-
-            try {
-                if ($prodNew->transactionLevel() > 0) {
-                    $prodNew->rollBack();
                 }
             } catch (Throwable) {
                 // Pertahankan exception utama.
@@ -264,6 +258,7 @@ class InspectionOutController extends Controller
                     'no_container' => $noCont,
                     'error' => $th->getMessage(),
                     'code' => $th->getCode(),
+                    'stage' => $stage,
                 ]
             );
 
@@ -271,7 +266,7 @@ class InspectionOutController extends Controller
                 'status' => 'error',
                 'message' => $th->getMessage()
                     ?: 'Terjadi kesalahan saat memproses Inspection Out.',
-                'error' => $th->getMessage(),
+                'data' => null,
             ], $errorCode);
         }
     }

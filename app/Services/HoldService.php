@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class HoldService
 {
@@ -129,8 +130,7 @@ class HoldService
     /**
      * HOLD container.
      *
-     * Validasi data dilakukan pada prod.
-     * Update dilakukan hanya pada prod_new.
+     * Validasi dan update dilakukan pada prod (MySQL), mengikuti legacy.
      *
      * Legacy update:
      * t_spk_cont.FL_HOLD = 'Y'
@@ -149,7 +149,7 @@ class HoldService
         }
 
         /*
-         * Validasi/read hanya dari database legacy.
+         * Validasi/read dari MySQL prod.
          */
         $legacyRow = DB::connection('prod')
             ->table('t_spk_cont')
@@ -185,9 +185,9 @@ class HoldService
         }
 
         /*
-         * Write hanya ke prod_new.
+         * Update ke MySQL prod, sesuai proses legacy.
          */
-        $connection = DB::connection('prod_new');
+        $connection = DB::connection('prod');
 
         $connection->beginTransaction();
 
@@ -221,8 +221,8 @@ class HoldService
     /**
      * RELEASE container.
      *
-     * Validasi/read dilakukan pada prod.
-     * Update dilakukan hanya pada prod_new.
+     * Validasi dan seluruh update dilakukan pada prod (MySQL),
+     * mengikuti proses legacy.
      *
      * Legacy:
      * 1. Update t_spk_cont:
@@ -287,9 +287,9 @@ class HoldService
         $noSpk = $noSpk ?: $legacyRow->NO_SPK;
 
         /*
-         * Write hanya ke prod_new.
+         * Update ke MySQL prod, sesuai proses legacy.
          */
-        $connection = DB::connection('prod_new');
+        $connection = DB::connection('prod');
 
         $connection->beginTransaction();
 

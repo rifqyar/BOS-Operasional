@@ -194,6 +194,11 @@ class HoldController extends Controller
                 'success' => true,
                 'status' => 'success',
                 'message' => 'Container berhasil diproses HOLD.',
+                'data' => [
+                    'id' => $id,
+                    'no_container' => $noCont,
+                    'warna' => $warna,
+                ],
                 'id' => $id,
                 'no_container' => $noCont,
                 'warna' => $warna,
@@ -217,6 +222,7 @@ class HoldController extends Controller
                 'message' => $e->getMessage()
                     ?: 'Container gagal diproses HOLD.',
                 'error' => $e->getMessage(),
+                'data' => null,
             ], $httpCode);
         }
     }
@@ -266,6 +272,11 @@ class HoldController extends Controller
                 'success' => true,
                 'status' => 'success',
                 'message' => 'Container berhasil diproses RELEASE.',
+                'data' => [
+                    'id' => $id,
+                    'no_container' => $noCont,
+                    'no_spk' => $noSpk,
+                ],
                 'id' => $id,
                 'no_container' => $noCont,
                 'no_spk' => $noSpk,
@@ -289,6 +300,7 @@ class HoldController extends Controller
                 'message' => $e->getMessage()
                     ?: 'Container gagal diproses RELEASE.',
                 'error' => $e->getMessage(),
+                'data' => null,
             ], $httpCode);
         }
     }

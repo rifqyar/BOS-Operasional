@@ -121,6 +121,15 @@
         alert(text);
     };
 
+    const getAjaxErrorMessage = (xhr, fallback) => {
+        const response = xhr.responseJSON || {};
+        const firstValidationError = Object.values(response.errors || {})
+            .flat()
+            .find((message) => typeof message === 'string' && message.trim());
+
+        return firstValidationError || response.message || fallback;
+    };
+
     /*
     |--------------------------------------------------------------------------
     | BUTTON LOADING
@@ -327,8 +336,10 @@
                                 ? 'Terjadi Kesalahan'
                                 : 'Container tidak ditemukan',
 
-                            xhr.responseJSON?.message ||
+                            getAjaxErrorMessage(
+                                xhr,
                                 'Gagal mengambil data container, harap hubungi tim IT'
+                            )
                         );
                     })
 
@@ -560,8 +571,10 @@
                         showAlert(
                             'error',
                             'Gagal',
-                            xhr.responseJSON?.message ||
+                            getAjaxErrorMessage(
+                                xhr,
                                 'Gagal mengambil detail pemeriksaan.'
+                            )
                         );
                     })
 
@@ -650,15 +663,41 @@
                             response.message ||
                                 'Data berhasil diproses.'
                         );
+
+                        if (Number(response.kode) === 1) {
+                            const noCont = $form
+                                .find('[name="nomerkon"]')
+                                .val()
+                                ?.trim();
+
+                            const $detailButton = $(
+                                '[data-panel-name="realisasi"] [data-detail-button]'
+                            ).filter(function () {
+                                return $(this).data('no-cont') === noCont;
+                            }).first();
+
+                            if ($detailButton.length) {
+                                $detailButton.trigger('click');
+                            }
+                        } else if (Number(response.kode) === 2) {
+                            getDetailContainer()
+                                .empty()
+                                .addClass('hidden');
+
+                            getRowsContainer().empty();
+                            getResultWrapper().addClass('hidden');
+                        }
                     })
 
                     .fail((xhr) => {
 
                         showAlert(
-                            'error',
-                            'Gagal',
-                            xhr.responseJSON?.message ||
+                            xhr.status === 422 ? 'info' : 'error',
+                            xhr.status === 422 ? 'Data tidak valid' : 'Gagal',
+                            getAjaxErrorMessage(
+                                xhr,
                                 'Data gagal diproses.'
+                            )
                         );
                     })
 
