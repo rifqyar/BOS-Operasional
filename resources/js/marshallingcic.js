@@ -748,6 +748,17 @@
             data: $.param(formData),
 
             success: function (response) {
+                if (response && response.mode === 'test') {
+                    showAlert(
+                        'info',
+                        'Mode Testing',
+                        response.message ||
+                            'Validasi berhasil. Tidak ada data yang disimpan.'
+                    );
+
+                    return;
+                }
+
                 if (response && response.success) {
                     showToast(
                         'success',

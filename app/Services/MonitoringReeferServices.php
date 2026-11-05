@@ -59,31 +59,23 @@ class MonitoringReeferServices
             ->first();
 
         /*
-         * Monitoring baru disimpan ke prod_new. Baca temperatur terakhir
-         * dari sana untuk tampilan, bukan untuk validasi proses.
+         * Monitoring baru disimpan ke prod_new. Jangan membaca atau
+         * membandingkan WAKTU_MONITOR dari koneksi ini; gunakan ID untuk
+         * mengambil temperatur terakhir yang tersimpan.
          */
         $latestProdNew = DB::connection('prod_new')
             ->table('T_OP_REEFER')
-            ->select('TEMPERATURE_MONITOR', 'WAKTU_MONITOR', 'ID')
-            ->whereNotNull('WAKTU_MONITOR')
+            ->select('TEMPERATURE_MONITOR', 'ID')
+            ->whereNotNull('TEMPERATURE_MONITOR')
             ->where('NO_CONT', 'LIKE', '%' . $keyword . '%')
             ->whereNull('WAKTU_END')
             ->where('FL_MONITOR', 'Y')
             ->orderByDesc('ID')
             ->first();
 
-        if (!$latestProdNew) {
-            return $latestProd;
-        }
-
-        if (!$latestProd) {
-            return $latestProdNew;
-        }
-
-        return strtotime((string) $latestProdNew->WAKTU_MONITOR)
-            > strtotime((string) $latestProd->WAKTU_MONITOR)
-                ? $latestProdNew
-                : $latestProd;
+        // Baris prod_new diprioritaskan karena proses Monitoring Reefer
+        // terbaru menyimpan temperatur ke koneksi tersebut.
+        return $latestProdNew ?? $latestProd;
     }
 
     /**

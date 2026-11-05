@@ -256,7 +256,16 @@ class MonitoringReeferController extends Controller
         $validated = $validator->validated();
 
         $noCont = strtoupper(trim($validated['nomerkon']));
-        $username = (string) $request->session()->get('USERLOGIN', '');
+        $user = $request->user();
+        $username = trim((string) (
+            data_get($user, 'USERLOGIN')
+            ?? data_get($user, 'userlogin')
+            ?? data_get($user, 'username')
+            ?? data_get($user, 'user_name')
+            ?? $request->session()->get('USERLOGIN')
+            ?? $request->session()->get('userlogin')
+            ?? ''
+        ));
 
         if ($username === '') {
             $this->logError(
