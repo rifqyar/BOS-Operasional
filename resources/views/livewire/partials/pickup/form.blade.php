@@ -1,5 +1,5 @@
 @foreach ($rows as $row)
-    @if ($row->FL_SEND_NPCT1 == 'N')
+    @if (($row->fl_send_npct1 ?? $row->FL_SEND_NPCT1 ?? null) === 'N')
         <form data-send-form
             class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(5rem,0.45fr)_minmax(0,1.55fr)_auto] lg:items-end">
             <input type="hidden" name="no_spk" value="{{ $row->no_spk }}">
@@ -24,8 +24,8 @@
                 <select name="no_truck"
                     class="h-11 w-full min-w-0 max-w-full rounded-md border border-slate-200 bg-white px-3 pr-9 text-sm font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white">
                     @foreach ($trucks as $truck)
-                        <option value="{{ $truck->NO_TRUCK }}">
-                            {{ $truck->NO_TRUCK }} - {{ $truck->NO_PLAT }} - {{ $truck->NM_PEMILIK }}
+                        <option value="{{ $truck->no_truck }}">
+                            {{ $truck->no_truck }} - {{ $truck->no_plat }} - {{ $truck->nm_pemilik }}
                         </option>
                     @endforeach
                 </select>
@@ -61,8 +61,8 @@
                 <select name="no_truck"
                     class="h-11 w-full min-w-0 max-w-full rounded-md border border-slate-200 bg-white px-3 pr-9 text-sm font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white">
                     @foreach ($trucks as $truck)
-                        <option value="{{ $truck->NO_TRUCK }}" @selected(($row->id_flat ?? $row->ID_FLAT ?? '') == $truck->NO_TRUCK)>
-                            {{ $truck->NO_TRUCK }} - {{ $truck->NO_PLAT }} - {{ $truck->NM_PEMILIK }}
+                        <option value="{{ $truck->no_truck }}" @selected(($row->id_flat ?? $row->ID_FLAT ?? '') == $truck->no_truck)>
+                            {{ $truck->no_truck }} - {{ $truck->no_plat }} - {{ $truck->nm_pemilik }}
                         </option>
                     @endforeach
                 </select>

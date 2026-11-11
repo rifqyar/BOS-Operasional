@@ -24,7 +24,7 @@ class InspectionOutController extends Controller
     /**
      * Search Inspection Out.
      *
-     * Data dibaca dari database legacy (prod).
+    * Data dibaca dari prod_new.
      * Jika container memenuhi kondisi, langsung tampilkan form.
      */
     public function search(Request $request): JsonResponse
@@ -78,7 +78,7 @@ class InspectionOutController extends Controller
     /**
      * Store Inspection Out.
      *
-     * Validasi dan seluruh perubahan dilakukan pada MySQL prod.
+    * Validasi dan seluruh perubahan dilakukan pada prod_new.
      */
     public function store(Request $request): JsonResponse
     {
@@ -92,7 +92,7 @@ class InspectionOutController extends Controller
 
         $noCont = strtoupper(trim($validated['nomercont']));
 
-        $prod = DB::connection('prod');
+        $prod = DB::connection('prod_new');
         $transactionStarted = false;
         $stage = 'begin_transaction';
 
@@ -101,7 +101,7 @@ class InspectionOutController extends Controller
             $transactionStarted = true;
 
             /*
-             * Validasi ulang dari prod, di dalam transaksi agar
+             * Validasi ulang dari prod_new, di dalam transaksi agar
              * state yang diperiksa sama dengan state yang diubah.
              */
             $stage = 'validasi_inspection_out';
@@ -140,7 +140,7 @@ class InspectionOutController extends Controller
                 ?? 'SYSTEM';
 
             /*
-             * 1. UPDATE t_operation (MySQL prod)
+             * 1. UPDATE t_operation (prod_new)
              * Mengikuti key legacy: NO_CONT + NO_SPK.
              */
             $stage = 'update_t_operation';
@@ -160,7 +160,7 @@ class InspectionOutController extends Controller
             }
 
             /*
-             * 2. UPDATE t_spk_cont (MySQL prod)
+             * 2. UPDATE t_spk_cont (prod_new)
              * Status container menjadi 870.
              * Status 900 tidak boleh diubah.
              */
@@ -183,7 +183,7 @@ class InspectionOutController extends Controller
             }
 
             /*
-             * 3. UPDATE t_op_delivery (MySQL prod)
+             * 3. UPDATE t_op_delivery (prod_new)
              * Mengikuti field yang di-update oleh legacy set_inspect().
              */
             $stage = 'update_t_op_delivery';

@@ -25,7 +25,7 @@ class OnChassisController extends Controller
     /**
      * Search container.
      *
-     * READ/VALIDASI: MySQL prod.
+    * READ/VALIDASI: prod_new.
      */
     public function search(Request $request): JsonResponse
     {
@@ -85,7 +85,7 @@ class OnChassisController extends Controller
     /**
      * Proses On Chassis.
      *
-     * Validasi dan update dilakukan pada MySQL prod sesuai legacy.
+    * Validasi dan update dilakukan pada prod_new.
      */
     public function store(Request $request): JsonResponse
     {
@@ -99,7 +99,7 @@ class OnChassisController extends Controller
 
         $noContainer = strtoupper(trim($validated['nomercont']));
         $noSpk = trim((string) ($validated['nomerspk'] ?? ''));
-        $prod = DB::connection('prod');
+        $prod = DB::connection('prod_new');
         $transactionStarted = false;
         $stage = 'begin_transaction';
 

@@ -154,7 +154,7 @@ class DeliveryController extends Controller
         }
     }
 
-    /** Store either Truck In or Gate Out after rechecking the current prod state. */
+    /** Store either Truck In or Gate Out after rechecking the current prod_new state. */
     public function store(Request $request): JsonResponse
     {
         try {

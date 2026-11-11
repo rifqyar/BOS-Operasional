@@ -11,12 +11,12 @@ class HoldService
     /**
      * Legacy: search_holdd($keyword)
      *
-     * Read-only query menggunakan koneksi prod.
+    * Read-only query menggunakan koneksi prod_new.
      */
     public function searchHold(string $keyword)
     {
         return collect(
-            DB::connection('prod')->select(
+            $this->normalizeRows(DB::connection('prod_new')->select(
                 "SELECT
                     d.ID,
                     d.NO_SPK,
@@ -36,19 +36,19 @@ class HoldService
                   AND c.FL_HOLD = 'N'
                   AND c.STATUS_CONT != 900",
                 ['%' . $keyword . '%']
-            )
+            ))
         );
     }
 
     /**
      * Legacy: search_realease($keyword)
      *
-     * Read-only query menggunakan koneksi prod.
+    * Read-only query menggunakan koneksi prod_new.
      */
     public function searchRelease(string $keyword)
     {
         return collect(
-            DB::connection('prod')->select(
+            $this->normalizeRows(DB::connection('prod_new')->select(
                 "SELECT
                     d.ID,
                     d.NO_SPK,
@@ -73,7 +73,7 @@ class HoldService
                   AND c.FL_HOLD = 'Y'
                   AND c.STATUS_CONT != 900",
                 ['%' . $keyword . '%']
-            )
+            ))
         );
     }
 
@@ -81,13 +81,13 @@ class HoldService
      * Legacy: realese()
      *
      * Daftar container HOLD dengan pagination.
-     * Seluruh pembacaan menggunakan prod.
+    * Seluruh pembacaan menggunakan prod_new.
      */
     public function getHeldContainers(int $perPage = 10)
     {
         $perPage = min(max($perPage, 1), 50);
 
-        return DB::connection('prod')
+        $paginator = DB::connection('prod_new')
             ->table('t_spk as d')
             ->join(
                 't_spk_cont as c',
@@ -125,12 +125,20 @@ class HoldService
             ->where('c.STATUS_CONT', '!=', 900)
             ->orderByDesc('d.ID')
             ->paginate($perPage);
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(
+                fn ($row) => $this->normalizeRow($row)
+            )
+        );
+
+        return $paginator;
     }
 
     /**
      * HOLD container.
      *
-     * Validasi dan update dilakukan pada prod (MySQL), mengikuti legacy.
+    * Validasi dan update dilakukan pada prod_new.
      *
      * Legacy update:
      * t_spk_cont.FL_HOLD = 'Y'
@@ -149,9 +157,9 @@ class HoldService
         }
 
         /*
-         * Validasi/read dari MySQL prod.
+         * Validasi/read dari prod_new.
          */
-        $legacyRow = DB::connection('prod')
+        $legacyRow = DB::connection('prod_new')
             ->table('t_spk_cont')
             ->select([
                 'ID',
@@ -162,6 +170,7 @@ class HoldService
             ->where('ID', $id)
             ->where('NO_CONT', $noCont)
             ->first();
+        $legacyRow = $this->normalizeRow($legacyRow);
 
         if (!$legacyRow) {
             throw new Exception(
@@ -185,9 +194,9 @@ class HoldService
         }
 
         /*
-         * Update ke MySQL prod, sesuai proses legacy.
+         * Update ke prod_new.
          */
-        $connection = DB::connection('prod');
+        $connection = DB::connection('prod_new');
 
         $connection->beginTransaction();
 
@@ -221,8 +230,7 @@ class HoldService
     /**
      * RELEASE container.
      *
-     * Validasi dan seluruh update dilakukan pada prod (MySQL),
-     * mengikuti proses legacy.
+    * Validasi dan seluruh update dilakukan pada prod_new.
      *
      * Legacy:
      * 1. Update t_spk_cont:
@@ -241,10 +249,10 @@ class HoldService
         $noCont = strtoupper(trim($noCont));
 
         /*
-         * Validasi/read container dari prod.
-         * Ambil NO_SPK dari legacy jika tidak dikirim frontend.
+         * Validasi/read container dari prod_new.
+         * Ambil NO_SPK dari database jika tidak dikirim frontend.
          */
-        $legacyRow = DB::connection('prod')
+        $legacyRow = DB::connection('prod_new')
             ->table('t_spk as d')
             ->join(
                 't_spk_cont as c',
@@ -262,6 +270,7 @@ class HoldService
             ->where('d.ID', $id)
             ->where('c.NO_CONT', $noCont)
             ->first();
+        $legacyRow = $this->normalizeRow($legacyRow);
 
         if (!$legacyRow) {
             throw new Exception(
@@ -287,9 +296,9 @@ class HoldService
         $noSpk = $noSpk ?: $legacyRow->NO_SPK;
 
         /*
-         * Update ke MySQL prod, sesuai proses legacy.
+         * Update ke prod_new.
          */
-        $connection = DB::connection('prod');
+        $connection = DB::connection('prod_new');
 
         $connection->beginTransaction();
 
@@ -337,5 +346,27 @@ class HoldService
 
             throw $e;
         }
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass();
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
     }
 }

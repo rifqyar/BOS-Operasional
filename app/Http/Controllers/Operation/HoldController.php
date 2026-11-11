@@ -27,7 +27,7 @@ class HoldController extends Controller
      * 2. Jika tidak ditemukan, cari container yang sudah HOLD.
      * 3. Jika tidak ditemukan juga, kembalikan 404.
      *
-     * Seluruh pencarian dilakukan pada koneksi prod.
+    * Seluruh pencarian dilakukan pada koneksi prod_new.
      */
     public function search(Request $request): JsonResponse
     {

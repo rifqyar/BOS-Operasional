@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\DB;
 
-function checkHoldP2(string $keyword): bool
+function checkHoldP2(string $keyword, string $connectionName = 'prod'): bool
 {
     $query = "SELECT
                     d.ID,
@@ -10,7 +10,7 @@ function checkHoldP2(string $keyword): bool
                     c.NO_CONT,
                     d.TGL_DOK,
                     d.NO_DOK,
-                    a.NAMA as 'JNS_DOK',
+                    a.NAMA AS JNS_DOK,
                     (case
                         when c.FL_HOLD = 'Y' then 'HOLD'
                     end) as 'KETERANGAN'
@@ -21,9 +21,13 @@ function checkHoldP2(string $keyword): bool
                     left join reff_kode_dok_bc a on
                     a.ID = d.JNS_DOK
                     where exists (select 1 from t_atensi_p2 where NO_CONT = c.NO_CONT and NO_SPK = d.NO_SPK)
-                    and (c.NO_CONT like '%$keyword%' or d.NO_SPK like '%$keyword%' or d.NO_DOK like '%$keyword%')
+                    and (c.NO_CONT like ? or d.NO_SPK like ? or d.NO_DOK like ?)
                     and c.FL_HOLD = 'Y'
                     and c.STATUS_CONT != 900";
-    $onHold = DB::connection('prod')->selectOne($query);
+    $pattern = '%' . $keyword . '%';
+    $onHold = DB::connection($connectionName)->selectOne(
+        $query,
+        [$pattern, $pattern, $pattern]
+    );
     return !empty($onHold);
 }

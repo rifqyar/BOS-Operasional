@@ -10,7 +10,7 @@ class OnChassisServices
     /** Search only Truck In containers that have not been processed On Chassis. */
     public function searchContainer(string $keyword): array
     {
-        return DB::connection('prod')->table('t_op_delivery')
+        return DB::connection('prod_new')->table('t_op_delivery')
             ->where('NO_CONT', 'like', '%' . strtoupper(trim($keyword)) . '%')
             ->whereNotNull('WK_TRUCKIN')
             ->whereNull('WK_CHASSIS')
@@ -39,7 +39,7 @@ class OnChassisServices
     /** Available Truck In records for the legacy On Chassis list. */
     public function getAvailableContainers(): array
     {
-        return DB::connection('prod')->table('t_op_delivery')
+        return DB::connection('prod_new')->table('t_op_delivery')
             ->whereNotNull('WK_TRUCKIN')
             ->whereNull('WK_CHASSIS')
             ->orderByDesc('ID')
@@ -49,11 +49,11 @@ class OnChassisServices
 
     /**
      * Revalidate and lock the delivery, SPK container, SPK, and operation
-     * rows inside the caller's prod transaction.
+    * rows inside the caller's prod_new transaction.
      */
     public function getContainerForProcess(string $noContainer, ?string $noSpk = null): array
     {
-        $db = DB::connection('prod');
+        $db = DB::connection('prod_new');
         $noContainer = strtoupper(trim($noContainer));
 
         $delivery = $db->table('t_op_delivery')

@@ -8,11 +8,11 @@ class InspectionOutServices
 {
     /**
      * Ambil gatepass untuk kegiatan Inspection Out.
-     * Semua pembacaan menggunakan database legacy (prod).
+    * Semua pembacaan menggunakan prod_new.
      */
     public function getGatepass(string $noCont)
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT *
              FROM t_gatepass
              WHERE NO_CONT LIKE ?
@@ -26,7 +26,7 @@ class InspectionOutServices
      */
     public function getDelivery(string $noCont)
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT *
              FROM t_op_delivery
              WHERE NO_CONT LIKE ?
@@ -40,7 +40,7 @@ class InspectionOutServices
      */
     public function getCondition()
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT ID, KONDISI
              FROM reff_kondisi"
         );
@@ -117,13 +117,13 @@ class InspectionOutServices
     /**
      * Validasi ulang saat submit.
      *
-     * Pembacaan dan validasi dilakukan pada prod (legacy).
+    * Pembacaan dan validasi dilakukan pada prod_new.
      */
     public function validateInspectionOut(
         string $noCont,
         string $conditionId
     ): array {
-        $gatepass = DB::connection('prod')->table('t_gatepass')
+        $gatepass = DB::connection('prod_new')->table('t_gatepass')
             ->where('NO_CONT', $noCont)
             ->where('JNS_KEGIATAN', '3')
             ->lockForUpdate()
@@ -136,7 +136,7 @@ class InspectionOutServices
             ];
         }
 
-        $deliveryRow = DB::connection('prod')->table('t_op_delivery')
+        $deliveryRow = DB::connection('prod_new')->table('t_op_delivery')
             ->where('NO_CONT', $noCont)
             ->whereNull('WK_GATEOUT')
             ->orderByDesc('ID')
@@ -164,7 +164,7 @@ class InspectionOutServices
         /*
          * Kondisi harus berasal dari referensi legacy.
          */
-        $condition = DB::connection('prod')
+        $condition = DB::connection('prod_new')
             ->table('reff_kondisi')
             ->where('ID', $conditionId)
             ->exists();
@@ -180,7 +180,7 @@ class InspectionOutServices
          * Mengikuti legacy cek_tspkcontst2:
          * STATUS_CONT IN (450, 800, 850, 870)
          */
-        $spkCont = DB::connection('prod')
+        $spkCont = DB::connection('prod_new')
             ->table('t_spk_cont')
             ->where('NO_CONT', $noCont)
             ->whereIn('STATUS_CONT', [450, 800, 850, 870])
@@ -199,7 +199,7 @@ class InspectionOutServices
          * Legacy cek_tspk2 mengambil t_spk berdasarkan ID
          * dari t_spk_cont.
          */
-        $spk = DB::connection('prod')
+        $spk = DB::connection('prod_new')
             ->table('t_spk')
             ->where('ID', $spkCont->ID)
             ->lockForUpdate()

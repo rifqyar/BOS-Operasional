@@ -13,16 +13,15 @@ class MarshallingCicService
     use LogTraits;
 
     /**
-     * Database lama MySQL.
-     * Semua pencarian dan validasi bisnis dilakukan di sini.
+     * Semua akses database Marshalling CIC menggunakan prod_new.
      */
     protected function readDb()
     {
-        return DB::connection('prod');
+        return DB::connection('prod_new');
     }
 
     /**
-     * Mengambil daftar job Marshalling CIC dari MySQL prod.
+     * Mengambil daftar job Marshalling CIC dari prod_new.
      */
     public function getAllJobs(
         int $perPage = 10
@@ -110,11 +109,18 @@ class MarshallingCicService
             ->distinct()
             ->orderByDesc('A.ID_JOB_SLIP');
 
-        return $query->paginate($perPage);
+        $paginator = $query->paginate($perPage);
+        $paginator->setCollection(
+            $paginator->getCollection()->map(
+                fn ($row) => $this->normalizeRow($row)
+            )
+        );
+
+        return $paginator;
     }
 
     /**
-     * Search job Marshalling CIC dari MySQL prod.
+     * Search job Marshalling CIC dari prod_new.
      */
     public function search(string $keyword)
     {
@@ -164,18 +170,18 @@ class MarshallingCicService
                     'EX BEHANDLE 2'
                 )
             ORDER BY A.ID_JOB_SLIP DESC",
-            ['%' . $keyword . '%']
+            ['%'.$keyword.'%']
         );
 
-        return collect($result);
+        return collect($this->normalizeRows($result));
     }
 
     /**
-     * Mengambil detail job slip dari MySQL prod.
+     * Mengambil detail job slip dari prod_new.
      */
     public function getDetail(int $idJobSlip)
     {
-        return $this->readDb()->selectOne(
+        return $this->normalizeRow($this->readDb()->selectOne(
             "SELECT DISTINCT
                 A.ID_JOB_SLIP,
                 A.NO_CONT,
@@ -224,53 +230,75 @@ class MarshallingCicService
                 AND A.ID_JOB_SLIP = ?
             ORDER BY A.ID_JOB_SLIP DESC",
             [$idJobSlip]
-        );
+        ));
     }
 
     /**
-     * Referensi jenis pekerjaan dari MySQL prod.
+     * Referensi jenis pekerjaan dari prod_new.
      */
     public function getJobActivities()
     {
-        return $this->readDb()->select(
+        return $this->normalizeRows($this->readDb()->select(
             'SELECT * FROM m_job_activity'
-        );
+        ));
     }
 
     /**
-     * Referensi alat dari MySQL prod.
+     * Referensi alat dari prod_new.
      */
     public function getEquipments()
     {
-        return $this->readDb()->select(
+        return $this->normalizeRows($this->readDb()->select(
             'SELECT * FROM t_reff_alat'
-        );
+        ));
     }
 
     /**
-     * Referensi truck dari MySQL prod.
+     * Referensi truck dari prod_new.
      */
     public function getTrucks()
     {
-        return $this->readDb()->select(
+        return $this->normalizeRows($this->readDb()->select(
             'SELECT * FROM reff_truck'
-        );
+        ));
     }
 
     /**
-     * Referensi operator dari MySQL prod.
+     * Referensi operator dari prod_new.
      */
     public function getOperators()
     {
-        return $this->readDb()->select(
+        return $this->normalizeRows($this->readDb()->select(
             "SELECT *
              FROM reff_user
              WHERE KD_GROUP LIKE '%OPR%'"
+        ));
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
         );
     }
 
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
+    }
+
     /**
-     * Simpan proses Marshalling CIC beserta seluruh perubahan legacy di MySQL prod.
+     * Simpan proses Marshalling CIC beserta seluruh perubahan di prod_new.
      */
     public function storeMarshallingCic(
         array $data,
@@ -310,7 +338,7 @@ class MarshallingCicService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$jobSlip) {
+            if (! $jobSlip) {
                 throw new RuntimeException("Job slip {$idJobSlip} untuk kontainer {$noCont} tidak ditemukan.");
             }
 
@@ -322,7 +350,7 @@ class MarshallingCicService
                 'EX BEHANDLE 2',
             ];
 
-            if (!in_array($jenisSumber, $jenisDiizinkan, true)) {
+            if (! in_array($jenisSumber, $jenisDiizinkan, true)) {
                 throw new RuntimeException('Jenis pekerjaan pada job slip tidak sesuai untuk Marshalling CIC.');
             }
 
@@ -343,7 +371,7 @@ class MarshallingCicService
                 ->orderByDesc('ID')
                 ->first();
 
-            if (!$spk) {
+            if (! $spk) {
                 throw new RuntimeException("SPK {$noSpk} tidak ditemukan.");
             }
 
@@ -353,27 +381,11 @@ class MarshallingCicService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$spkCont) {
+            if (! $spkCont) {
                 throw new RuntimeException("Kontainer {$noCont} tidak terdaftar pada SPK {$noSpk}.");
             }
 
-            $statusSekarang = $db->table('reff_status_spk')
-                ->where('ID', $spkCont->STATUS_CONT)
-                ->value('KETERANGAN');
-            $statusCic = $db->table('reff_status_spk')
-                ->where('ID', '460')
-                ->value('KETERANGAN');
-
-            if (!$statusSekarang || !$statusCic) {
-                throw new RuntimeException('Referensi deskripsi status SPK tidak ditemukan. Hubungi administrator.');
-            }
-
-            if (mb_strtoupper(trim((string) $statusSekarang)) !== mb_strtoupper(trim((string) $statusCic))) {
-                throw new RuntimeException(
-                    "Status SPK '{$statusSekarang}' belum sesuai untuk proses Marshalling CIC. " .
-                    "Status yang diperlukan: '{$statusCic}'."
-                );
-            }
+            
 
             if ((string) ($data['jenispekerjaan1'] ?? '') === '') {
                 throw new RuntimeException('Jenis pekerjaan 1 wajib dipilih.');
@@ -384,7 +396,7 @@ class MarshallingCicService
                 ->orderByDesc('ID')
                 ->first();
 
-            if (!$container) {
+            if (! $container) {
                 throw new RuntimeException("Data tipe kontainer {$noCont} tidak ditemukan.");
             }
 
@@ -478,12 +490,12 @@ class MarshallingCicService
                 $jobUntukLaporan = $job !== '' ? $job : $jenisSumber;
                 $reportUpdate = $jobUntukLaporan === 'BEHANDLE 1'
                     ? [
-                        'PB1_LOKASI_CIC' => $nmBlock . '0' . $nmTier,
+                        'PB1_LOKASI_CIC' => $nmBlock.'0'.$nmTier,
                         'PB1_MARSHALLING_B1' => $now,
                     ]
                     : [
                         'PB2_MARSHALLING_B2' => $now,
-                        'PB2_LOKASI_CIC' => $nmBlock . '0' . $nmTier,
+                        'PB2_LOKASI_CIC' => $nmBlock.'0'.$nmTier,
                     ];
 
                 $updatedReport = $db->table('report_behandle')
@@ -505,15 +517,15 @@ class MarshallingCicService
                 'new_job_slip_id' => $newJobSlipId,
                 'no_cont' => $noCont,
                 'no_spk' => $noSpk,
-                'status_spk' => $statusSekarang,
+                
                 'lokasi' => $nmBlock,
                 'tier' => $nmTier,
-                'database' => 'prod',
+                'database' => 'prod_new',
             ];
 
             $this->logInfo(
                 'marshalling-cic',
-                'Marshalling CIC berhasil disimpan di prod.',
+                'Marshalling CIC berhasil disimpan di prod_new.',
                 $result + ['username' => $username]
             );
 
@@ -525,7 +537,7 @@ class MarshallingCicService
                 } catch (Throwable $rollbackException) {
                     $this->logError(
                         'marshalling-cic',
-                        'Rollback transaksi prod Marshalling CIC gagal.',
+                        'Rollback transaksi prod_new Marshalling CIC gagal.',
                         [
                             'no_cont' => $noCont,
                             'username' => $username,
@@ -537,7 +549,7 @@ class MarshallingCicService
 
             $this->logError(
                 'marshalling-cic',
-                'Marshalling CIC gagal disimpan dan transaksi prod di-rollback.',
+                'Marshalling CIC gagal disimpan dan transaksi prod_new di-rollback.',
                 [
                     'id_job_slip' => $idJobSlip,
                     'no_cont' => $noCont,

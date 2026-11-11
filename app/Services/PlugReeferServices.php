@@ -14,7 +14,7 @@ class PlugReeferServices
      */
     public function searchReefer(string $keyword): array
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT
                 B.NO_CONT,
                 D.TEMP_CUST AS SUHU_CUST,
@@ -34,7 +34,7 @@ class PlugReeferServices
                 AND B.NO_CONT LIKE ?
                 AND B.STATUS_CONT != '900'
             ORDER BY A.ID DESC
-            LIMIT 1",
+            FETCH FIRST 1 ROWS ONLY",
             ['%' . $keyword . '%']
         );
     }
@@ -47,14 +47,14 @@ class PlugReeferServices
      */
     public function checked(string $noCont): array
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT *
             FROM t_op_reefer
             WHERE NO_CONT = ?
                 AND WAKTU IS NOT NULL
                 AND FL_UNPLUG = 'N'
             ORDER BY ID ASC
-            LIMIT 1",
+            FETCH FIRST 1 ROWS ONLY",
             [$noCont]
         );
     }
@@ -67,14 +67,14 @@ class PlugReeferServices
      */
     public function tempAkhir(string $noCont): array
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT *
             FROM t_op_reefer
             WHERE NO_CONT = ?
                 AND TEMPERATURE_MONITOR IS NOT NULL
                 AND FL_MONITOR = 'Y'
             ORDER BY ID DESC
-            LIMIT 1",
+            FETCH FIRST 1 ROWS ONLY",
             [$noCont]
         );
     }
@@ -87,14 +87,14 @@ class PlugReeferServices
      */
     public function getSpkContainer(string $noCont): ?object
     {
-        return DB::connection('prod')->selectOne(
+        return DB::connection('prod_new')->selectOne(
             "SELECT A.*, B.*
             FROM t_spk_cont A
             INNER JOIN t_spk B
                 ON A.ID = B.ID
             WHERE A.NO_CONT = ?
             ORDER BY A.ID DESC
-            LIMIT 1",
+            FETCH FIRST 1 ROWS ONLY",
             [$noCont]
         );
     }

@@ -8,8 +8,13 @@ class PickupServices
 {
     public function getTrucks()
     {
-        $data = DB::connection('prod')->select("SELECT * FROM reff_truck");
-        return $data;
+        return DB::connection('prod_new')->select(
+            "SELECT
+                NO_TRUCK AS no_truck,
+                NO_PLAT AS no_plat,
+                NM_PEMILIK AS nm_pemilik
+             FROM reff_truck"
+        );
     }
 
     public function getDetailCont(string $noContainer, ?string $noTruck = null, ?string $noSpk = null)
@@ -21,7 +26,7 @@ class PickupServices
             $bindings[] = $noSpk;
         }
 
-        $data = DB::connection('prod')->selectOne(
+        $data = DB::connection('prod_new')->selectOne(
             "SELECT
                 A.ID,
                 A.NO_DOK,
@@ -73,6 +78,15 @@ class PickupServices
             $bindings
         );
 
-        return $data;
+        if ($data === null) {
+            return null;
+        }
+
+        $normalizedData = new \stdClass();
+        foreach ((array) $data as $column => $value) {
+            $normalizedData->{strtoupper($column)} = $value;
+        }
+
+        return $normalizedData;
     }
 }

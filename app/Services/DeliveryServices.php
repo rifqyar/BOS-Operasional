@@ -11,10 +11,10 @@ class DeliveryServices
 {
     use LogTraits;
 
-    /** Legacy Delivery lookup, using MySQL prod. */
+    /** Delivery lookup using prod_new. */
     public function searchContainer(string $keyword): array
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT A.*
              FROM t_gatepass A
              INNER JOIN t_spk_cont B ON A.NO_CONT = B.NO_CONT
@@ -27,7 +27,7 @@ class DeliveryServices
 
     public function getGatepass(string $noCont): array
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             "SELECT * FROM t_gatepass WHERE NO_CONT = ? AND JNS_KEGIATAN = '3'",
             [$noCont]
         );
@@ -35,7 +35,7 @@ class DeliveryServices
 
     public function getDelivery(string $noCont): array
     {
-        return DB::connection('prod')->select(
+        return DB::connection('prod_new')->select(
             'SELECT * FROM t_op_delivery WHERE NO_CONT = ? AND WK_GATEOUT IS NULL ORDER BY ID DESC',
             [$noCont]
         );
@@ -43,7 +43,7 @@ class DeliveryServices
 
     public function getCondition(): array
     {
-        return DB::connection('prod')->select('SELECT ID, KONDISI FROM reff_kondisi');
+        return DB::connection('prod_new')->select('SELECT ID, KONDISI FROM reff_kondisi');
     }
 
     /** Determine the next screen from current persisted state, not the hidden form field. */
@@ -77,10 +77,10 @@ class DeliveryServices
             : ['status' => 0, 'no_cont' => $noCont, 'message' => 'Container belum memenuhi kondisi Delivery.'];
     }
 
-    /** Apply legacy Truck In or Gate Out and all related updates on prod. */
+    /** Apply Truck In or Gate Out and all related updates on prod_new. */
     public function store(array $data, string $username): array
     {
-        $db = DB::connection('prod');
+        $db = DB::connection('prod_new');
         $noCont = strtoupper(trim((string) ($data['nomercont'] ?? '')));
         $truck = trim((string) ($data['nomertruck'] ?? ''));
         $gate = strtoupper(trim((string) ($data['gate'] ?? '')));

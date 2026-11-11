@@ -74,7 +74,7 @@ class BehandleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $dbLegacy = DB::connection('prod');
+        $dbLegacy = DB::connection('prod_new');
         try {
             $validated = $request->validate([
                 'id_request' => ['required', 'string', 'max:50'],
@@ -111,11 +111,15 @@ class BehandleController extends Controller
 
             /** Check data status container */
             $dataSpk = $dbLegacy->selectOne(
-                "SELECT ts.ID, ts.NO_SPK, ts.TGL_SPK, ts.NO_DOK, tsc.NO_CONT, tsc.STATUS_CONT FROM t_spk_cont tsc inner join t_spk ts ON tsc.ID = ts.ID and ts.NO_SPK = ? WHERE tsc.NO_CONT = ?",
+                "SELECT ts.ID, ts.NO_SPK, ts.TGL_SPK, ts.NO_DOK, tsc.NO_CONT, tsc.STATUS_CONT AS status_cont FROM t_spk_cont tsc inner join t_spk ts ON tsc.ID = ts.ID and ts.NO_SPK = ? WHERE tsc.NO_CONT = ?",
                 [$validated['nospk'], $validated['nomerkon']]
             );
 
-            if($dataSpk->STATUS_CONT < 200) {
+            if (!$dataSpk) {
+                throw new Exception("Container tidak ditemukan atau belum diambil. Pastikan container sudah diambil (Pickup)", 404);
+            }
+
+            if ((int) $dataSpk->status_cont < 200) {
                 $this->logInfo('behandlein', 'Gagal Behandle In Container', [
                     'error'        => 'Container belum diambil (Pickup). Pastikan container sudah diambil (Pickup)',
                     'no_spk'       => $validated['nospk'] ?? null,
@@ -124,7 +128,7 @@ class BehandleController extends Controller
                 ]);
 
                 throw new Exception("Container belum diambil (Pickup). Pastikan container sudah diambil (Pickup)", 422);
-            } else if ($dataSpk->STATUS_CONT > 200) {
+            } else if ((int) $dataSpk->status_cont > 200) {
                 $this->logInfo('behandlein', 'Gagal Behandle In Container', [
                     'error'        => 'Container sudah di Behandle In. Harap cek kembali data container.',
                     'no_spk'       => $validated['nospk'] ?? null,
@@ -133,15 +137,6 @@ class BehandleController extends Controller
                 ]);
 
                 throw new Exception("Container sudah di Behandle In. Harap cek kembali data container.", 422);
-            } else if (empty($dataSpk)) {
-                $this->logInfo('behandlein', 'Gagal Behandle In Container', [
-                    'error'        => 'Container tidak ditemukan atau belum diambil. Pastikan container sudah diambil (Pickup)',
-                    'no_spk'       => $validated['nospk'] ?? null,
-                    'no_container' => $validated['nomerkon'] ?? null,
-                    'lokasi'     => $validated['nolok'] ?? null,
-                ]);
-
-                throw new Exception("Container tidak ditemukan atau belum diambil. Pastikan container sudah diambil (Pickup)", 404);
             }
 
             $validateLocation = ['1B', '1b', 'YB', 'CI'];

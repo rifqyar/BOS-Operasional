@@ -265,9 +265,8 @@ class PlugReeferController extends Controller
         $noCont = $request->input('nomerkon');
         $temperature = $request->input('temperature');
         $action = $request->input('action');
-        // t_op_reefer menyimpan state Plug yang nanti di-update saat Unplug,
-        // jadi insert dan update harus tetap berada pada koneksi legacy prod.
-        $connection = DB::connection('prod');
+        // t_op_reefer menyimpan state Plug yang nanti di-update saat Unplug.
+        $connection = DB::connection('prod_new');
 
         try {
             $validated = $request->validate([
@@ -407,19 +406,11 @@ class PlugReeferController extends Controller
                 }
 
                 /*
-                 * Pertahankan kriteria legacy:
-                 * NO_CONT dan NO_SPK,
-                 * urut ID ascending,
-                 * hanya satu baris.
+                      * checked() sudah memilih aktivitas aktif dengan ID terkecil.
                  */
                 $updated = $connection
                     ->table('t_op_reefer')
-                    ->where('NO_CONT', $noCont)
-                    ->where('NO_SPK', $spk->NO_SPK)
-                    ->whereNotNull('WAKTU')
-                    ->where('FL_UNPLUG', 'N')
-                    ->orderBy('ID', 'ASC')
-                    ->limit(1)
+                          ->where('ID', $activePlug->ID)
                     ->update([
                         'WAKTU_END' => $now,
                         'FL_UNPLUG' => 'Y',

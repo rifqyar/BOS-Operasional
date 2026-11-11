@@ -27,19 +27,19 @@ class PickupController extends Controller
         ]);
 
         try {
-            $rows = DB::connection('prod')->select(
+            $rows = DB::connection('prod_new')->select(
                 "SELECT
                     ts.NO_SPK AS no_spk,
                     tsc.NO_CONT AS no_container,
                     tsc.UKR_CONT AS ukuran,
                     tsc.STATUS_CONT AS status_cont,
-                    tsc.FL_SEND_NPCT1,
+                    tsc.FL_SEND_NPCT1 AS fl_send_npct1,
                     tsc.ID_FLAT AS id_flat
                 FROM t_spk ts
                 INNER JOIN t_spk_cont tsc ON ts.ID = tsc.ID
                 WHERE ts.NO_SPK = ?
                     AND tsc.STATUS_CONT IN (100)
-                    AND ts.WK_REQ >= '2026-01-01'
+                    AND ts.WK_REQ >= DATE '2026-01-01'
                 ORDER BY tsc.NO_CONT",
                 [$validated['no_spk']]
             );
@@ -57,7 +57,13 @@ class PickupController extends Controller
             return response()->json([
                 'data' => $view,
             ]);
-        } catch (Throwable) {
+        } catch (Throwable $th) {
+            $this->logError('pickup', 'Gagal mencari data SPK pickup', [
+                'no_spk' => $validated['no_spk'],
+                'error' => $th->getMessage(),
+                'exception' => get_class($th),
+            ]);
+
             return response()->json([
                 'message' => 'Terjadi kesalahan saat mencari data SPK.',
             ], 500);
@@ -72,7 +78,8 @@ class PickupController extends Controller
             'no_truck' => ['nullable', 'string', 'max:30'],
         ]);
 
-        DB::connection('prod')->beginTransaction();
+        $db = DB::connection('prod_new');
+        $db->beginTransaction();
         try {
             $cont = $validated['no_container'];
             $plat = $validated['no_truck'] ?? null;
@@ -91,7 +98,7 @@ class PickupController extends Controller
 
             // 3. Validasi status kode respon NPCT
             if ($data1 == '00' && $data2 == '00') {
-                DB::connection('prod')->table('t_spk_cont')
+                $db->table('t_spk_cont')
                     ->where('NO_CONT', $cont)
                     ->where('status_cont', '100')
                     ->update([
@@ -99,7 +106,7 @@ class PickupController extends Controller
                         'ID_FLAT'       => $plat,
                     ]);
 
-                DB::connection('prod')->commit();
+                $db->commit();
 
                 $this->logInfo('pickup', 'Data pickup berhasil dikirim ke NPCT', [
                     'no_spk' => $validated['no_spk'],
@@ -126,7 +133,9 @@ class PickupController extends Controller
                 throw new Exception('Gagal mengirim data pickup ke NPCT. Kode respon: ' . $data1 . ', ' . $data2, 500);
             }
         } catch (Exception $th) {
-            DB::connection('prod')->rollBack();
+            if ($db->transactionLevel() > 0) {
+                $db->rollBack();
+            }
             $this->logError('pickup', 'Gagal mengirim data pickup ke NPCT', [
                 'error' => $th->getMessage(),
                 'no_spk' => $validated['no_spk'],
@@ -152,8 +161,8 @@ class PickupController extends Controller
         $cont   = $validated['no_container'];
         $plat   = $validated['no_truck'] ?? null;
 
-        DB::connection('prod')->beginTransaction();
-        DB::connection('prod_new')->beginTransaction();
+        $db = DB::connection('prod_new');
+        $db->beginTransaction();
         try {
             $datacont = $this->services->getDetailCont($cont, $plat, $no_spk);
 
@@ -165,7 +174,7 @@ class PickupController extends Controller
 
             // a. INSERT TO t_op_pickup (Oracle)
             $user = Auth::user()?->username ?? Auth::user()?->user_name ?? 'SYSTEM';
-            DB::connection('prod_new')->table('t_op_pickup')->insert([
+            $db->table('t_op_pickup')->insert([
                 'OPERATOR' => $user,
                 'NO_SPK'   => $no_spk,
                 'NO_CONT'  => $cont,
@@ -173,10 +182,10 @@ class PickupController extends Controller
                 'W_PICKUP' => $now,
             ]);
 
-            // b. UPDATE t_spk_cont (MySQL prod)
+            // b. UPDATE t_spk_cont
             $contUpdated = 0;
             if (!empty($datacont->ID)) {
-                $contUpdated = DB::connection('prod')->table('t_spk_cont')
+                $contUpdated = $db->table('t_spk_cont')
                     ->where('ID', $datacont->ID)
                     ->where('NO_CONT', $cont)
                     ->update([
@@ -187,7 +196,7 @@ class PickupController extends Controller
             }
 
             if ($contUpdated === 0) {
-                DB::connection('prod')->table('t_spk_cont')
+                $db->table('t_spk_cont')
                     ->whereIn('ID', function ($q) use ($no_spk) {
                         $q->select('ID')->from('t_spk')->where('NO_SPK', $no_spk);
                     })
@@ -199,8 +208,8 @@ class PickupController extends Controller
                     ]);
             }
 
-            // c. UPDATE t_job_slip (MySQL prod)
-            DB::connection('prod')->table('t_job_slip')
+            // c. UPDATE t_job_slip
+            $db->table('t_job_slip')
                 ->where('NO_SPK', $no_spk)
                 ->where('NO_CONT', $cont)
                 ->update([
@@ -209,7 +218,7 @@ class PickupController extends Controller
                 ]);
 
             // d. INSERT TO t_operation (Oracle)
-            DB::connection('prod_new')->table('t_operation')->insert([
+            $db->table('t_operation')->insert([
                 'NO_SPK'    => $no_spk,
                 'NO_CONT'   => $cont,
                 'JNS_DOK'   => $datacont->JNS_DOK ?? null,
@@ -219,7 +228,7 @@ class PickupController extends Controller
             ]);
 
             // e. UPDATE report_behandle (Oracle)
-            $reportQuery = DB::connection('prod_new')->table('report_behandle')
+            $reportQuery = $db->table('report_behandle')
                 ->where('NO_CONT', $cont)
                 ->where('RB1_NO_SPK', $no_spk);
 
@@ -230,7 +239,7 @@ class PickupController extends Controller
             $report = $reportQuery->orderBy('ID', 'desc')->first();
 
             if ($report) {
-                DB::connection('prod_new')->table('report_behandle')
+                $db->table('report_behandle')
                     ->where('ID', $report->ID)
                     ->update([
                         'PRN_PICKUP' => $now,
@@ -238,21 +247,20 @@ class PickupController extends Controller
                     ]);
             }
 
-            // f. SELECT & UPDATE STATUS SPK (MySQL prod)
-            $spkKont100 = DB::connection('prod')->table('t_spk')
+            // f. SELECT & UPDATE STATUS SPK
+            $spkKont100 = $db->table('t_spk')
                 ->join('t_spk_cont', 't_spk.ID', '=', 't_spk_cont.ID')
                 ->where('t_spk.NO_SPK', $no_spk)
                 ->where('t_spk_cont.STATUS_CONT', '100')
                 ->count();
 
             if ($spkKont100 === 0) {
-                DB::connection('prod')->table('t_spk')
+                $db->table('t_spk')
                     ->where('NO_SPK', $no_spk)
                     ->update(['KD_STATUS' => '200']);
             }
 
-            DB::connection('prod')->commit();
-            DB::connection('prod_new')->commit();
+            $db->commit();
 
             $this->logInfo('pickup', 'Berhasil Pickup Container', [
                 'no_spk'       => $no_spk,
@@ -266,8 +274,9 @@ class PickupController extends Controller
                 'cont'    => $datacont,
             ]);
         } catch (Exception $th) {
-            DB::connection('prod')->rollBack();
-            DB::connection('prod_new')->rollBack();
+            if ($db->transactionLevel() > 0) {
+                $db->rollBack();
+            }
 
             $errorCode = ($th->getCode() === 404) ? 404 : 500;
 

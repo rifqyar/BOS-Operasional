@@ -27,7 +27,7 @@ class MarshallingYardServices
 
     private function baseQueryYard()
     {
-        return DB::connection('prod')->table('t_job_slip as A')
+        return DB::connection('prod_new')->table('t_job_slip as A')
             ->join('t_spk as B', 'A.NO_SPK', '=', 'B.NO_SPK')
             ->join('t_gatepass as C', 'A.NO_GATEPASS', '=', 'C.ID')
             ->select([
@@ -67,7 +67,7 @@ class MarshallingYardServices
             ORDER BY A.ID_JOB_SLIP DESC";
 
         try {
-            return DB::connection('prod')->selectOne($sql, ['005', $idJobSlip]);
+            return DB::connection('prod_new')->selectOne($sql, ['005', $idJobSlip]);
         } catch (Throwable $e) {
             $this->logError('marshalling-yard', 'Gagal mengambil detail Marshalling Yard.', [
                 'stage' => 'getDetailYard', 'id_job_slip' => $idJobSlip,
@@ -79,28 +79,28 @@ class MarshallingYardServices
 
     public function getJobActivity()
     {
-        return DB::connection('prod')->table('m_job_activity')->get();
+        return DB::connection('prod_new')->table('m_job_activity')->get();
     }
 
     public function getEquipment()
     {
-        return DB::connection('prod')->table('t_reff_alat')->get();
+        return DB::connection('prod_new')->table('t_reff_alat')->get();
     }
 
     public function getOperator()
     {
-        return DB::connection('prod')->table('reff_user')->where('KD_GROUP', 'like', '%OPR%')->get();
+        return DB::connection('prod_new')->table('reff_user')->where('KD_GROUP', 'like', '%OPR%')->get();
     }
 
     public function getTruck()
     {
-        return DB::connection('prod')->table('reff_truck')->orderBy('NO_TRUCK')->get();
+        return DB::connection('prod_new')->table('reff_truck')->orderBy('NO_TRUCK')->get();
     }
 
-    /** Seluruh pemeriksaan dan mutasi mengikuti legacy pada MySQL prod. */
+    /** Seluruh pemeriksaan dan mutasi dilakukan pada prod_new. */
     public function storeMarshallingYard(array $data, string $username): array
     {
-        $db = DB::connection('prod');
+        $db = DB::connection('prod_new');
         $idJobSlip = (int) ($data['idJobSlip'] ?? 0);
         $noCont = strtoupper(trim((string) ($data['nocont'] ?? '')));
         $lokasiAkhir = strtoupper(trim((string) ($data['lokak'] ?? '')));

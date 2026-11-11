@@ -14,7 +14,7 @@ class RealisasiServices
     /**
      * Koneksi untuk membaca data referensi.
      */
-    private string $readConnection = 'prod';
+    private string $readConnection = 'prod_new';
 
     /**
      * Koneksi tujuan untuk insert catatan/detail yang bersifat append-only.
@@ -38,16 +38,16 @@ class RealisasiServices
                  FROM t_spk_cont A
                  INNER JOIN t_spk B
                     ON A.ID = B.ID
-                 INNER JOIN t_request_cont C
+                                 LEFT JOIN t_request_cont C
                     ON A.NO_CONT = C.NO_CONT
-                 INNER JOIN t_op_behandlein D
+                                 LEFT JOIN t_op_behandlein D
                     ON A.NO_CONT = D.NO_CONT
-                 INNER JOIN t_job_slip E
+                                 LEFT JOIN t_job_slip E
                     ON D.NO_SPK = E.NO_SPK
                  WHERE A.NO_CONT LIKE UPPER(?)
                    AND A.STATUS_CONT IN ('460')
                  ORDER BY A.ID DESC
-                 LIMIT 1",
+                 FETCH FIRST 1 ROWS ONLY",
                 ['%' . strtoupper($keyword) . '%']
             );
 
@@ -78,7 +78,7 @@ class RealisasiServices
     /**
      * Mengambil data pemeriksaan berstatus WAITING.
      *
-     * Status WAITING adalah state operasional legacy dan dibaca dari prod.
+    * Status WAITING dibaca dari prod_new.
      */
     public function getStatus(string $no_cont)
     {
@@ -88,7 +88,7 @@ class RealisasiServices
              WHERE NO_CONT = ?
                AND STATUS = 'WAITING'
              ORDER BY ID DESC
-             LIMIT 1",
+             FETCH FIRST 1 ROWS ONLY",
             [$no_cont]
         );
     }
@@ -162,7 +162,7 @@ class RealisasiServices
              WHERE A.NO_CONT = ?
                AND A.STATUS_CONT = '460'
              ORDER BY A.ID DESC
-             LIMIT 1",
+             FETCH FIRST 1 ROWS ONLY",
             [$noCont]
         );
     }
@@ -188,7 +188,7 @@ class RealisasiServices
                     'EX BEHANDLE 2'
                )
              ORDER BY ID_JOB_SLIP DESC
-             LIMIT 1",
+             FETCH FIRST 1 ROWS ONLY",
             [$noCont, $noSpk]
         );
     }
@@ -208,7 +208,7 @@ class RealisasiServices
                AND JNS_KEGIATAN IN ('1', '2')
                AND FL_ACTIVE = 'Y'
              ORDER BY ID DESC
-             LIMIT 1",
+             FETCH FIRST 1 ROWS ONLY",
             [$noCont, $noDok]
         );
     }
@@ -264,7 +264,7 @@ class RealisasiServices
         );
 
         /*
-         * Data referensi dibaca dari koneksi prod.
+         * Data referensi dibaca dari koneksi prod_new.
          */
         $container = $this->getSpkContainer($noCont);
 
@@ -362,7 +362,7 @@ class RealisasiServices
 
         /*
          * Status pemeriksaan adalah state operasional legacy, jadi selalu
-         * dibaca dan ditulis pada prod seperti implementasi legacy.
+         * dibaca dan ditulis pada prod_new.
          */
         $inspection = DB::connection($this->readConnection)
             ->selectOne(
@@ -371,7 +371,7 @@ class RealisasiServices
                  WHERE NO_CONT = ?
                    AND STATUS = 'WAITING'
                  ORDER BY ID DESC
-                 LIMIT 1",
+                 FETCH FIRST 1 ROWS ONLY",
                 [$noCont]
             );
 
@@ -434,7 +434,9 @@ class RealisasiServices
 
         try {
             $prod->beginTransaction();
-            $insertDb->beginTransaction();
+            if ($this->insertConnection !== $this->readConnection) {
+                $insertDb->beginTransaction();
+            }
 
             /*
              * Periksa ulang di dalam transaksi untuk mengurangi
@@ -463,8 +465,8 @@ class RealisasiServices
 
             /*
              * t_op_inspection adalah state proses yang nanti diperbarui
-             * saat selesai, sehingga record otoritatifnya harus berada
-             * di prod agar validasi awal/selesai membaca state yang sama.
+             * saat selesai, sehingga validasi awal/selesai membaca
+             * record dari koneksi yang sama.
              */
             $prod->table('t_op_inspection')->insert([
                 'NO_CONT' => $noCont,
@@ -516,7 +518,9 @@ class RealisasiServices
             );
 
             $prod->commit();
-            $insertDb->commit();
+            if ($this->insertConnection !== $this->readConnection) {
+                $insertDb->commit();
+            }
 
             $this->logInfo(
                 'pemeriksaan-behandle',
@@ -539,7 +543,9 @@ class RealisasiServices
             ];
         } catch (Throwable $e) {
             $this->rollbackTransactions(
-                [$prod, $insertDb],
+                $this->insertConnection === $this->readConnection
+                    ? [$prod]
+                    : [$prod, $insertDb],
                 $noCont,
                 $operatorLogin
             );
@@ -594,7 +600,9 @@ class RealisasiServices
 
         try {
             $prod->beginTransaction();
-            $insertDb->beginTransaction();
+            if ($this->insertConnection !== $this->readConnection) {
+                $insertDb->beginTransaction();
+            }
 
             /*
              * Kunci data pemeriksaan yang sedang berlangsung.
@@ -725,7 +733,7 @@ class RealisasiServices
 
             /*
              * Resolve the mirrored Oracle job slip ID for the insert FK.
-             * Business validation remains against the source row in prod.
+             * Business validation remains against the selected source row.
              */
             $pickupForInsert = $insertDb->table('t_job_slip')
                 ->where('NO_CONT', $noCont)
@@ -774,7 +782,9 @@ class RealisasiServices
             );
 
             $prod->commit();
-            $insertDb->commit();
+            if ($this->insertConnection !== $this->readConnection) {
+                $insertDb->commit();
+            }
 
             $this->logInfo(
                 'pemeriksaan-behandle',
@@ -798,7 +808,9 @@ class RealisasiServices
             ];
         } catch (Throwable $e) {
             $this->rollbackTransactions(
-                [$prod, $insertDb],
+                $this->insertConnection === $this->readConnection
+                    ? [$prod]
+                    : [$prod, $insertDb],
                 $noCont,
                 $operatorLogin
             );

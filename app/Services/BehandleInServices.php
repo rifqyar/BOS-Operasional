@@ -13,7 +13,7 @@ class BehandleInServices
     use LogTraits;
     public function getDataContainer(string $no_cont)
     {
-        $data = DB::connection('prod')->selectOne(
+        $data = DB::connection('prod_new')->selectOne(
             "SELECT
                     b.*,
 	                a.NO_SPK,
@@ -51,25 +51,47 @@ class BehandleInServices
                     and E.FL_PERBAIKI = ?",
             ["%" . $no_cont . "%", 'N']
         );
+
+        if ($data === null) {
+            return null;
+        }
+
+        $normalizedData = new \stdClass();
+        foreach ((array) $data as $column => $value) {
+            $normalizedData->{strtoupper($column)} = $value;
+        }
+
+        $data = $normalizedData;
+
         return $data;
     }
 
     public function getJobActivity()
     {
-        $data = DB::connection('prod')->select("SELECT * FROM m_job_activity");
+        $data = DB::connection('prod_new')->select("SELECT * FROM m_job_activity");
         return $data;
     }
 
     public function getAlat()
     {
-        $data = DB::connection('prod')->select("SELECT * FROM t_reff_alat");
+        $data = DB::connection('prod_new')->select("SELECT * FROM t_reff_alat");
         return $data;
     }
 
     public function getOperator()
     {
-        $data = DB::connection('prod')->select("SELECT * FROM reff_user WHERE KD_GROUP LIKE '%OPR%'");
-        return $data;
+        $rows = DB::connection('prod_new')->select(
+            "SELECT * FROM reff_user WHERE KD_GROUP LIKE '%OPR%'"
+        );
+
+        return array_map(function ($row) {
+            $normalizedRow = new \stdClass();
+            foreach ((array) $row as $column => $value) {
+                $normalizedRow->{strtoupper($column)} = $value;
+            }
+
+            return $normalizedRow;
+        }, $rows);
     }
 
     public function getTruck(string $id_flat)
@@ -162,7 +184,7 @@ class BehandleInServices
 
     private function prosesUpdateData(array $data)
     {
-        $dbLegacy = DB::connection('prod');
+        $dbLegacy = DB::connection('prod_new');
         $dbLegacy->beginTransaction();
 
         $dataSPK = $data['spk'] ?? null;

@@ -101,7 +101,7 @@ class MarshallingCicController extends Controller
                 ], 422);
             }
 
-            if (checkHoldP2($keyword)) {
+            if (checkHoldP2($keyword, 'prod_new')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Container on Hold P2. Harap release container terlebih dahulu.',
