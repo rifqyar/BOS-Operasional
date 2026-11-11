@@ -14,21 +14,43 @@ class MarshallingYardServices
 
     public function getAllJobsYard(int $perPage = 10): LengthAwarePaginator
     {
-        return $this->baseQueryYard()->orderByDesc('A.ID_JOB_SLIP')->paginate($perPage);
+        $paginator = $this->baseQueryYard()
+            ->orderByDesc('A.ID_JOB_SLIP')
+            ->paginate($perPage);
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(
+                fn ($row) => $this->normalizeRow($row)
+            )
+        );
+
+        return $paginator;
     }
 
     public function searchYard(string $keyword, int $perPage = 10): LengthAwarePaginator
     {
-        return $this->baseQueryYard()
-            ->where('A.NO_CONT', 'like', '%' . strtoupper(trim($keyword)) . '%')
+        $paginator = $this->baseQueryYard()
+            ->where('A.NO_CONT', 'LIKE', '%'.strtoupper(trim($keyword)).'%')
             ->orderByDesc('A.ID_JOB_SLIP')
             ->paginate($perPage);
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(
+                fn ($row) => $this->normalizeRow($row)
+            )
+        );
+
+        return $paginator;
     }
 
     private function baseQueryYard()
     {
         return DB::connection('prod_new')->table('t_job_slip as A')
             ->join('t_spk as B', 'A.NO_SPK', '=', 'B.NO_SPK')
+            ->join('t_spk_cont as S', function ($join) {
+                $join->on('B.ID', '=', 'S.ID')
+                    ->on('A.NO_CONT', '=', 'S.NO_CONT');
+            })
             ->join('t_gatepass as C', 'A.NO_GATEPASS', '=', 'C.ID')
             ->select([
                 'A.ID_JOB_SLIP', 'A.NO_CONT', 'C.UKR_CONT', 'A.LOKASI_AWAL',
@@ -36,13 +58,11 @@ class MarshallingYardServices
             ])
             ->where('A.STATUS', 'WAITING')
             ->where('A.KD_STATUS', '20')
-            ->where('A.LOKASI_AKHIR', 'like', '1A%')
+            ->where('A.LOKASI_AKHIR', 'LIKE', '1A%')
+            ->where('S.STATUS_CONT', '!=', 900)
             ->where('C.FL_ACTIVE', 'Y')
             ->whereIn('A.JENIS', ['EX BEHANDLE 1', 'EX BEHANDLE 2'])
-            ->groupBy([
-                'A.ID_JOB_SLIP', 'A.NO_CONT', 'C.UKR_CONT', 'A.LOKASI_AWAL',
-                'A.LOKASI_AKHIR', 'A.TIER_AWAL', 'A.TIER_AKHIR', 'A.JENIS',
-            ]);
+            ->distinct();
     }
 
     public function getDetailYard(string|int $idJobSlip): ?object
@@ -67,7 +87,9 @@ class MarshallingYardServices
             ORDER BY A.ID_JOB_SLIP DESC";
 
         try {
-            return DB::connection('prod_new')->selectOne($sql, ['005', $idJobSlip]);
+            return $this->normalizeRow(
+                DB::connection('prod_new')->selectOne($sql, ['005', $idJobSlip])
+            );
         } catch (Throwable $e) {
             $this->logError('marshalling-yard', 'Gagal mengambil detail Marshalling Yard.', [
                 'stage' => 'getDetailYard', 'id_job_slip' => $idJobSlip,
@@ -79,22 +101,73 @@ class MarshallingYardServices
 
     public function getJobActivity()
     {
-        return DB::connection('prod_new')->table('m_job_activity')->get();
+        return $this->normalizeRows(
+            DB::connection('prod_new')
+                ->table('m_job_activity')
+                ->select('ID', 'JENIS_PEKERJAAN')
+                ->orderBy('ID')
+                ->get()
+                ->all()
+        );
     }
 
     public function getEquipment()
     {
-        return DB::connection('prod_new')->table('t_reff_alat')->get();
+        return $this->normalizeRows(
+            DB::connection('prod_new')
+                ->table('t_reff_alat')
+                ->select('ID', 'NM_ALAT', 'KEPEMILIKAN', 'NO_POLISI', 'JENIS_PEKERJAAN')
+                ->orderBy('ID')
+                ->get()
+                ->all()
+        );
     }
 
     public function getOperator()
     {
-        return DB::connection('prod_new')->table('reff_user')->where('KD_GROUP', 'like', '%OPR%')->get();
+        return $this->normalizeRows(
+            DB::connection('prod_new')
+                ->table('reff_user')
+                ->select('ID', 'USER_NAME', 'NAMA', 'KD_GROUP')
+                ->where('KD_GROUP', 'LIKE', '%OPR%')
+                ->orderBy('NAMA')
+                ->get()
+                ->all()
+        );
     }
 
     public function getTruck()
     {
-        return DB::connection('prod_new')->table('reff_truck')->orderBy('NO_TRUCK')->get();
+        return $this->normalizeRows(
+            DB::connection('prod_new')
+                ->table('reff_truck')
+                ->select('ID_TRUCK', 'NO_TRUCK', 'NM_PEMILIK', 'NO_PLAT', 'UKURAN_TRUCK', 'BERAT_TRUCK')
+                ->orderBy('NO_TRUCK')
+                ->get()
+                ->all()
+        );
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
     }
 
     /** Seluruh pemeriksaan dan mutasi dilakukan pada prod_new. */
@@ -119,36 +192,27 @@ class MarshallingYardServices
             }
 
             $stage = 'validasi_job_slip';
-            $jobSlip = $db->table('t_job_slip')
+            $jobSlip = $this->normalizeRow($db->table('t_job_slip')
                 ->where('ID_JOB_SLIP', $idJobSlip)->where('NO_CONT', $noCont)
                 ->where('STATUS', 'WAITING')->where('KD_STATUS', '20')
-                ->lockForUpdate()->first();
-            if (!$jobSlip) {
+                ->lockForUpdate()->first());
+            if (! $jobSlip) {
                 throw new RuntimeException('Data Job Slip tidak ditemukan atau sudah diproses.', 404);
             }
 
             $stage = 'validasi_spk';
-            $spk = $db->table('t_spk')->where('NO_SPK', $jobSlip->NO_SPK)->orderByDesc('ID')->first();
-            if (!$spk) {
+            $spk = $this->normalizeRow(
+                $db->table('t_spk')->where('NO_SPK', $jobSlip->NO_SPK)->orderByDesc('ID')->first()
+            );
+            if (! $spk) {
                 throw new RuntimeException('Data SPK untuk pekerjaan ini tidak ditemukan.', 404);
             }
-            $spkCont = $db->table('t_spk_cont')->where('ID', $spk->ID)->where('NO_CONT', $noCont)
-                ->lockForUpdate()->first();
-            if (!$spkCont) {
+            $spkCont = $this->normalizeRow(
+                $db->table('t_spk_cont')->where('ID', $spk->ID)->where('NO_CONT', $noCont)
+                    ->lockForUpdate()->first()
+            );
+            if (! $spkCont) {
                 throw new RuntimeException('Kontainer tidak ditemukan pada SPK pekerjaan ini.', 404);
-            }
-
-            // Teks status diambil dari reff_status_spk agar pesan validasi mudah dipahami operator.
-            $statusSekarang = $db->table('reff_status_spk')->where('ID', $spkCont->STATUS_CONT)->value('KETERANGAN');
-            $statusYard = $db->table('reff_status_spk')->where('ID', '450')->value('KETERANGAN');
-            if (!$statusSekarang || !$statusYard) {
-                throw new RuntimeException('Referensi keterangan status SPK tidak ditemukan. Hubungi administrator.', 500);
-            }
-            if (mb_strtoupper(trim((string) $statusSekarang)) !== mb_strtoupper(trim((string) $statusYard))) {
-                throw new RuntimeException(
-                    "Status SPK saat ini '{$statusSekarang}'. Proses Marshalling Yard memerlukan status '{$statusYard}'.",
-                    422
-                );
             }
 
             $stage = 'validasi_lokasi';
@@ -161,15 +225,19 @@ class MarshallingYardServices
             }
 
             $stage = 'validasi_pemeriksaan';
-            $pemeriksaan = $db->table('t_op_inspection')->where('NO_CONT', $noCont)
-                ->where('NO_SPK', $jobSlip->NO_SPK)->orderByDesc('ID')->first();
-            if (!$pemeriksaan || strtoupper((string) $pemeriksaan->STATUS) !== 'DONE') {
+            $pemeriksaan = $this->normalizeRow(
+                $db->table('t_op_inspection')->where('NO_CONT', $noCont)
+                    ->where('NO_SPK', $jobSlip->NO_SPK)->orderByDesc('ID')->first()
+            );
+            if (! $pemeriksaan || strtoupper((string) $pemeriksaan->STATUS) !== 'DONE') {
                 throw new RuntimeException('Kontainer belum selesai diperiksa.', 422);
             }
 
             $stage = 'validasi_tipe_kontainer';
-            $tipeKontainer = $db->table('t_cocostscont')->where('NO_CONT', $noCont)->orderByDesc('ID')->first();
-            if (!$tipeKontainer) {
+            $tipeKontainer = $this->normalizeRow(
+                $db->table('t_cocostscont')->where('NO_CONT', $noCont)->orderByDesc('ID')->first()
+            );
+            if (! $tipeKontainer) {
                 throw new RuntimeException('Tipe kontainer tidak ditemukan.', 404);
             }
 
@@ -220,11 +288,13 @@ class MarshallingYardServices
             ]);
 
             $stage = 'update_report_behandle';
-            $report = $db->table('report_behandle')->where('NO_CONT', $noCont)
-                ->where('REQ_NO_DOK', $jobSlip->NO_DOK)->where('RB1_NO_SPK', $jobSlip->NO_SPK)
-                ->orderByDesc('ID')->first();
+            $report = $this->normalizeRow(
+                $db->table('report_behandle')->where('NO_CONT', $noCont)
+                    ->where('REQ_NO_DOK', $jobSlip->NO_DOK)->where('RB1_NO_SPK', $jobSlip->NO_SPK)
+                    ->orderByDesc('ID')->first()
+            );
             if ($report) {
-                $after = $nmBlock . '0' . $nmTier;
+                $after = $nmBlock.'0'.$nmTier;
                 $reportValues = strtoupper(trim((string) $jobSlip->JENIS)) === 'BEHANDLE 1'
                     ? ['PB1_MARSHALLING_B1' => $now, 'PB1_LOKASI_AFTER' => $after]
                     : ['PB2_MARSHALLING_EX_B2' => $now, 'PB2_LOKASI_AFTER' => $after];
@@ -236,7 +306,7 @@ class MarshallingYardServices
             $transactionStarted = false;
             $this->logInfo('marshalling-yard', 'Marshalling Yard berhasil diproses.', [
                 'stage' => 'selesai', 'id_job_slip' => $idJobSlip, 'no_container' => $noCont,
-                'no_spk' => $jobSlip->NO_SPK, 'status_spk' => $statusYard,
+                'no_spk' => $jobSlip->NO_SPK,
                 'lokasi_akhir' => $lokasiAkhir, 'operator' => $username,
             ]);
 

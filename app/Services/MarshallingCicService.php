@@ -332,11 +332,11 @@ class MarshallingCicService
                 throw new RuntimeException('Format lokasi akhir tidak valid.');
             }
 
-            $jobSlip = $db->table('t_job_slip')
+            $jobSlip = $this->normalizeRow($db->table('t_job_slip')
                 ->where('ID_JOB_SLIP', $idJobSlip)
                 ->where('NO_CONT', $noCont)
                 ->lockForUpdate()
-                ->first();
+                ->first());
 
             if (! $jobSlip) {
                 throw new RuntimeException("Job slip {$idJobSlip} untuk kontainer {$noCont} tidak ditemukan.");
@@ -366,35 +366,33 @@ class MarshallingCicService
                 throw new RuntimeException('Nomor SPK pada job slip sumber kosong.');
             }
 
-            $spk = $db->table('t_spk')
+            $spk = $this->normalizeRow($db->table('t_spk')
                 ->where('NO_SPK', $noSpk)
                 ->orderByDesc('ID')
-                ->first();
+                ->first());
 
             if (! $spk) {
                 throw new RuntimeException("SPK {$noSpk} tidak ditemukan.");
             }
 
-            $spkCont = $db->table('t_spk_cont')
+            $spkCont = $this->normalizeRow($db->table('t_spk_cont')
                 ->where('ID', $spk->ID)
                 ->where('NO_CONT', $noCont)
                 ->lockForUpdate()
-                ->first();
+                ->first());
 
             if (! $spkCont) {
                 throw new RuntimeException("Kontainer {$noCont} tidak terdaftar pada SPK {$noSpk}.");
             }
 
-            
-
             if ((string) ($data['jenispekerjaan1'] ?? '') === '') {
                 throw new RuntimeException('Jenis pekerjaan 1 wajib dipilih.');
             }
 
-            $container = $db->table('t_cocostscont')
+            $container = $this->normalizeRow($db->table('t_cocostscont')
                 ->where('NO_CONT', $noCont)
                 ->orderByDesc('ID')
-                ->first();
+                ->first());
 
             if (! $container) {
                 throw new RuntimeException("Data tipe kontainer {$noCont} tidak ditemukan.");
@@ -479,12 +477,12 @@ class MarshallingCicService
                 'OPERATOR' => $username,
             ]);
 
-            $report = $db->table('report_behandle')
+            $report = $this->normalizeRow($db->table('report_behandle')
                 ->where('NO_CONT', $noCont)
                 ->where('REQ_NO_DOK', $jobSlip->NO_DOK)
                 ->where('RB1_NO_SPK', $noSpk)
                 ->orderByDesc('ID')
-                ->first();
+                ->first());
 
             if ($report) {
                 $jobUntukLaporan = $job !== '' ? $job : $jenisSumber;
@@ -517,7 +515,7 @@ class MarshallingCicService
                 'new_job_slip_id' => $newJobSlipId,
                 'no_cont' => $noCont,
                 'no_spk' => $noSpk,
-                
+
                 'lokasi' => $nmBlock,
                 'tier' => $nmTier,
                 'database' => 'prod_new',

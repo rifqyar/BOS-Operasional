@@ -8,17 +8,17 @@ class InspectionOutServices
 {
     /**
      * Ambil gatepass untuk kegiatan Inspection Out.
-    * Semua pembacaan menggunakan prod_new.
+     * Semua pembacaan menggunakan prod_new.
      */
     public function getGatepass(string $noCont)
     {
-        return DB::connection('prod_new')->select(
+        return $this->normalizeRows(DB::connection('prod_new')->select(
             "SELECT *
              FROM t_gatepass
              WHERE NO_CONT LIKE ?
                AND JNS_KEGIATAN = '3'",
-            ['%' . $noCont . '%']
-        );
+            ['%'.$noCont.'%']
+        ));
     }
 
     /**
@@ -26,13 +26,13 @@ class InspectionOutServices
      */
     public function getDelivery(string $noCont)
     {
-        return DB::connection('prod_new')->select(
-            "SELECT *
+        return $this->normalizeRows(DB::connection('prod_new')->select(
+            'SELECT *
              FROM t_op_delivery
              WHERE NO_CONT LIKE ?
-               AND WK_GATEOUT IS NULL",
-            ['%' . $noCont . '%']
-        );
+               AND WK_GATEOUT IS NULL',
+            ['%'.$noCont.'%']
+        ));
     }
 
     /**
@@ -40,10 +40,10 @@ class InspectionOutServices
      */
     public function getCondition()
     {
-        return DB::connection('prod_new')->select(
-            "SELECT ID, KONDISI
-             FROM reff_kondisi"
-        );
+        return $this->normalizeRows(DB::connection('prod_new')->select(
+            'SELECT ID, KONDISI
+             FROM reff_kondisi'
+        ));
     }
 
     /**
@@ -86,7 +86,7 @@ class InspectionOutServices
             ? $exactRows[0]
             : (count($delivery) === 1 ? $delivery[0] : null);
 
-        if (!$deliveryRow) {
+        if (! $deliveryRow) {
             return [
                 'status' => 0,
                 'kode' => 1,
@@ -100,7 +100,7 @@ class InspectionOutServices
             && $deliveryRow->WK_CHASSIS !== null
             && $deliveryRow->WK_INSPECT === null;
 
-        if (!$readyForInspectionOut) {
+        if (! $readyForInspectionOut) {
             return $this->notFound($noCont);
         }
 
@@ -117,33 +117,33 @@ class InspectionOutServices
     /**
      * Validasi ulang saat submit.
      *
-    * Pembacaan dan validasi dilakukan pada prod_new.
+     * Pembacaan dan validasi dilakukan pada prod_new.
      */
     public function validateInspectionOut(
         string $noCont,
         string $conditionId
     ): array {
-        $gatepass = DB::connection('prod_new')->table('t_gatepass')
+        $gatepass = $this->normalizeRow(DB::connection('prod_new')->table('t_gatepass')
             ->where('NO_CONT', $noCont)
             ->where('JNS_KEGIATAN', '3')
             ->lockForUpdate()
-            ->first();
+            ->first());
 
-        if (!$gatepass) {
+        if (! $gatepass) {
             return [
                 'valid' => false,
                 'message' => "Gatepass kegiatan Inspection Out untuk container {$noCont} tidak ditemukan.",
             ];
         }
 
-        $deliveryRow = DB::connection('prod_new')->table('t_op_delivery')
+        $deliveryRow = $this->normalizeRow(DB::connection('prod_new')->table('t_op_delivery')
             ->where('NO_CONT', $noCont)
             ->whereNull('WK_GATEOUT')
             ->orderByDesc('ID')
             ->lockForUpdate()
-            ->first();
+            ->first());
 
-        if (!$deliveryRow) {
+        if (! $deliveryRow) {
             return [
                 'valid' => false,
                 'message' => "Data delivery container {$noCont} tidak ditemukan atau sudah Gate Out.",
@@ -169,7 +169,7 @@ class InspectionOutServices
             ->where('ID', $conditionId)
             ->exists();
 
-        if (!$condition) {
+        if (! $condition) {
             return [
                 'valid' => false,
                 'message' => 'Kondisi container tidak valid.',
@@ -180,15 +180,15 @@ class InspectionOutServices
          * Mengikuti legacy cek_tspkcontst2:
          * STATUS_CONT IN (450, 800, 850, 870)
          */
-        $spkCont = DB::connection('prod_new')
+        $spkCont = $this->normalizeRow(DB::connection('prod_new')
             ->table('t_spk_cont')
             ->where('NO_CONT', $noCont)
             ->whereIn('STATUS_CONT', [450, 800, 850, 870])
             ->orderByDesc('ID')
             ->lockForUpdate()
-            ->first();
+            ->first());
 
-        if (!$spkCont) {
+        if (! $spkCont) {
             return [
                 'valid' => false,
                 'message' => "Status container {$noCont} tidak memenuhi syarat Inspection Out.",
@@ -199,13 +199,13 @@ class InspectionOutServices
          * Legacy cek_tspk2 mengambil t_spk berdasarkan ID
          * dari t_spk_cont.
          */
-        $spk = DB::connection('prod_new')
+        $spk = $this->normalizeRow(DB::connection('prod_new')
             ->table('t_spk')
             ->where('ID', $spkCont->ID)
             ->lockForUpdate()
-            ->first();
+            ->first());
 
-        if (!$spk) {
+        if (! $spk) {
             return [
                 'valid' => false,
                 'message' => "Data SPK untuk container {$noCont} tidak ditemukan.",
@@ -228,5 +228,27 @@ class InspectionOutServices
             'no_cont' => $noCont,
             'message' => "WARNING ! NO CONT : {$noCont} NOT FOUND",
         ];
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
     }
 }

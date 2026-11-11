@@ -48,7 +48,7 @@ class RealisasiServices
                    AND A.STATUS_CONT IN ('460')
                  ORDER BY A.ID DESC
                  FETCH FIRST 1 ROWS ONLY",
-                ['%' . strtoupper($keyword) . '%']
+                ['%'.strtoupper($keyword).'%']
             );
 
             $this->logInfo(
@@ -60,7 +60,7 @@ class RealisasiServices
                 ]
             );
 
-            return $data;
+            return $this->normalizeRows($data);
         } catch (Throwable $e) {
             $this->logError(
                 'pemeriksaan-behandle',
@@ -75,14 +75,36 @@ class RealisasiServices
         }
     }
 
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
+    }
+
     /**
      * Mengambil data pemeriksaan berstatus WAITING.
      *
-    * Status WAITING dibaca dari prod_new.
+     * Status WAITING dibaca dari prod_new.
      */
     public function getStatus(string $no_cont)
     {
-        return DB::connection($this->readConnection)->selectOne(
+        return $this->normalizeRow(DB::connection($this->readConnection)->selectOne(
             "SELECT *
              FROM t_op_inspection
              WHERE NO_CONT = ?
@@ -90,7 +112,7 @@ class RealisasiServices
              ORDER BY ID DESC
              FETCH FIRST 1 ROWS ONLY",
             [$no_cont]
-        );
+        ));
     }
 
     /**
@@ -98,9 +120,9 @@ class RealisasiServices
      */
     public function getAlat()
     {
-        return DB::connection($this->readConnection)->select(
+        return $this->normalizeRows(DB::connection($this->readConnection)->select(
             'SELECT * FROM t_reff_alat'
-        );
+        ));
     }
 
     /**
@@ -108,11 +130,11 @@ class RealisasiServices
      */
     public function getOperator()
     {
-        return DB::connection($this->readConnection)->select(
+        return $this->normalizeRows(DB::connection($this->readConnection)->select(
             "SELECT *
              FROM reff_user
              WHERE KD_GROUP LIKE '%OPR%'"
-        );
+        ));
     }
 
     /**
@@ -120,9 +142,9 @@ class RealisasiServices
      */
     public function getCondition()
     {
-        return DB::connection($this->readConnection)->select(
+        return $this->normalizeRows(DB::connection($this->readConnection)->select(
             'SELECT ID, KONDISI FROM reff_kondisi'
-        );
+        ));
     }
 
     /**
@@ -133,7 +155,7 @@ class RealisasiServices
         string $no_dok,
         $tgl_dok
     ) {
-        return DB::connection($this->readConnection)->selectOne(
+        return $this->normalizeRow(DB::connection($this->readConnection)->selectOne(
             "SELECT A.LNSW_NOAJU
              FROM t_ppk_hdr A
              JOIN t_ppk_cont B
@@ -143,7 +165,7 @@ class RealisasiServices
                AND A.NO_RESPON = ?
                AND A.TG_RESPON = ?",
             [$no_cont, $no_dok, $tgl_dok]
-        );
+        ));
     }
 
     /**
@@ -151,7 +173,7 @@ class RealisasiServices
      */
     private function getSpkContainer(string $noCont)
     {
-        return DB::connection($this->readConnection)->selectOne(
+        return $this->normalizeRow(DB::connection($this->readConnection)->selectOne(
             "SELECT
                 A.*,
                 B.NO_SPK AS SPK_NO_SPK,
@@ -164,7 +186,7 @@ class RealisasiServices
              ORDER BY A.ID DESC
              FETCH FIRST 1 ROWS ONLY",
             [$noCont]
-        );
+        ));
     }
 
     /**
@@ -174,23 +196,17 @@ class RealisasiServices
         string $noCont,
         string $noSpk
     ) {
-        return DB::connection($this->readConnection)->selectOne(
+        return $this->normalizeRow(DB::connection($this->readConnection)->selectOne(
             "SELECT *
              FROM t_job_slip
              WHERE NO_CONT = ?
                AND NO_SPK = ?
                AND STATUS = 'WAITING'
                AND KD_STATUS = '20'
-               AND JENIS IN (
-                    'BEHANDLE 1',
-                    'BEHANDLE 2',
-                    'EX BEHANDLE 1',
-                    'EX BEHANDLE 2'
-               )
              ORDER BY ID_JOB_SLIP DESC
              FETCH FIRST 1 ROWS ONLY",
             [$noCont, $noSpk]
-        );
+        ));
     }
 
     /**
@@ -200,7 +216,7 @@ class RealisasiServices
         string $noCont,
         string $noDok
     ) {
-        return DB::connection($this->readConnection)->selectOne(
+        return $this->normalizeRow(DB::connection($this->readConnection)->selectOne(
             "SELECT *
              FROM t_gatepass
              WHERE NO_CONT = ?
@@ -210,7 +226,7 @@ class RealisasiServices
              ORDER BY ID DESC
              FETCH FIRST 1 ROWS ONLY",
             [$noCont, $noDok]
-        );
+        ));
     }
 
     /**
@@ -268,7 +284,7 @@ class RealisasiServices
          */
         $container = $this->getSpkContainer($noCont);
 
-        if (!$container) {
+        if (! $container) {
             $this->logWarning(
                 'pemeriksaan-behandle',
                 'Container tidak ditemukan atau statusnya tidak memenuhi syarat.',
@@ -284,7 +300,7 @@ class RealisasiServices
             ?? $container->NO_SPK
             ?? null;
 
-        if (!$noSpk) {
+        if (! $noSpk) {
             throw new RuntimeException(
                 'Nomor SPK tidak ditemukan untuk container tersebut.'
             );
@@ -294,7 +310,7 @@ class RealisasiServices
          * Jika form mengirimkan nomor SPK, validasi terhadap database.
          */
         if (
-            !empty($input['nospk'])
+            ! empty($input['nospk'])
             && trim($input['nospk']) !== (string) $noSpk
         ) {
             $this->logWarning(
@@ -317,7 +333,7 @@ class RealisasiServices
             (string) $noSpk
         );
 
-        if (!$jobSlip) {
+        if (! $jobSlip) {
             $this->logWarning(
                 'pemeriksaan-behandle',
                 'Job slip tidak ditemukan.',
@@ -334,7 +350,7 @@ class RealisasiServices
 
         $noDok = $jobSlip->NO_DOK ?? null;
 
-        if (!$noDok) {
+        if (! $noDok) {
             throw new RuntimeException(
                 'Nomor dokumen tidak ditemukan pada job slip.'
             );
@@ -345,7 +361,7 @@ class RealisasiServices
             (string) $noDok
         );
 
-        if (!$gatepass) {
+        if (! $gatepass) {
             $this->logWarning(
                 'pemeriksaan-behandle',
                 'Data gatepass tidak ditemukan.',
@@ -379,7 +395,7 @@ class RealisasiServices
          * Belum ada pemeriksaan WAITING:
          * jalankan proses mulai pemeriksaan.
          */
-        if (!$inspection) {
+        if (! $inspection) {
             return $this->mulaiPemeriksaan(
                 $input,
                 $container,
@@ -442,11 +458,11 @@ class RealisasiServices
              * Periksa ulang di dalam transaksi untuk mengurangi
              * risiko dua proses mulai berjalan bersamaan.
              */
-            $waiting = $prod->table('t_op_inspection')
+            $waiting = $this->normalizeRow($prod->table('t_op_inspection')
                 ->where('NO_CONT', $noCont)
                 ->where('STATUS', 'WAITING')
                 ->lockForUpdate()
-                ->first();
+                ->first());
 
             if ($waiting) {
                 throw new RuntimeException(
@@ -455,8 +471,8 @@ class RealisasiServices
             }
 
             $lokasi = ($gatepass->LOKASI ?? '')
-                . '0'
-                . ($gatepass->TIER ?? '');
+                .'0'
+                .($gatepass->TIER ?? '');
 
             $jnsKegiatan = $gatepass->JNS_KEGIATAN ?? null;
             $noDok = $gatepass->NO_DOK ?? $jobSlip->NO_DOK ?? null;
@@ -488,8 +504,6 @@ class RealisasiServices
                 'NO_CONT' => $noCont,
                 'NO_SPK' => $noSpk,
                 'ACTIVITY' => 'START_PERIKSA',
-                'WK_ACTIVITY' => $now,
-                'OPERATOR' => $operatorLogin,
             ]);
 
             /*
@@ -607,14 +621,14 @@ class RealisasiServices
             /*
              * Kunci data pemeriksaan yang sedang berlangsung.
              */
-            $waiting = $prod->table('t_op_inspection')
+            $waiting = $this->normalizeRow($prod->table('t_op_inspection')
                 ->where('NO_CONT', $noCont)
                 ->where('NO_SPK', $noSpk)
                 ->where('STATUS', 'WAITING')
                 ->lockForUpdate()
-                ->first();
+                ->first());
 
-            if (!$waiting) {
+            if (! $waiting) {
                 throw new RuntimeException(
                     'Pemeriksaan aktif tidak ditemukan atau sudah selesai.'
                 );
@@ -639,8 +653,6 @@ class RealisasiServices
                 'NO_CONT' => $noCont,
                 'NO_SPK' => $noSpk,
                 'ACTIVITY' => 'FINISH_PERIKSA',
-                'WK_ACTIVITY' => $now,
-                'OPERATOR' => $operatorLogin,
             ]);
 
             /*
@@ -708,7 +720,7 @@ class RealisasiServices
                     ->where('STATUS', 'WAITING')
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     throw new RuntimeException(
                         'Job slip tidak ditemukan saat pembaruan.'
                     );
@@ -718,33 +730,30 @@ class RealisasiServices
             /*
              * Mencari job slip PICKUP untuk detail pemeriksaan.
              */
-            $pickup = $prod->table('t_job_slip')
+            $pickup = $this->normalizeRow($prod->table('t_job_slip')
                 ->where('NO_CONT', $noCont)
                 ->where('NO_SPK', $noSpk)
                 ->where('JENIS', 'PICKUP')
                 ->orderByDesc('ID_JOB_SLIP')
-                ->first();
+                ->first());
 
-            if (!$pickup) {
+            if (! $pickup) {
                 throw new RuntimeException(
                     'Job slip PICKUP tidak ditemukan.'
                 );
             }
 
-            /*
-             * Resolve the mirrored Oracle job slip ID for the insert FK.
-             * Business validation remains against the selected source row.
-             */
-            $pickupForInsert = $insertDb->table('t_job_slip')
+            /* Gunakan baris Pickup yang sama untuk foreign key detail. */
+            $pickupForInsert = $this->normalizeRow($insertDb->table('t_job_slip')
                 ->where('NO_CONT', $noCont)
                 ->where('NO_SPK', $noSpk)
-                ->where('JNS_JOB_SLIP', 'PICKUP')
+                ->where('JENIS', 'PICKUP')
                 ->orderByDesc('ID_JOB_SLIP')
-                ->first();
+                ->first());
 
-            if (!$pickupForInsert) {
+            if (! $pickupForInsert) {
                 throw new RuntimeException(
-                    'Job slip PICKUP belum tersedia pada database tujuan untuk detail pemeriksaan.'
+                    'Job slip PICKUP tidak ditemukan untuk detail pemeriksaan.'
                 );
             }
 
@@ -847,19 +856,19 @@ class RealisasiServices
             'PB2_NEW_NO_SEAL',
         ];
 
-        if (!in_array($column, $allowedColumns, true)) {
+        if (! in_array($column, $allowedColumns, true)) {
             throw new RuntimeException(
                 'Kolom laporan behandle tidak diizinkan.'
             );
         }
 
-        $report = $connection->table('report_behandle')
+        $report = $this->normalizeRow($connection->table('report_behandle')
             ->where('NO_CONT', $noCont)
             ->where('RB1_NO_SPK', $noSpk)
             ->orderByDesc('ID')
-            ->first();
+            ->first());
 
-        if (!$report) {
+        if (! $report) {
             return;
         }
 

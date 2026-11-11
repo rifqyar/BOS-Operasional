@@ -14,36 +14,38 @@ class DeliveryServices
     /** Delivery lookup using prod_new. */
     public function searchContainer(string $keyword): array
     {
-        return DB::connection('prod_new')->select(
+        return $this->normalizeRows(DB::connection('prod_new')->select(
             "SELECT A.*
              FROM t_gatepass A
              INNER JOIN t_spk_cont B ON A.NO_CONT = B.NO_CONT
              WHERE A.NO_CONT LIKE ?
                AND A.JNS_KEGIATAN = '3'
                AND B.STATUS_CONT != 900",
-            ['%' . strtoupper(trim($keyword)) . '%']
-        );
+            ['%'.strtoupper(trim($keyword)).'%']
+        ));
     }
 
     public function getGatepass(string $noCont): array
     {
-        return DB::connection('prod_new')->select(
+        return $this->normalizeRows(DB::connection('prod_new')->select(
             "SELECT * FROM t_gatepass WHERE NO_CONT = ? AND JNS_KEGIATAN = '3'",
             [$noCont]
-        );
+        ));
     }
 
     public function getDelivery(string $noCont): array
     {
-        return DB::connection('prod_new')->select(
+        return $this->normalizeRows(DB::connection('prod_new')->select(
             'SELECT * FROM t_op_delivery WHERE NO_CONT = ? AND WK_GATEOUT IS NULL ORDER BY ID DESC',
             [$noCont]
-        );
+        ));
     }
 
     public function getCondition(): array
     {
-        return DB::connection('prod_new')->select('SELECT ID, KONDISI FROM reff_kondisi');
+        return $this->normalizeRows(
+            DB::connection('prod_new')->select('SELECT ID, KONDISI FROM reff_kondisi')
+        );
     }
 
     /** Determine the next screen from current persisted state, not the hidden form field. */
@@ -51,12 +53,12 @@ class DeliveryServices
     {
         $noCont = strtoupper(trim($noCont));
         $gatepass = $this->getGatepass($noCont);
-        if (!$gatepass || !$this->searchContainer($noCont)) {
+        if (! $gatepass || ! $this->searchContainer($noCont)) {
             return ['status' => 0, 'no_cont' => $noCont, 'message' => "NO CONT : {$noCont} NOT FOUND"];
         }
 
         $deliveries = $this->getDelivery($noCont);
-        if (!$deliveries) {
+        if (! $deliveries) {
             return [
                 'status' => 1,
                 'no_cont' => $noCont,
@@ -67,9 +69,9 @@ class DeliveryServices
         }
 
         $delivery = $deliveries[0];
-        $ready = !empty($delivery->WK_TRUCKIN)
-            && !empty($delivery->WK_CHASSIS)
-            && !empty($delivery->WK_INSPECT)
+        $ready = ! empty($delivery->WK_TRUCKIN)
+            && ! empty($delivery->WK_CHASSIS)
+            && ! empty($delivery->WK_INSPECT)
             && empty($delivery->WK_GATEOUT);
 
         return $ready
@@ -96,40 +98,40 @@ class DeliveryServices
             }
 
             $stage = 'ambil_spk_container';
-            $spkCont = $db->table('t_spk_cont')->where('NO_CONT', $noCont)
-                ->where('STATUS_CONT', '<>', '900')->orderByDesc('ID')->lockForUpdate()->first();
-            if (!$spkCont) {
+            $spkCont = $this->normalizeRow($db->table('t_spk_cont')->where('NO_CONT', $noCont)
+                ->where('STATUS_CONT', '<>', '900')->orderByDesc('ID')->lockForUpdate()->first());
+            if (! $spkCont) {
                 throw new RuntimeException('Container tidak ditemukan atau sudah Gate Out.', 404);
             }
 
-            $spk = $db->table('t_spk')->where('ID', $spkCont->ID)->first();
-            if (!$spk) {
+            $spk = $this->normalizeRow($db->table('t_spk')->where('ID', $spkCont->ID)->first());
+            if (! $spk) {
                 throw new RuntimeException('Data SPK container tidak ditemukan.', 404);
             }
 
             $stage = 'validasi_gatepass';
-            $gatepass = $db->table('t_gatepass')->where('NO_CONT', $noCont)
-                ->where('JNS_KEGIATAN', '3')->orderByDesc('ID')->first();
-            if (!$gatepass) {
+            $gatepass = $this->normalizeRow($db->table('t_gatepass')->where('NO_CONT', $noCont)
+                ->where('JNS_KEGIATAN', '3')->orderByDesc('ID')->first());
+            if (! $gatepass) {
                 throw new RuntimeException('Gatepass kegiatan Delivery tidak ditemukan.', 404);
             }
 
             $stage = 'validasi_delivery';
-            $delivery = $db->table('t_op_delivery')->where('NO_CONT', $noCont)
-                ->whereNull('WK_GATEOUT')->orderByDesc('ID')->lockForUpdate()->first();
-            $isTruckIn = !$delivery;
+            $delivery = $this->normalizeRow($db->table('t_op_delivery')->where('NO_CONT', $noCont)
+                ->whereNull('WK_GATEOUT')->orderByDesc('ID')->lockForUpdate()->first());
+            $isTruckIn = ! $delivery;
             if ($delivery && (
                 empty($delivery->WK_TRUCKIN) || empty($delivery->WK_CHASSIS)
-                || empty($delivery->WK_INSPECT) || !empty($delivery->WK_GATEOUT)
+                || empty($delivery->WK_INSPECT) || ! empty($delivery->WK_GATEOUT)
             )) {
                 throw new RuntimeException('Container belum memenuhi kondisi untuk Gate Out.', 422);
             }
 
             $now = now();
             $timestamp = $now->format('Y-m-d H:i:s');
-            $operation = $db->table('t_operation')->where('NO_CONT', $noCont)
-                ->where('NO_SPK', $spk->NO_SPK)->lockForUpdate()->first();
-            if (!$operation) {
+            $operation = $this->normalizeRow($db->table('t_operation')->where('NO_CONT', $noCont)
+                ->where('NO_SPK', $spk->NO_SPK)->lockForUpdate()->first());
+            if (! $operation) {
                 throw new RuntimeException('Data operasi container dan SPK tidak ditemukan.', 404);
             }
 
@@ -138,17 +140,17 @@ class DeliveryServices
                 if ($truck === '') {
                     throw new RuntimeException('Nomor truck wajib diisi untuk proses Truck In.', 422);
                 }
-                if (!preg_match('/^GATE [1-6]$/', $gate)) {
+                if (! preg_match('/^GATE [1-6]$/', $gate)) {
                     throw new RuntimeException('Pilih gate Truck In yang valid.', 422);
                 }
-            } elseif (!preg_match('/^(GATE [1-4]|TIDAK BOLEH GATE OUT)$/', $gate)) {
+            } elseif (! preg_match('/^(GATE [1-4]|TIDAK BOLEH GATE OUT)$/', $gate)) {
                 throw new RuntimeException('Pilih gate Gate Out yang valid.', 422);
             }
 
             if ($isTruckIn) {
                 $stage = 'ambil_data_kontainer';
-                $containerType = $db->table('t_cocostscont')->where('NO_CONT', $noCont)->orderByDesc('ID')->first();
-                if (!$containerType) {
+                $containerType = $this->normalizeRow($db->table('t_cocostscont')->where('NO_CONT', $noCont)->orderByDesc('ID')->first());
+                if (! $containerType) {
                     throw new RuntimeException('Data ukuran dan berat container tidak ditemukan.', 404);
                 }
 
@@ -195,13 +197,13 @@ class DeliveryServices
                 }
             } else {
                 $stage = 'ambil_data_eir';
-                $container = $db->table('t_spk_cont')->where('ID', $spkCont->ID)->where('NO_CONT', $noCont)->first();
-                $containerType = $db->table('t_cocostscont')->where('NO_CONT', $noCont)->orderByDesc('ID')->first();
-                if (!$containerType) {
+                $container = $this->normalizeRow($db->table('t_spk_cont')->where('ID', $spkCont->ID)->where('NO_CONT', $noCont)->first());
+                $containerType = $this->normalizeRow($db->table('t_cocostscont')->where('NO_CONT', $noCont)->orderByDesc('ID')->first());
+                if (! $containerType) {
                     throw new RuntimeException('Data tipe container untuk EIR tidak ditemukan.', 404);
                 }
-                $behandle = $db->table('t_op_behandlein')->where('NO_CONT', $noCont)->orderByDesc('ID')->first();
-                $inspection = $db->table('t_op_inspection')->where('NO_CONT', $noCont)->orderByDesc('ID')->first();
+                $behandle = $this->normalizeRow($db->table('t_op_behandlein')->where('NO_CONT', $noCont)->orderByDesc('ID')->first());
+                $inspection = $this->normalizeRow($db->table('t_op_inspection')->where('NO_CONT', $noCont)->orderByDesc('ID')->first());
 
                 $stage = 'update_denah';
                 $db->table('t_denah_lapangan')->where('NM_BLOK', $container->LOKASI)
@@ -215,7 +217,7 @@ class DeliveryServices
                     'FLAT' => $truck !== '' ? $truck : null,
                     'ISO_CODE' => $containerType->ISO_CODE,
                     'BRUTO' => $containerType->BRUTO,
-                    'LOKASI_END' => $container->LOKASI . '0' . $container->TIER,
+                    'LOKASI_END' => $container->LOKASI.'0'.$container->TIER,
                     'WK_GATEOUT' => $now->format('Y-m-d H:i'),
                     'WK_BEHANDLEIN' => $behandle->W_BEHANDLE ?? null,
                     'WK_START' => $inspection->START_INSP ?? null,
@@ -291,10 +293,41 @@ class DeliveryServices
 
     private function makeDailySecNo(int $sequence): string
     {
-        if ($sequence < 10) return 'CMS0000' . $sequence;
-        if ($sequence < 100) return 'CMS000' . $sequence;
-        if ($sequence < 1000) return 'CMS00' . $sequence;
-        if ($sequence < 10000) return 'CMS0' . $sequence;
-        return 'CMS' . $sequence;
+        if ($sequence < 10) {
+            return 'CMS0000'.$sequence;
+        }
+        if ($sequence < 100) {
+            return 'CMS000'.$sequence;
+        }
+        if ($sequence < 1000) {
+            return 'CMS00'.$sequence;
+        }
+        if ($sequence < 10000) {
+            return 'CMS0'.$sequence;
+        }
+
+        return 'CMS'.$sequence;
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
     }
 }
