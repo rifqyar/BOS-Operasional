@@ -10,13 +10,19 @@ class OnChassisServices
     /** Search only Truck In containers that have not been processed On Chassis. */
     public function searchContainer(string $keyword): array
     {
-        return DB::connection('prod_new')->table('t_op_delivery')
-            ->where('NO_CONT', 'like', '%' . strtoupper(trim($keyword)) . '%')
+        $keyword = strtoupper(trim($keyword));
+
+        return $this->normalizeRows(DB::connection('prod_new')->table('t_op_delivery')
+            ->select([
+                'ID', 'NO_CONT', 'NO_SPK', 'UKR_CONT', 'NO_TRUCK',
+                'LOKASI', 'TIER', 'WK_TRUCKIN', 'WK_CHASSIS',
+            ])
+            ->whereRaw('UPPER("NO_CONT") LIKE ?', ['%'.$keyword.'%'])
             ->whereNotNull('WK_TRUCKIN')
             ->whereNull('WK_CHASSIS')
             ->orderByDesc('ID')
             ->get()
-            ->all();
+            ->all());
     }
 
     /** Return an exact match or a sole partial match; never choose an arbitrary container. */
@@ -39,12 +45,16 @@ class OnChassisServices
     /** Available Truck In records for the legacy On Chassis list. */
     public function getAvailableContainers(): array
     {
-        return DB::connection('prod_new')->table('t_op_delivery')
+        return $this->normalizeRows(DB::connection('prod_new')->table('t_op_delivery')
+            ->select([
+                'ID', 'NO_CONT', 'NO_SPK', 'UKR_CONT', 'NO_TRUCK',
+                'LOKASI', 'TIER', 'WK_TRUCKIN', 'WK_CHASSIS',
+            ])
             ->whereNotNull('WK_TRUCKIN')
             ->whereNull('WK_CHASSIS')
             ->orderByDesc('ID')
             ->get()
-            ->all();
+            ->all());
     }
 
     /**
@@ -56,13 +66,14 @@ class OnChassisServices
         $db = DB::connection('prod_new');
         $noContainer = strtoupper(trim($noContainer));
 
-        $delivery = $db->table('t_op_delivery')
+        $delivery = $this->normalizeRow($db->table('t_op_delivery')
+            ->select(['ID', 'NO_CONT', 'NO_SPK', 'WK_TRUCKIN', 'WK_CHASSIS'])
             ->where('NO_CONT', $noContainer)
             ->whereNotNull('WK_TRUCKIN')
             ->whereNull('WK_CHASSIS')
             ->orderByDesc('ID')
             ->lockForUpdate()
-            ->first();
+            ->first());
 
         if (!$delivery) {
             throw new RuntimeException('Container tidak ditemukan atau sudah diproses On Chassis.', 404);
@@ -76,30 +87,33 @@ class OnChassisServices
             throw new RuntimeException('Nomor SPK tidak sesuai dengan data Delivery container.', 422);
         }
 
-        $spk = $db->table('t_spk')
+        $spk = $this->normalizeRow($db->table('t_spk')
+            ->select(['ID', 'NO_SPK'])
             ->where('NO_SPK', $deliverySpk)
             ->orderByDesc('ID')
             ->lockForUpdate()
-            ->first();
+            ->first());
         if (!$spk) {
             throw new RuntimeException('Data SPK container tidak ditemukan.', 404);
         }
 
-        $spkContainer = $db->table('t_spk_cont')
+        $spkContainer = $this->normalizeRow($db->table('t_spk_cont')
+            ->select(['ID', 'NO_CONT', 'STATUS_CONT'])
             ->where('ID', $spk->ID)
             ->where('NO_CONT', $noContainer)
             ->where('STATUS_CONT', '<>', '900')
             ->lockForUpdate()
-            ->first();
+            ->first());
         if (!$spkContainer) {
             throw new RuntimeException('Status container tidak memenuhi syarat On Chassis.', 422);
         }
 
-        $operation = $db->table('t_operation')
+        $operation = $this->normalizeRow($db->table('t_operation')
+            ->select(['NO_CONT', 'NO_SPK'])
             ->where('NO_CONT', $noContainer)
             ->where('NO_SPK', $deliverySpk)
             ->lockForUpdate()
-            ->first();
+            ->first());
         if (!$operation) {
             throw new RuntimeException('Data operasi container dan SPK tidak ditemukan.', 404);
         }
@@ -110,5 +124,27 @@ class OnChassisServices
             'spk' => $spk,
             'operation' => $operation,
         ];
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
     }
 }

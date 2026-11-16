@@ -1,5 +1,6 @@
+
 <div
-    class="mx-auto mb-5 w-full max-w-4xl"
+    class="mx-auto mb-5 max-w-3xl"
     data-panel
     data-panel-name="onchassis"
     data-search-url="{{ route('onchassis.search') }}"
@@ -7,38 +8,41 @@
     data-csrf-token="{{ csrf_token() }}">
 
     {{-- HEADER --}}
-    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-4 flex items-center justify-between gap-3">
 
         <a
             href="{{ route('dashboard') }}"
             wire:navigate
             data-back-menu
-            class="inline-flex min-h-10 w-fit items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10">
+            class="inline-flex min-h-10 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10">
 
             <flux:icon.arrow-left class="size-4" />
 
             Menu Handheld
         </a>
 
-        <span class="w-fit rounded-md bg-sky-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-300">
+        <span class="rounded-sm bg-sky-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
             On Chassis
         </span>
+
     </div>
 
     {{-- SEARCH --}}
     <form
         data-search-form
-        class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950">
+        class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
 
         <label
             for="onchassis-search"
             class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            No Container
+
+            Nomor Container
         </label>
 
-        <div class="mt-2 flex flex-col gap-3 sm:flex-row">
+        <div class="mt-2 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
 
-            <div class="relative flex-1">
+            {{-- INPUT --}}
+            <div class="relative">
 
                 <flux:icon.magnifying-glass
                     class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
@@ -50,18 +54,33 @@
                     autocomplete="off"
                     autofocus
                     required
-                    placeholder="SEARCH NO CONTAINER"
-                    class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500">
+                    placeholder="SEARCH NO. CONTAINER"
+                    class="h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm font-medium text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-white/10 dark:bg-slate-950 dark:text-white">
+
             </div>
 
+            {{-- SEARCH BUTTON --}}
             <button
                 type="submit"
                 data-search-button
-                class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-6 text-sm font-bold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-70">
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-slate-900">
 
                 <flux:icon.magnifying-glass class="size-4" />
 
-                SEARCH
+                Search
+            </button>
+
+            {{-- RESET BUTTON --}}
+            <button
+                type="reset"
+                data-reset-button
+                aria-label="Reset pencarian On Chassis"
+                title="Reset"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900">
+
+                <flux:icon.arrow-path class="size-4" />
+
+                Reset
             </button>
 
         </div>
@@ -70,7 +89,7 @@
     {{-- RESULT / FORM --}}
     <div
         data-content
-        class="mt-5">
+        class="mt-4">
     </div>
 
 </div>

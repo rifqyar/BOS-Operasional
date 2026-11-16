@@ -7,6 +7,8 @@ $(function () {
         return;
     }
 
+    let searchRequest = null;
+
     function getCsrfToken() {
         return panel.attr('data-csrf-token') || '';
     }
@@ -105,7 +107,7 @@ $(function () {
 
             content.empty();
 
-            $.ajax({
+            searchRequest = $.ajax({
                 url: getSearchUrl(),
                 type: 'POST',
                 dataType: 'json',
@@ -147,6 +149,10 @@ $(function () {
                 error: function (xhr) {
                     content.empty();
 
+                    if (xhr.statusText === 'abort') {
+                        return;
+                    }
+
                     if (xhr.status === 419) {
                         showAlert(
                             'warning',
@@ -176,8 +182,31 @@ $(function () {
 
                 complete: function () {
                     setButtonLoading(button, false);
+                    searchRequest = null;
                 },
             });
+        }
+    );
+
+    $(document).on(
+        'click',
+        '[data-panel-name="onchassis"] [data-reset-button]',
+        function () {
+            const resetButton = $(this);
+            const currentPanel = resetButton.closest('[data-panel-name="onchassis"]');
+            const searchForm = currentPanel.find('[data-search-form]');
+            const searchButton = searchForm.find('[data-search-button]');
+            const searchInput = searchForm.find('[name="search_ch"]');
+
+            if (searchRequest) {
+                searchRequest.abort();
+                searchRequest = null;
+            }
+
+            searchForm[0]?.reset();
+            searchInput.trigger('input').trigger('change').trigger('focus');
+            currentPanel.find('[data-content]').empty();
+            setButtonLoading(searchButton, false);
         }
     );
 

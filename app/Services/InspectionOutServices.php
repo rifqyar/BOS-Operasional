@@ -10,40 +10,47 @@ class InspectionOutServices
      * Ambil gatepass untuk kegiatan Inspection Out.
      * Semua pembacaan menggunakan prod_new.
      */
-    public function getGatepass(string $noCont)
+    public function getGatepass(string $noCont): array
     {
-        return $this->normalizeRows(DB::connection('prod_new')->select(
-            "SELECT *
-             FROM t_gatepass
-             WHERE NO_CONT LIKE ?
-               AND JNS_KEGIATAN = '3'",
-            ['%'.$noCont.'%']
-        ));
+        $noCont = strtoupper(trim($noCont));
+
+        return $this->normalizeRows(DB::connection('prod_new')->table('t_gatepass')
+            ->select(['ID', 'NO_CONT', 'JNS_KEGIATAN'])
+            ->whereRaw('UPPER("NO_CONT") LIKE ?', ['%'.$noCont.'%'])
+            ->where('JNS_KEGIATAN', '3')
+            ->get()
+            ->all());
     }
 
     /**
      * Ambil delivery yang belum Gate Out.
      */
-    public function getDelivery(string $noCont)
+    public function getDelivery(string $noCont): array
     {
-        return $this->normalizeRows(DB::connection('prod_new')->select(
-            'SELECT *
-             FROM t_op_delivery
-             WHERE NO_CONT LIKE ?
-               AND WK_GATEOUT IS NULL',
-            ['%'.$noCont.'%']
-        ));
+        $noCont = strtoupper(trim($noCont));
+
+        return $this->normalizeRows(DB::connection('prod_new')->table('t_op_delivery')
+            ->select([
+                'ID', 'NO_CONT', 'UKR_CONT', 'NO_SEAL', 'WK_TRUCKIN',
+                'WK_CHASSIS', 'WK_INSPECT', 'WK_GATEOUT',
+            ])
+            ->whereRaw('UPPER("NO_CONT") LIKE ?', ['%'.$noCont.'%'])
+            ->whereNull('WK_GATEOUT')
+            ->orderByDesc('ID')
+            ->get()
+            ->all());
     }
 
     /**
      * Ambil referensi kondisi container.
      */
-    public function getCondition()
+    public function getCondition(): array
     {
-        return $this->normalizeRows(DB::connection('prod_new')->select(
-            'SELECT ID, KONDISI
-             FROM reff_kondisi'
-        ));
+        return $this->normalizeRows(DB::connection('prod_new')->table('reff_kondisi')
+            ->select(['ID', 'KONDISI'])
+            ->orderBy('ID')
+            ->get()
+            ->all());
     }
 
     /**
@@ -51,6 +58,7 @@ class InspectionOutServices
      */
     public function getInspectionData(string $noCont): array
     {
+        $noCont = strtoupper(trim($noCont));
         $gatepass = $this->getGatepass($noCont);
 
         if (count($gatepass) === 0) {
@@ -123,7 +131,9 @@ class InspectionOutServices
         string $noCont,
         string $conditionId
     ): array {
+        $noCont = strtoupper(trim($noCont));
         $gatepass = $this->normalizeRow(DB::connection('prod_new')->table('t_gatepass')
+            ->select(['ID', 'NO_CONT', 'JNS_KEGIATAN'])
             ->where('NO_CONT', $noCont)
             ->where('JNS_KEGIATAN', '3')
             ->lockForUpdate()
@@ -137,6 +147,9 @@ class InspectionOutServices
         }
 
         $deliveryRow = $this->normalizeRow(DB::connection('prod_new')->table('t_op_delivery')
+            ->select([
+                'ID', 'NO_CONT', 'WK_TRUCKIN', 'WK_CHASSIS', 'WK_INSPECT', 'WK_GATEOUT',
+            ])
             ->where('NO_CONT', $noCont)
             ->whereNull('WK_GATEOUT')
             ->orderByDesc('ID')
@@ -182,8 +195,9 @@ class InspectionOutServices
          */
         $spkCont = $this->normalizeRow(DB::connection('prod_new')
             ->table('t_spk_cont')
+            ->select(['ID', 'NO_CONT', 'STATUS_CONT'])
             ->where('NO_CONT', $noCont)
-            ->whereIn('STATUS_CONT', [450, 800, 850, 870])
+            ->whereIn('STATUS_CONT', ['450', '800', '850', '870'])
             ->orderByDesc('ID')
             ->lockForUpdate()
             ->first());
@@ -201,6 +215,7 @@ class InspectionOutServices
          */
         $spk = $this->normalizeRow(DB::connection('prod_new')
             ->table('t_spk')
+            ->select(['ID', 'NO_SPK'])
             ->where('ID', $spkCont->ID)
             ->lockForUpdate()
             ->first());

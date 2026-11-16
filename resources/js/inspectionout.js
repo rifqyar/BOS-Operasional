@@ -82,6 +82,31 @@ $(function () {
         }
     }
 
+        /**
+     * Reset form Inspection Out.
+     */
+    $(document).on(
+        'click',
+        '[data-panel-name="inspectionout"] [data-reset-button]',
+        function () {
+            const form = panel.find('[data-search-form]');
+            const content = panel.find('[data-content]');
+            const searchButton = form.find('[data-search-button]');
+
+            // Kosongkan input pencarian
+            form[0].reset();
+
+            // Bersihkan hasil pencarian
+            content.empty();
+
+            // Pastikan tombol Search kembali aktif
+            searchButton.prop('disabled', false);
+
+            // Kembalikan fokus ke input container
+            form.find('[name="search_cont"]').trigger('focus');
+        }
+    );
+
     $(document).on(
         'submit',
         '[data-panel-name="inspectionout"] [data-search-form]',

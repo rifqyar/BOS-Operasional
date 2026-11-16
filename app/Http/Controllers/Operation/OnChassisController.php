@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class OnChassisController extends Controller
@@ -29,17 +30,16 @@ class OnChassisController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'search_ch' => ['required', 'string', 'max:50'],
-        ]);
-
-        $keyword = strtoupper(trim($validated['search_ch']));
-
         try {
+            $validated = $request->validate([
+                'search_ch' => ['required', 'string', 'max:50'],
+            ]);
+            $keyword = strtoupper(trim($validated['search_ch']));
+
             $container = $this->onChassisService->getContainer($keyword);
 
             if (!$container) {
-                $this->logInfo(self::LOG_CHANNEL, 'Container On Chassis tidak ditemukan', [
+                $this->logError(self::LOG_CHANNEL, 'Container On Chassis tidak ditemukan', [
                     'search_keyword' => $keyword,
                 ]);
 
@@ -68,10 +68,22 @@ class OnChassisController extends Controller
                 'message' => 'Data container berhasil ditemukan.',
                 'data' => $html,
             ]);
+        } catch (ValidationException $th) {
+            $this->logError(self::LOG_CHANNEL, 'Validasi pencarian On Chassis gagal.', [
+                'search_keyword' => $request->input('search_ch'),
+                'errors' => $th->errors(),
+            ]);
+
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Nomor container belum diisi atau tidak valid.',
+                'errors' => $th->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $th) {
             $this->logError(self::LOG_CHANNEL, 'Gagal mencari container On Chassis', [
                 'error' => $th->getMessage(),
-                'search_keyword' => $keyword,
+                'search_keyword' => $request->input('search_ch'),
             ]);
 
             return response()->json([
@@ -89,21 +101,26 @@ class OnChassisController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nomerspk' => ['nullable', 'string', 'max:100'],
-            'nomercont' => ['required', 'string', 'max:50'],
-            'ukuran' => ['nullable', 'string', 'max:50'],
-            'notruck' => ['nullable', 'string', 'max:100'],
-            'lokasi' => ['nullable', 'string', 'max:100'],
-        ]);
-
-        $noContainer = strtoupper(trim($validated['nomercont']));
-        $noSpk = trim((string) ($validated['nomerspk'] ?? ''));
-        $prod = DB::connection('prod_new');
+        $validated = [];
+        $noContainer = strtoupper(trim((string) $request->input('nomercont', '')));
+        $noSpk = trim((string) $request->input('nomerspk', ''));
+        $prod = null;
         $transactionStarted = false;
-        $stage = 'begin_transaction';
+        $stage = 'validasi_request';
 
         try {
+            $validated = $request->validate([
+                'nomerspk' => ['nullable', 'string', 'max:100'],
+                'nomercont' => ['required', 'string', 'max:50'],
+                'ukuran' => ['nullable', 'string', 'max:50'],
+                'notruck' => ['nullable', 'string', 'max:100'],
+                'lokasi' => ['nullable', 'string', 'max:100'],
+            ]);
+
+            $noContainer = strtoupper(trim($validated['nomercont']));
+            $noSpk = trim((string) ($validated['nomerspk'] ?? ''));
+            $prod = DB::connection('prod_new');
+            $stage = 'begin_transaction';
             $prod->beginTransaction();
             $transactionStarted = true;
 
@@ -184,9 +201,23 @@ class OnChassisController extends Controller
                     'wk_chassis' => $now->toDateTimeString(),
                 ],
             ]);
+        } catch (ValidationException $th) {
+            $this->logError(self::LOG_CHANNEL, 'Validasi penyimpanan On Chassis gagal.', [
+                'no_spk' => $noSpk,
+                'no_container' => $noContainer,
+                'errors' => $th->errors(),
+                'stage' => $stage,
+            ]);
+
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Data On Chassis belum lengkap atau tidak valid.',
+                'errors' => $th->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $th) {
             try {
-                if ($transactionStarted && $prod->transactionLevel() > 0) {
+                if ($transactionStarted && $prod && $prod->transactionLevel() > 0) {
                     $prod->rollBack();
                 }
             } catch (Throwable) {

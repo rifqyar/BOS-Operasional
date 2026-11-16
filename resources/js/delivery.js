@@ -70,9 +70,11 @@ document.addEventListener('submit', async function (event) {
         const result = await response.json();
 
         if (!response.ok) {
+            const validationMessage = Object.values(result.errors || {})
+                .flat()
+                .find((message) => typeof message === 'string' && message.trim());
             const error = new Error(
-                result.message || result.errors?.search_cont2?.[0]
-                || result.errors?.nomercont?.[0]
+                validationMessage || result.message
                 || 'Permintaan Delivery gagal diproses.'
             );
             error.status = response.status;

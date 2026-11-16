@@ -1,3 +1,4 @@
+
 <div class="mx-auto mb-5 max-w-3xl"
     data-panel
     data-panel-name="inspectionout"
@@ -29,7 +30,7 @@
             Nomor Container
         </label>
 
-        <div class="mt-2 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <div class="mt-2 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
             <div class="relative">
                 <flux:icon.magnifying-glass
                     class="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
@@ -51,6 +52,15 @@
 
                 <flux:icon.magnifying-glass class="size-4" />
                 Search
+            </button>
+
+            <button
+                type="reset"
+                data-reset-button
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+
+                <flux:icon.arrow-path class="size-4" />
+                Reset
             </button>
         </div>
     </form>

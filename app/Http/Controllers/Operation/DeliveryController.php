@@ -175,9 +175,14 @@ class DeliveryController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (ValidationException $e) {
+            $this->logError($this->logChannel, 'Validasi penyimpanan Delivery gagal.', [
+                'no_container' => $request->input('nomercont'),
+                'errors' => $e->errors(),
+            ]);
+
             return response()->json([
                 'status' => 'info',
-                'message' => $e->getMessage(),
+                'message' => 'Data Delivery belum lengkap atau tidak valid.',
                 'errors' => $e->errors(),
                 'data' => null,
             ], 422);

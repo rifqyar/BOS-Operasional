@@ -276,9 +276,8 @@
 
                     @foreach ($trucksList as $truck)
                         @php
-                            $truckId = $truck->NO_TRUCK
+                            $truckId = $truck->ID_TRUCK
                                 ?? $truck->ID
-                                ?? $truck->ID_TRUCK
                                 ?? '';
 
                             $truckName = $truck->NO_TRUCK

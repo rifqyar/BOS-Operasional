@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class InspectionOutController extends Controller
@@ -29,17 +30,23 @@ class InspectionOutController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'search_cont' => ['required', 'string', 'max:50'],
-        ]);
-
-        $noCont = strtoupper(trim($validated['search_cont']));
+        $noCont = strtoupper(trim((string) $request->input('search_cont', '')));
 
         try {
+            $validated = $request->validate([
+                'search_cont' => ['required', 'string', 'max:50'],
+            ]);
+            $noCont = strtoupper(trim($validated['search_cont']));
+
             $result = $this->inspectionOutService
                 ->getInspectionData($noCont);
 
             if (($result['status'] ?? 0) !== 2) {
+                $this->logError('inspection-out', 'Container tidak memenuhi syarat Inspection Out.', [
+                    'no_container' => $noCont,
+                    'message' => $result['message'] ?? null,
+                ]);
+
                 return response()->json([
                     'status' => 0,
                     'kode' => 1,
@@ -53,10 +60,27 @@ class InspectionOutController extends Controller
                 ['result' => $result]
             )->render();
 
+            $this->logInfo('inspection-out', 'Pencarian Inspection Out berhasil.', [
+                'no_container' => $noCont,
+                'no_seal' => $result['no_seal'] ?? null,
+            ]);
+
             return response()->json([
                 'status' => 2,
                 'data' => $html,
             ]);
+        } catch (ValidationException $th) {
+            $this->logError('inspection-out', 'Validasi pencarian Inspection Out gagal.', [
+                'no_container' => $noCont,
+                'errors' => $th->errors(),
+            ]);
+
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Nomor container belum diisi atau tidak valid.',
+                'errors' => $th->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $th) {
             $this->logError(
                 'inspection-out',
@@ -82,21 +106,24 @@ class InspectionOutController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nomercont' => ['required', 'string', 'max:50'],
-            'ukuran' => ['nullable', 'string', 'max:50'],
-            'optradio' => ['required', 'in:ada,tidak ada'],
-            'noseal' => ['nullable', 'string', 'max:100'],
-            'kondisi' => ['required', 'string', 'max:50'],
-        ]);
-
-        $noCont = strtoupper(trim($validated['nomercont']));
-
-        $prod = DB::connection('prod_new');
+        $validated = [];
+        $noCont = strtoupper(trim((string) $request->input('nomercont', '')));
+        $prod = null;
         $transactionStarted = false;
-        $stage = 'begin_transaction';
+        $stage = 'validasi_request';
 
         try {
+            $validated = $request->validate([
+                'nomercont' => ['required', 'string', 'max:50'],
+                'ukuran' => ['nullable', 'string', 'max:50'],
+                'optradio' => ['required', 'in:ada,tidak ada'],
+                'noseal' => ['nullable', 'string', 'max:100'],
+                'kondisi' => ['required', 'integer', 'min:1'],
+            ]);
+
+            $noCont = strtoupper(trim($validated['nomercont']));
+            $prod = DB::connection('prod_new');
+            $stage = 'begin_transaction';
             $prod->beginTransaction();
             $transactionStarted = true;
 
@@ -235,12 +262,25 @@ class InspectionOutController extends Controller
                     'wk_inspect' => $now,
                 ],
             ]);
+        } catch (ValidationException $th) {
+            $this->logError('inspection-out', 'Validasi penyimpanan Inspection Out gagal.', [
+                'no_container' => $noCont,
+                'errors' => $th->errors(),
+                'stage' => $stage,
+            ]);
+
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Data Inspection Out belum lengkap atau tidak valid.',
+                'errors' => $th->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $th) {
             /*
              * Rollback hanya jika transaksi masih aktif.
              */
             try {
-                if ($transactionStarted && $prod->transactionLevel() > 0) {
+                if ($transactionStarted && $prod && $prod->transactionLevel() > 0) {
                     $prod->rollBack();
                 }
             } catch (Throwable) {

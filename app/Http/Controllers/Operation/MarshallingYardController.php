@@ -221,33 +221,30 @@ class MarshallingYardController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'idJobSlip' => ['required', 'integer', 'min:1'],
-            'nocont' => ['required', 'string', 'max:20'],
-            'ukrcont' => ['nullable', 'string', 'max:10'],
-            'lokaw' => ['nullable', 'string', 'max:50'],
-            'lokak' => ['required', 'string', 'max:50'],
-            'job' => ['required', 'string', 'max:50'],
-            'respon' => ['nullable', 'string', 'max:50'],
-            'note' => ['nullable', 'string', 'max:500'],
-
-            /*
-             * Field aktivitas mengikuti form yang sudah ada.
-             */
-            'jenispekerjaan1' => ['nullable', 'integer'],
-            'alat1' => ['nullable', 'string', 'max:50'],
-            'operator1' => ['nullable', 'string', 'max:50'],
-
-            'jenispekerjaan2' => ['nullable', 'integer'],
-            'truck1' => ['nullable', 'string', 'max:50'],
-            'operator2' => ['nullable', 'string', 'max:50'],
-
-            'jenispekerjaan3' => ['nullable', 'integer'],
-            'alat3' => ['nullable', 'string', 'max:50'],
-            'operator3' => ['nullable', 'string', 'max:50'],
-        ]);
-
         try {
+            $validated = $request->validate([
+                'idJobSlip' => ['required', 'integer', 'min:1'],
+                'nocont' => ['required', 'string', 'max:20'],
+                'ukrcont' => ['nullable', 'string', 'max:10'],
+                'lokaw' => ['nullable', 'string', 'max:50'],
+                'lokak' => ['required', 'string', 'max:50'],
+                'job' => ['required', 'string', 'max:50'],
+                'respon' => ['nullable', 'string', 'max:50'],
+                'note' => ['nullable', 'string', 'max:500'],
+
+                'jenispekerjaan1' => ['nullable', 'integer'],
+                'alat1' => ['nullable', 'string', 'max:50'],
+                'operator1' => ['nullable', 'string', 'max:50'],
+
+                'jenispekerjaan2' => ['nullable', 'integer'],
+                'truck1' => ['nullable', 'integer'],
+                'operator2' => ['nullable', 'string', 'max:50'],
+
+                'jenispekerjaan3' => ['nullable', 'integer'],
+                'alat3' => ['nullable', 'string', 'max:50'],
+                'operator3' => ['nullable', 'string', 'max:50'],
+            ]);
+
             $username = (string) (Auth::user()?->username
                 ?? Auth::user()?->user_name
                 ?? session('USERLOGIN', ''));
@@ -259,7 +256,18 @@ class MarshallingYardController extends Controller
                 'data' => $result['data'],
             ]);
         } catch (ValidationException $e) {
-            throw $e;
+            $this->logError('marshalling-yard', 'Validasi penyimpanan Marshalling Yard gagal.', [
+                'id_job_slip' => $request->input('idJobSlip'),
+                'no_container' => $request->input('nocont'),
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Data Marshalling Yard belum lengkap atau tidak valid.',
+                'errors' => $e->errors(),
+                'data' => null,
+            ], 422);
         } catch (Throwable $e) {
             $statusCode = (int) $e->getCode();
             $statusCode = in_array($statusCode, [404, 409, 422], true) ? $statusCode : 500;

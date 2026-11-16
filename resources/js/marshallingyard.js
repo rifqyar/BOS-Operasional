@@ -28,31 +28,17 @@
      * =========================================================
      */
 
-    function showAlert(message, type = 'error') {
-        const titles = {
-            success: 'Berhasil',
-            error: 'Gagal',
-            warning: 'Perhatian',
-            info: 'Informasi',
-        };
-
-        // Hindari pemanggilan berulang jika window.showAlert
-        // ternyata menunjuk ke fungsi yang sama.
-        if (
-            typeof window.showAlert === 'function' &&
-            window.showAlert !== showAlert
-        ) {
-            window.showAlert(type, titles[type] || 'Informasi', message);
+    function showAlert(icon, title, text) {
+        if (typeof window.showAlert === 'function') {
+            window.showAlert(icon, title, text);
             return;
         }
 
-        if (window.Swal && typeof window.Swal.fire === 'function') {
-            const allowedTypes = ['success', 'error', 'warning', 'info'];
-
+        if (window.Swal?.fire) {
             window.Swal.fire({
-                icon: allowedTypes.includes(type) ? type : 'error',
-                title: titles[type] || 'Informasi',
-                text: message,
+                icon,
+                title,
+                text,
                 confirmButtonText: 'Mengerti',
                 confirmButtonColor: '#0369a1',
             });
@@ -60,7 +46,7 @@
             return;
         }
 
-        window.alert(message);
+        window.alert(text || title);
     }
 
     function showToast(icon, title, text = '') {
@@ -293,8 +279,9 @@
 
         if (!url) {
             showAlert(
-                'URL pencarian Marshalling Yard tidak ditemukan.',
-                'error'
+                'error',
+                'Konfigurasi belum lengkap',
+                'URL pencarian Marshalling Yard tidak ditemukan.'
             );
             return;
         }
@@ -308,8 +295,9 @@
 
         if (!noCont) {
             showAlert(
-                'Nomor container wajib diisi.',
-                'error'
+                'info',
+                'Data belum lengkap',
+                'Nomor container wajib diisi.'
             );
             return;
         }
@@ -353,9 +341,10 @@
 
                 if (response.success === false) {
                     showAlert(
+                        'info',
+                        'Data tidak ditemukan',
                         response.message ||
-                            'Data Marshalling Yard tidak ditemukan.',
-                        'error'
+                            'Data Marshalling Yard tidak ditemukan.'
                     );
                 }
             })
@@ -375,9 +364,10 @@
                 );
 
                 showAlert(
+                    xhr.status === 404 || xhr.status === 422 ? 'info' : 'error',
+                    xhr.status === 404 ? 'Data tidak ditemukan' : 'Gagal mencari data',
                     response?.message ||
-                        'Gagal mencari data Marshalling Yard.',
-                    xhr.status === 404 || xhr.status === 422 ? 'info' : 'error'
+                        'Gagal mencari data Marshalling Yard.'
                 );
             })
             .always(function () {
@@ -396,8 +386,9 @@
 
         if (!url) {
             showAlert(
-                'URL detail Marshalling Yard tidak ditemukan.',
-                'error'
+                'error',
+                'Konfigurasi belum lengkap',
+                'URL detail Marshalling Yard tidak ditemukan.'
             );
             return;
         }
@@ -406,8 +397,9 @@
 
         if (!idJobSlip) {
             showAlert(
-                'ID Job Slip tidak ditemukan.',
-                'error'
+                'error',
+                'Data tidak lengkap',
+                'ID Job Slip tidak ditemukan.'
             );
             return;
         }
@@ -474,7 +466,7 @@
                     </div>
                 `;
 
-                showAlert(message, 'error');
+                showAlert('error', 'Gagal mengambil detail', message);
             })
             .always(function () {
                 button.innerHTML =
@@ -582,8 +574,9 @@
 
         if (!url) {
             showAlert(
-                'URL penyimpanan Marshalling Yard tidak ditemukan.',
-                'error'
+                'error',
+                'Konfigurasi belum lengkap',
+                'URL penyimpanan Marshalling Yard tidak ditemukan.'
             );
             return;
         }
@@ -606,9 +599,10 @@
                 // Pastikan backend benar-benar mengembalikan success: true.
                 if (!response || response.status !== 'success') {
                     showAlert(
+                        'error',
+                        'Gagal',
                         response?.message ||
-                            'Marshalling Yard gagal disimpan.',
-                        'error'
+                            'Marshalling Yard gagal disimpan.'
                     );
                     return;
                 }
@@ -639,19 +633,27 @@
                         .join('\n');
 
                     showAlert(
+                        'info',
+                        'Data belum valid',
                         messages ||
                             response.message ||
-                            'Data yang dikirim belum valid.',
-                        'info'
+                            'Data yang dikirim belum valid.'
                     );
 
                     return;
                 }
 
                 showAlert(
+                    xhr.status === 404 || xhr.status === 409 || xhr.status === 422
+                        ? 'info'
+                        : 'error',
+                    xhr.status === 404 || xhr.status === 409
+                        ? 'Proses tidak dapat dilanjutkan'
+                        : xhr.status === 422
+                            ? 'Data belum valid'
+                            : 'Gagal',
                     response?.message ||
-                        'Gagal memproses Marshalling Yard.',
-                    xhr.status === 404 || xhr.status === 409 ? 'info' : 'error'
+                        'Gagal memproses Marshalling Yard.'
                 );
             })
             .always(function () {
