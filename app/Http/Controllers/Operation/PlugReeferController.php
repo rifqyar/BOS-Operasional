@@ -155,36 +155,12 @@ class PlugReeferController extends Controller
             $row = $rows[0];
 
             $checked = $this->services->checked($noCont);
-
-            $tempAkhir = $this->services->tempAkhir($noCont);
-
-            $spk = $this->services->getSpkContainer($noCont);
-
-            /*
-             * Condition 1:
-             * Belum ada aktivitas Plug aktif.
-             *
-             * Condition 2:
-             * Container sedang Plug.
-             *
-             * Condition 0:
-             * Kondisi lainnya, tidak dapat diproses.
-             */
-            $condition = 0;
-
-            if (empty($checked)) {
-                $condition = 1;
-            } else {
-                $activePlug = $checked[0];
-
-                if (
-                    !empty($activePlug->WAKTU)
-                    && ($activePlug->FL_PLUG ?? null) === 'Y'
-                    && ($activePlug->FL_UNPLUG ?? null) === 'N'
-                ) {
-                    $condition = 2;
-                }
-            }
+            $activePlug = $checked[0] ?? null;
+            $tempAkhir = $this->services->tempAkhir(
+                $noCont,
+                $activePlug ? (int) $activePlug->ID : null
+            );
+            $condition = $this->services->determineCondition($noCont, $checked);
 
             $lastTemperature = $tempAkhir[0]->TEMPERATURE_MONITOR
                 ?? '';
@@ -193,9 +169,6 @@ class PlugReeferController extends Controller
                 'livewire.partials.plugreefer.form',
                 [
                     'row' => $row,
-                    'spk' => $spk,
-                    'checked' => $checked,
-                    'tempAkhir' => $tempAkhir,
                     'lastTemperature' => $lastTemperature,
                     'condition' => $condition,
                 ]
@@ -265,7 +238,7 @@ class PlugReeferController extends Controller
         $noCont = $request->input('nomerkon');
         $temperature = $request->input('temperature');
         $action = $request->input('action');
-        // t_op_reefer menyimpan state Plug yang nanti di-update saat Unplug.
+        // T_OP_REEFER menyimpan state Plug yang nanti diperbarui saat Unplug.
         $connection = DB::connection('prod_new');
 
         try {
@@ -298,7 +271,12 @@ class PlugReeferController extends Controller
             /*
              * Ambil SPK dan container terbaru.
              */
-            $spk = $this->services->getSpkContainer($noCont);
+            $checked = $this->services->checked($noCont);
+            $activePlug = $checked[0] ?? null;
+            $spk = $this->services->getSpkContainer(
+                $noCont,
+                $action === 'unplugin' ? ($activePlug->NO_SPK ?? null) : null
+            );
 
             if (!$spk || empty($spk->NO_CONT)) {
                 throw new Exception(
@@ -312,8 +290,6 @@ class PlugReeferController extends Controller
              * action dari browser tidak menjadi satu-satunya
              * penentu operasi database.
              */
-            $checked = $this->services->checked($noCont);
-
             $user = $request->user();
             $operator = data_get($user, 'USERLOGIN')
                 ?? data_get($user, 'userlogin')
@@ -330,7 +306,7 @@ class PlugReeferController extends Controller
              *
              * Legacy:
              * Jika tidak ada aktivitas aktif,
-             * INSERT data baru ke t_op_reefer.
+             * INSERT data baru ke T_OP_REEFER.
              */
             if ($action === 'plugin') {
                 if (!empty($checked)) {
@@ -340,7 +316,7 @@ class PlugReeferController extends Controller
                     );
                 }
 
-                $connection->table('t_op_reefer')->insert([
+                $connection->table('T_OP_REEFER')->insert([
                     'NO_SPK' => $spk->NO_SPK,
                     'NO_CONT' => $noCont,
                     'WAKTU' => $now,
@@ -406,10 +382,10 @@ class PlugReeferController extends Controller
                 }
 
                 /*
-                      * checked() sudah memilih aktivitas aktif dengan ID terkecil.
+                 * checked() memilih aktivitas Plug aktif terbaru.
                  */
                 $updated = $connection
-                    ->table('t_op_reefer')
+                    ->table('T_OP_REEFER')
                           ->where('ID', $activePlug->ID)
                     ->update([
                         'WAKTU_END' => $now,

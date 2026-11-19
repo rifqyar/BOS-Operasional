@@ -13,15 +13,28 @@ class MonitoringReeferServices
      */
     public function searchReefer(string $keyword): array
     {
-        return DB::connection('prod_new')->select(
-            "SELECT *
-             FROM t_op_reefer
-             WHERE WAKTU IS NOT NULL
-               AND NO_CONT LIKE ?
-             ORDER BY ID ASC
-             FETCH FIRST 1 ROWS ONLY",
-            ['%' . $keyword . '%']
-        );
+        return $this->normalizeRows(DB::connection('prod_new')->select(
+            "SELECT ID, NO_CONT, WAKTU, NO_SPK, TEMPERATURE_MONITOR
+             FROM (
+                SELECT
+                    R.ID,
+                    R.NO_CONT,
+                    R.WAKTU,
+                    R.NO_SPK,
+                    R.TEMPERATURE_MONITOR,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY R.NO_CONT
+                        ORDER BY R.ID DESC
+                    ) AS RN
+                FROM T_OP_REEFER R
+                WHERE R.WAKTU IS NOT NULL
+                  AND R.WAKTU_END IS NULL
+                  AND UPPER(R.NO_CONT) LIKE ?
+             ) ACTIVE_REEFER
+             WHERE RN = 1
+             ORDER BY ID DESC",
+            ['%' . strtoupper(trim($keyword)) . '%']
+        ));
     }
 
     /**
@@ -30,33 +43,40 @@ class MonitoringReeferServices
      */
     public function getMonitoring(string $keyword)
     {
-        return DB::connection('prod_new')->selectOne(
+        return $this->normalizeRow(DB::connection('prod_new')->selectOne(
             "SELECT *
-             FROM t_op_reefer
-             WHERE WAKTU IS NOT NULL
-               AND NO_CONT LIKE ?
+             FROM T_OP_REEFER
+             WHERE NO_CONT = ?
+               AND WAKTU IS NOT NULL
                AND WAKTU_END IS NULL
-             ORDER BY ID ASC
+             ORDER BY ID DESC
              FETCH FIRST 1 ROWS ONLY",
-            ['%' . $keyword . '%']
-        );
+            [strtoupper(trim($keyword))]
+        ));
     }
 
     /**
      * Mengambil temperatur monitoring sebelumnya.
      * Mengambil temperatur monitoring dari prod_new.
      */
-    public function getLastTemperature(string $keyword)
+    public function getLastTemperature(string $keyword, ?int $activePlugId = null): ?object
     {
-        return DB::connection('prod_new')
+        if ($activePlugId === null) {
+            return null;
+        }
+
+        $row = DB::connection('prod_new')
             ->table('T_OP_REEFER')
             ->select('TEMPERATURE_MONITOR', 'ID')
             ->whereNotNull('TEMPERATURE_MONITOR')
-            ->where('NO_CONT', 'LIKE', '%' . $keyword . '%')
+            ->where('NO_CONT', strtoupper(trim($keyword)))
             ->whereNull('WAKTU_END')
             ->where('FL_MONITOR', 'Y')
+            ->where('ID', '>=', $activePlugId)
             ->orderByDesc('ID')
             ->first();
+
+        return $this->normalizeRow($row);
     }
 
     /**
@@ -82,15 +102,19 @@ class MonitoringReeferServices
          * Validasi container/SPK di prod_new.
          * Query join mengikuti implementasi legacy M_operation.
          */
-        $spkCont = DB::connection('prod_new')->selectOne(
-            "SELECT A.*, B.*
-             FROM t_spk_cont A
-             INNER JOIN t_spk B ON A.ID = B.ID
+        $spkCont = $this->normalizeRow(DB::connection('prod_new')->selectOne(
+            "SELECT
+                A.NO_CONT,
+                A.ID AS ID_SPK_CONT,
+                A.STATUS_CONT,
+                B.NO_SPK
+             FROM T_SPK_CONT A
+             INNER JOIN T_SPK B ON A.ID = B.ID
              WHERE A.NO_CONT = ?
              ORDER BY A.ID DESC
              FETCH FIRST 1 ROWS ONLY",
             [$noCont]
-        );
+        ));
 
         if (!$spkCont || strtoupper(trim((string) $spkCont->NO_CONT)) !== $noCont) {
             throw new \InvalidArgumentException(
@@ -110,7 +134,7 @@ class MonitoringReeferServices
          */
         $activeReefer = DB::connection('prod_new')->selectOne(
             "SELECT ID, NO_CONT, WAKTU, WAKTU_END
-             FROM t_op_reefer
+             FROM T_OP_REEFER
              WHERE NO_CONT = ?
                AND WAKTU IS NOT NULL
                AND WAKTU_END IS NULL
@@ -167,5 +191,27 @@ class MonitoringReeferServices
 
             throw $e;
         }
+    }
+
+    private function normalizeRows(array $rows): array
+    {
+        return array_map(
+            fn ($row) => $this->normalizeRow($row),
+            $rows
+        );
+    }
+
+    private function normalizeRow(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $normalized = new \stdClass;
+        foreach ((array) $row as $column => $value) {
+            $normalized->{strtoupper($column)} = $value;
+        }
+
+        return $normalized;
     }
 }

@@ -55,22 +55,28 @@ class MonitoringReeferController extends Controller
             $rows = $this->service->searchReefer($keyword);
 
             if (empty($rows)) {
-                $this->logError(
+                $html = view(
+                    'livewire.partials.monitoringreefer.table',
+                    ['data' => []]
+                )->render();
+
+                $this->logInfo(
                     $this->logChannel,
-                    'Container tidak ditemukan pada pencarian Monitoring Reefer.',
+                    'Tidak ada container aktif untuk Monitoring Reefer.',
                     [
                         'action' => 'search',
                         'no_cont' => $keyword,
+                        'status' => false,
                     ]
                 );
 
                 return response()->json([
-                    'status'  => 'error',
-                    'success' => false,
-                    'kode'    => 404,
-                    'message' => "NO CONT : {$keyword} TIDAK DITEMUKAN.",
-                    'data'    => null,
-                ], 404);
+                    'status'  => 'success',
+                    'success' => true,
+                    'kode'    => 200,
+                    'message' => "NO CONT : {$keyword} tidak sedang aktif di-Plugin.",
+                    'data'    => $html,
+                ]);
             }
 
             $html = view(
@@ -172,7 +178,10 @@ class MonitoringReeferController extends Controller
                 ], 404);
             }
 
-            $temprev = $this->service->getLastTemperature($keyword);
+            $temprev = $this->service->getLastTemperature(
+                $keyword,
+                isset($monitoring->ID) ? (int) $monitoring->ID : null
+            );
             $html = view(
                 'livewire.partials.monitoringreefer.form',
                 [

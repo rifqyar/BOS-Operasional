@@ -1,9 +1,5 @@
 @php
     $row = $row ?? null;
-    $spk = $spk ?? null;
-    $checked = $checked ?? null;
-    $tempAkhir = $tempAkhir ?? null;
-
     $condition = $condition ?? 0;
 
     $noCont = $row->NO_CONT ?? '';
@@ -247,7 +243,7 @@
 
                     <input
                         type="text"
-                        value="{{ $lastTemperature ?: '-' }}"
+                        value="{{ $lastTemperature !== '' && $lastTemperature !== null ? $lastTemperature : '-' }}"
                         readonly
                         class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     >
